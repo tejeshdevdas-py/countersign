@@ -298,7 +298,7 @@ describe('userMessageLinkify', () => {
   });
 
   it('matches bare session deep links as session kind', () => {
-    const sessionUrl = 'xdt-maker://session/03e0c22d-19db-4ac5-814f-1ea04040b471';
+    const sessionUrl = 'countersign://session/03e0c22d-19db-4ac5-814f-1ea04040b471';
     const matches = findLinkifyMatches(`看这个 ${sessionUrl} 的会话`);
     expect(matches).toEqual([
       {
@@ -312,7 +312,7 @@ describe('userMessageLinkify', () => {
   });
 
   it('matches markdown-form session links with an explicit label', () => {
-    const sessionUrl = 'xdt-maker://session/03e0c22d-19db-4ac5-814f-1ea04040b471';
+    const sessionUrl = 'countersign://session/03e0c22d-19db-4ac5-814f-1ea04040b471';
     const md = `[修复语音输入白屏](${sessionUrl})`;
     const matches = findLinkifyMatches(`帮我看下 ${md} 这个任务`);
     expect(matches).toEqual([
@@ -328,7 +328,7 @@ describe('userMessageLinkify', () => {
   });
 
   it('keeps the message anchor inside markdown-form session links', () => {
-    const withAnchor = 'xdt-maker://session/abc-123?message=client-9';
+    const withAnchor = 'countersign://session/abc-123?message=client-9';
     const md = `[某条消息](${withAnchor})`;
     expect(findLinkifyMatches(md)).toEqual([
       {
@@ -343,7 +343,7 @@ describe('userMessageLinkify', () => {
   });
 
   it('keeps square brackets inside markdown labels intact (review P1)', () => {
-    const sessionUrl = 'xdt-maker://session/abc-123';
+    const sessionUrl = 'countersign://session/abc-123';
     const md = `[[WIP] 修复白屏](${sessionUrl})`;
     expect(findLinkifyMatches(md)).toEqual([
       {
@@ -358,7 +358,7 @@ describe('userMessageLinkify', () => {
   });
 
   it('does not swallow preceding bracketed text into the label (review P1 round 2)', () => {
-    const sessionUrl = 'xdt-maker://session/abc-123';
+    const sessionUrl = 'countersign://session/abc-123';
     const inner = `[修复白屏](${sessionUrl})`;
     const matches = findLinkifyMatches(`[x] ${inner}`);
     expect(matches).toEqual([
@@ -374,7 +374,7 @@ describe('userMessageLinkify', () => {
   });
 
   it('treats escaped brackets in labels as literals (review P1 round 3)', () => {
-    const sessionUrl = 'xdt-maker://session/abc-123';
+    const sessionUrl = 'countersign://session/abc-123';
     const md = `[修复 \\] 白屏](${sessionUrl})`;
     expect(findLinkifyMatches(md)).toEqual([
       {
@@ -400,7 +400,7 @@ describe('userMessageLinkify', () => {
   });
 
   it('omits label when markdown label is empty or equals the href', () => {
-    const sessionUrl = 'xdt-maker://session/abc-123';
+    const sessionUrl = 'countersign://session/abc-123';
     expect(findLinkifyMatches(`[](${sessionUrl})`)[0]).not.toHaveProperty('label');
     expect(findLinkifyMatches(`[${sessionUrl}](${sessionUrl})`)[0]).not.toHaveProperty('label');
     // 无论 label 形态,整段 markdown 只产出一个 session 匹配(内部裸链接被
@@ -409,7 +409,7 @@ describe('userMessageLinkify', () => {
   });
 
   it('keeps the message anchor and trims trailing punctuation on session links', () => {
-    const withAnchor = 'xdt-maker://session/abc-123?message=client-9';
+    const withAnchor = 'countersign://session/abc-123?message=client-9';
     expect(findLinkifyMatches(`跳到 ${withAnchor}，谢谢`)[0]).toMatchObject({
       kind: 'session',
       text: withAnchor,
@@ -421,7 +421,7 @@ describe('userMessageLinkify', () => {
   });
 
   it('matches bare project deep links as project kind', () => {
-    const projectUrl = 'xdt-maker://project/%2FUsers%2Fdash%2FCode%2FTools%2Fxdt-maker';
+    const projectUrl = 'countersign://project/%2FUsers%2Fdash%2FCode%2FTools%2Fxdt-maker';
     expect(findLinkifyMatches(`项目在 ${projectUrl} 这里`)).toEqual([
       {
         kind: 'project',
@@ -434,7 +434,7 @@ describe('userMessageLinkify', () => {
   });
 
   it('matches markdown-form project links with an explicit label', () => {
-    const projectUrl = 'xdt-maker://project/%2FUsers%2Fdash%2FCode%2FTools%2Fxdt-maker';
+    const projectUrl = 'countersign://project/%2FUsers%2Fdash%2FCode%2FTools%2Fxdt-maker';
     const md = `[主仓](${projectUrl})`;
     expect(findLinkifyMatches(md)).toEqual([
       {
@@ -449,29 +449,29 @@ describe('userMessageLinkify', () => {
   });
 
   it('does not match unknown xdt-maker URL shapes', () => {
-    expect(findLinkifyMatches('xdt-maker://other/foo')).toEqual([]);
-    expect(findLinkifyMatches('xdt-maker://project/')).toEqual([]);
+    expect(findLinkifyMatches('countersign://other/foo')).toEqual([]);
+    expect(findLinkifyMatches('countersign://project/')).toEqual([]);
   });
 
   it('rejects legacy project links with raw delimiters instead of prefix-matching (review P2)', () => {
     // 旧编码放行 `'()`,历史链接可能含裸字符;白名单截断出的前缀会让 chip
     // 聚焦到错误项目——整段降级纯文本。
-    expect(findLinkifyMatches('xdt-maker://project/%2Ftmp%2Ffoo(copy)')).toEqual([]);
-    expect(findLinkifyMatches("xdt-maker://project/%2FJohn's%20Repo")).toEqual([]);
+    expect(findLinkifyMatches('countersign://project/%2Ftmp%2Ffoo(copy)')).toEqual([]);
+    expect(findLinkifyMatches("countersign://project/%2FJohn's%20Repo")).toEqual([]);
   });
 
   it('still matches a bare project link wrapped in prose parentheses', () => {
-    const projectUrl = 'xdt-maker://project/%2Ftmp%2Ffoo';
+    const projectUrl = 'countersign://project/%2Ftmp%2Ffoo';
     expect(findLinkifyMatches(`(${projectUrl})`)[0]).toMatchObject({
       kind: 'project',
       href: projectUrl,
     });
   });
 
-  // 双 scheme 收敛:主 scheme cindy:// 与历史 xdt-maker://(上方全部用例)
+  // 双 scheme 收敛:主 scheme countersign:// 与历史 countersign://(上方全部用例)
   // 同一口径匹配;长度切片按实际命中的前缀(两 scheme 长度不同)。
-  it('matches primary-scheme cindy:// session links (bare + markdown form)', () => {
-    const sessionUrl = 'cindy://session/03e0c22d-19db-4ac5-814f-1ea04040b471';
+  it('matches primary-scheme countersign:// session links (bare + markdown form)', () => {
+    const sessionUrl = 'countersign://session/03e0c22d-19db-4ac5-814f-1ea04040b471';
     expect(findLinkifyMatches(`看这个 ${sessionUrl} 的会话`)).toEqual([
       {
         kind: 'session',
@@ -494,20 +494,20 @@ describe('userMessageLinkify', () => {
     ]);
   });
 
-  it('matches primary-scheme cindy:// project links and rejects empty ids per scheme', () => {
-    const projectUrl = 'cindy://project/%2Ftmp%2Ffoo';
+  it('matches primary-scheme countersign:// project links and rejects empty ids per scheme', () => {
+    const projectUrl = 'countersign://project/%2Ftmp%2Ffoo';
     expect(findLinkifyMatches(`项目在 ${projectUrl} 这里`)[0]).toMatchObject({
       kind: 'project',
       href: projectUrl,
     });
-    expect(findLinkifyMatches('cindy://other/foo')).toEqual([]);
-    expect(findLinkifyMatches('cindy://project/')).toEqual([]);
-    expect(findLinkifyMatches('cindy://session/')).toEqual([]);
+    expect(findLinkifyMatches('countersign://other/foo')).toEqual([]);
+    expect(findLinkifyMatches('countersign://project/')).toEqual([]);
+    expect(findLinkifyMatches('countersign://session/')).toEqual([]);
   });
 
   it('matches both schemes mixed in one message', () => {
-    const legacy = 'xdt-maker://session/aaa-111';
-    const primary = 'cindy://session/bbb-222';
+    const legacy = 'countersign://session/aaa-111';
+    const primary = 'countersign://session/bbb-222';
     const matches = findLinkifyMatches(`${legacy} 与 ${primary}`);
     expect(matches.map((m) => (m.kind === 'session' ? m.href : null))).toEqual([
       legacy,

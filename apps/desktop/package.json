@@ -1,6 +1,6 @@
 {
   "name": "desktop",
-  "productName": "Cindy",
+  "productName": "Countersign",
   "version": "0.0.0",
   "description": "Cindy desktop client",
   "main": ".vite/build/index.js",
@@ -44,10 +44,7 @@
     "preview:island-mascots": "node scripts/preview-island-mascots.mjs",
     "export:login-callback-template": "tsx scripts/export-login-callback-template.ts"
   },
-  "author": {
-    "name": "XD Inc.",
-    "email": "feedback@cindy.app"
-  },
+  "author": "Countersign contributors",
   "license": "Apache-2.0",
   "dependencies": {
     "@babel/parser": "^7.29.7",

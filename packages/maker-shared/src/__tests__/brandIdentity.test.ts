@@ -61,8 +61,9 @@ describe('BRAND_IDENTITY invariants', () => {
     // 发布渠道靠不同 OSS bucket 区分,不靠路径前缀。
     expect(BRAND_IDENTITY.executableNameByRegion.cn)
       .toBe(BRAND_IDENTITY.executableNameByRegion.global);
+    // Countersign fork: one local identity for cn/global (no split channels).
     expect(BRAND_IDENTITY.userDataDirNameByRegion.cn)
-      .not.toBe(BRAND_IDENTITY.userDataDirNameByRegion.global);
+      .toBe(BRAND_IDENTITY.userDataDirNameByRegion.global);
   });
 
   it('cn 区域值 = 基线标量字段(dev / legacy 消费点与 cn 构建同一身份)', () => {
@@ -85,7 +86,9 @@ describe('BRAND_IDENTITY invariants', () => {
     const rdnRe = /^[a-z][a-z0-9]*(\.[a-z][a-z0-9-]*)+$/;
     expect(BRAND_IDENTITY.appIdByRegion.cn).toMatch(rdnRe);
     expect(BRAND_IDENTITY.appIdByRegion.global).toMatch(rdnRe);
-    expect(BRAND_IDENTITY.appIdByRegion.cn).not.toBe(BRAND_IDENTITY.appIdByRegion.global);
+    // Countersign fork: cn/global share one app id; only dev is separate.
+    expect(BRAND_IDENTITY.appIdByRegion.cn).toBe(BRAND_IDENTITY.appIdByRegion.global);
+    expect(BRAND_IDENTITY.appIdByRegion.dev).not.toBe(BRAND_IDENTITY.appIdByRegion.global);
   });
 
   it('legacy userData / DB 前缀不含当前值(历史表只放旧值)', () => {
@@ -98,7 +101,8 @@ describe('BRAND_IDENTITY invariants', () => {
   });
 
   it('身份翻转后 legacy 数组必须携带 xdt-maker 旧值(兼容锚,只增不减)', () => {
-    expect(BRAND_IDENTITY.legacySchemes).toContain('xdt-maker');
+    // Countersign fork has no legacy URL schemes.
+    expect(BRAND_IDENTITY.legacySchemes).toEqual([]);
     expect(BRAND_IDENTITY.legacyUserDataDirNames).toContain('xdt-maker');
     expect(BRAND_IDENTITY.legacyDbFilePrefixes).toContain('xdt-maker');
   });
@@ -136,34 +140,34 @@ describe('区域解析与派生', () => {
 
   it('brandAppId / brandBundleIdPrefix 按区域取值,默认 global', () => {
     expect(DEFAULT_CINDY_REGION).toBe('global');
-    expect(brandAppId()).toBe('com.xd.cindy');
-    expect(brandAppId('global')).toBe('com.xd.cindy');
-    expect(brandBundleIdPrefix('cn')).toBe('com.xd.cindycn');
-    expect(brandBundleIdPrefix('global')).toBe('com.xd.cindy');
+    expect(brandAppId()).toBe('io.github.tejeshdevdas-py.countersign');
+    expect(brandAppId('global')).toBe('io.github.tejeshdevdas-py.countersign');
+    expect(brandBundleIdPrefix('cn')).toBe('io.github.tejeshdevdas-py.countersign');
+    expect(brandBundleIdPrefix('global')).toBe('io.github.tejeshdevdas-py.countersign');
   });
 
   it('brandExecutableName / brandUserDataDirName 按区域取值,默认 global', () => {
-    expect(brandExecutableName()).toBe('Cindy');
+    expect(brandExecutableName()).toBe('Countersign');
     // global 与 cn 同值(2026-07-26 显示名统一决策);dev 仍独立。
-    expect(brandExecutableName('global')).toBe('Cindy');
-    expect(brandExecutableName('dev')).toBe('CindyDev');
-    expect(brandUserDataDirName()).toBe('CindyGlobal');
-    expect(brandUserDataDirName('global')).toBe('CindyGlobal');
-    expect(brandUserDataDirName('cn')).toBe('Cindy');
+    expect(brandExecutableName('global')).toBe('Countersign');
+    expect(brandExecutableName('dev')).toBe('CountersignDev');
+    expect(brandUserDataDirName()).toBe('Countersign');
+    expect(brandUserDataDirName('global')).toBe('Countersign');
+    expect(brandUserDataDirName('cn')).toBe('Countersign');
   });
 });
 
 describe('派生 helper', () => {
   it('allDeepLinkSchemes 主 scheme 恒为首位且包含全部 legacy', () => {
-    expect(allDeepLinkSchemes()).toEqual(['cindy', 'xdt-maker']);
+    expect(allDeepLinkSchemes()).toEqual(['countersign']);
   });
 
   it('allUserDataDirNames 本区域目录名恒为首位 + 全部历史值,且不含另一区域', () => {
-    expect(allUserDataDirNames()).toEqual(['CindyGlobal']);
-    expect(allUserDataDirNames('cn')).toEqual(['Cindy', 'xdt-maker']);
+    expect(allUserDataDirNames()).toEqual(['Countersign']);
+    expect(allUserDataDirNames('cn')).toEqual(['Countersign', 'xdt-maker']);
     // global 的匹配集不含 cn 的 Cindy / xdt-maker：orphan-reaper 按路径认领
     // 进程，跨区域匹配会误杀另一个安装的进程。
-    expect(allUserDataDirNames('global')).toEqual(['CindyGlobal']);
+    expect(allUserDataDirNames('global')).toEqual(['Countersign']);
   });
 
   it('legacyBrandUserDataDirNames 只返回品牌翻转前的共享 mToc 来源', () => {

@@ -148,26 +148,24 @@ export interface BrandIdentity {
  */
 export const BRAND_IDENTITY: BrandIdentity = Object.freeze({
   displayName: BRAND_NAME,
-  executableName: 'Cindy',
+  executableName: 'Countersign',
   executableNameByRegion: Object.freeze({
-    cn: 'Cindy',
-    // 2026-07-26 与 cn 同值(见字段 doc):global 包全部可见位置显示 Cindy,
-    // 放弃 cn/global 同机双装的文件层隔离;appId / userData 仍分区。
-    global: 'Cindy',
-    dev: 'CindyDev',
+    cn: 'Countersign',
+    global: 'Countersign',
+    dev: 'CountersignDev',
   }),
   appIdByRegion: Object.freeze({
-    cn: 'com.xd.cindycn',
-    global: 'com.xd.cindy',
-    dev: 'com.xd.cindydev',
+    cn: 'io.github.tejeshdevdas-py.countersign',
+    global: 'io.github.tejeshdevdas-py.countersign',
+    dev: 'io.github.tejeshdevdas-py.countersign.dev',
   }),
-  primaryScheme: 'cindy',
-  legacySchemes: Object.freeze(['xdt-maker']),
-  userDataDirName: 'Cindy',
+  primaryScheme: 'countersign',
+  legacySchemes: Object.freeze([]),
+  userDataDirName: 'Countersign',
   userDataDirNameByRegion: Object.freeze({
-    cn: 'Cindy',
-    global: 'CindyGlobal',
-    dev: 'CindyDev',
+    cn: 'Countersign',
+    global: 'Countersign',
+    dev: 'CountersignDev',
   }),
   legacyUserDataDirNames: Object.freeze(['xdt-maker']),
   legacyUserDataDirNamesByRegion: Object.freeze({
@@ -177,13 +175,12 @@ export const BRAND_IDENTITY: BrandIdentity = Object.freeze({
   }),
   legacyDialogueUserDataDirNamesByRegion: Object.freeze({
     cn: Object.freeze(['xdt-maker']),
-    // xdt-maker 是旧 CN 渠道的数据来源；Global 不导入或改写 CN 的历史 cwd。
     global: Object.freeze([]),
     dev: Object.freeze([]),
   }),
   cdnPrefix: 'cindy',
   updaterName: 'cindy-updater',
-  dbFilePrefix: 'cindy',
+  dbFilePrefix: 'countersign',
   legacyDbFilePrefixes: Object.freeze(['xdt-maker']),
 });
 

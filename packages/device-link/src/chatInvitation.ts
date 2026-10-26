@@ -7,7 +7,7 @@
  */
 export const CHAT_INVITATION_PATH = '/chat-invite/join';
 const TOKEN = /^[A-Za-z0-9_-]{43}$/;
-const CUSTOM_SCHEME_PREFIX = 'cindy://chat-invite/';
+const CUSTOM_SCHEME_PREFIXES = ['countersign://chat-invite/', 'cindy://chat-invite/'];
 const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]']);
 
 /**
@@ -19,8 +19,9 @@ export function parseChatInvitationToken(input: string): string | null {
   if (typeof input !== 'string' || input.length > 8192) return null;
   const text = input.trim();
   if (TOKEN.test(text)) return text;
-  if (text.startsWith(CUSTOM_SCHEME_PREFIX)) {
-    const token = text.slice(CUSTOM_SCHEME_PREFIX.length);
+  const customPrefix = CUSTOM_SCHEME_PREFIXES.find((prefix) => text.startsWith(prefix));
+  if (customPrefix) {
+    const token = text.slice(customPrefix.length);
     return TOKEN.test(token) ? token : null;
   }
   // Trailing sentence punctuation is not part of a link; it can never complete a token.

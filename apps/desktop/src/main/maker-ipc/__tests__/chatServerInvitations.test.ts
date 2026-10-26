@@ -47,7 +47,7 @@ describe('Chat Server invitation contract', () => {
   const groupId = '10000000-0000-4000-8000-000000000001';
   const selfId = '30000000-0000-4000-8000-000000000001';
   const token = 'a'.repeat(43);
-  const link = `cindy://chat-invite/${token}`;
+  const link = `countersign://chat-invite/${token}`;
   const clientId = '40000000-0000-4000-8000-000000000001';
   let service: BotGroupChatService;
   let expiresAt: unknown;
@@ -103,7 +103,7 @@ describe('Chat Server invitation contract', () => {
     `https://relay.example.test/chat-invite/join#${token}?app=other`,
     `https://relay.example.test/chat-invite/join#${token}#more`,
     `ftp://relay.example.test/chat-invite/join#${token}`,
-    `cindy://chat-invite/${token.slice(1)}`,
+    `countersign://chat-invite/${token.slice(1)}`,
   ])('rejects %s before contacting the service and without echoing the token', async input => {
     for (const result of [await service.chatServer!.previewInvite({ link: input }), await service.chatServer!.acceptInvite({ link: input, clientId })]) {
       expect(result).toEqual({ ok: false, errorCode: 'INVALID_INPUT' });

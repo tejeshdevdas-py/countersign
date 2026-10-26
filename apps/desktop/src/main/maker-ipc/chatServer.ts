@@ -63,6 +63,7 @@ import { startCompanionCloud, type CompanionCloudRuntime } from '../companion-cl
 import { DIRECT_ROOM_COMPLETION, deliverDirectRoomMessage, directRoomClientId } from '../companion-cloud/directRoom.js';
 import { createChatHistory, type ChatHistory } from '@cindy/maker-shared/chat-history';
 import { readAllRoomMessages } from '../companion-cloud/room.js';
+import { DEEP_LINK_URL_PREFIX } from '../../shared/deepLinkSchemes.js';
 
 interface Actor { id: string; kind: string; externalId: string; name: string; avatar?: string | null; avatarSource?: string | null; homeDeviceId?: string | null; disabled?: boolean }
 interface Member { id: string; kind: 'human' | 'bot' | 'integration'; name: string; state: string; role: 'owner' | 'admin' | 'member' | 'guest';
@@ -2684,7 +2685,7 @@ function createChatServer(local: BotGroupChatService, deps: BotGroupChatServiceD
       const invite = inviteResponse(z.object({ token: z.string().regex(/^[A-Za-z0-9_-]{43}$/), ...inviteFields }).refine(validInvite),
         await api(`/conversations/${i.groupId}/invite-links`, 'POST', { operationId: i.clientId }, managementActor(await groupSnapshot(i.groupId)), false, 200),
       );
-      return { link: `cindy://chat-invite/${invite.token}`, expiresAt: invite.expiresAt, ...(invite.reusable !== undefined ? { reusable: invite.reusable } : {}) };
+      return { link: `${DEEP_LINK_URL_PREFIX}chat-invite/${invite.token}`, expiresAt: invite.expiresAt, ...(invite.reusable !== undefined ? { reusable: invite.reusable } : {}) };
     }),
     revokeInvite: input => result(async () => {
       const i = z.object({ groupId: id, link: z.string(), clientId: z.string().uuid() }).strict().parse(input);

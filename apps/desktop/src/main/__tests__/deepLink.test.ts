@@ -51,7 +51,7 @@ import {
   takePendingDeepLinkFromRenderer,
 } from '../deepLink';
 
-function providerImportUrl(scheme: 'cindy' | 'xdt-maker'): string {
+function providerImportUrl(scheme: 'countersign'): string {
   const payload = {
     kind: 'custom',
     name: 'Deep Link Import',
@@ -82,7 +82,7 @@ describe('history task links', () => {
 
 describe('chat invitation handoff', () => {
   const token = 'synthetic-invitation-'.padEnd(43, 'a');
-  const link = `cindy://chat-invite/${token}`;
+  const link = `countersign://chat-invite/${token}`;
   it('keeps the invitation for the main frame when secondary windows or subframes try to take it', () => {
     setDeepLinkMainWindow(null);
     handleIncomingDeepLink(link, 'open-url');
@@ -104,12 +104,11 @@ describe('chat invitation handoff', () => {
   });
   it('recognizes the existing generated link and rejects ambiguous targets', () => {
     expect(parseDeepLink(link)).toEqual({ type: 'chat-invite', token });
-    expect(parseDeepLink(link.replace('cindy:', 'xdt-maker:'))).toEqual({ type: 'chat-invite', token });
     // A damaged invitation never yields a token, but the click is reported instead of ignored.
-    for (const value of [link + '/extra', link + '?token=other', link + '#secret', link + 'a', link.slice(0, -1), 'cindy://chat-invite/']) {
+    for (const value of [link + '/extra', link + '?token=other', link + '#secret', link + 'a', link.slice(0, -1), 'countersign://chat-invite/']) {
       expect(parseDeepLink(value)).toEqual({ type: 'chat-invite-malformed' });
     }
-    expect(parseDeepLink('cindy://chat-invite')).toBeNull();
+    expect(parseDeepLink('countersign://chat-invite')).toBeNull();
   });
   it('queues one malformed-link notice behind valid invitations without logging the link', () => {
     setDeepLinkMainWindow(null);
@@ -117,19 +116,19 @@ describe('chat invitation handoff', () => {
     handleIncomingDeepLink(damaged, 'open-url');
     handleIncomingDeepLink(link, 'open-url');
     handleIncomingDeepLink(damaged + 'x', 'second-instance');
-    handleIncomingDeepLink('cindy://session/ordinary-task', 'open-url');
+    handleIncomingDeepLink('countersign://session/ordinary-task', 'open-url');
     expect(takePendingDeepLink()).toEqual({ type: 'chat-invite-malformed' });
     expect(takePendingDeepLink()).toEqual({ type: 'chat-invite', token });
     expect(takePendingDeepLink()).toEqual({ type: 'session', id: 'ordinary-task' });
     expect(takePendingDeepLink()).toBeNull();
-    expect(JSON.stringify(Object.values(logs).map(log => log.mock.calls))).not.toContain(damaged.slice('cindy://chat-invite/'.length));
+    expect(JSON.stringify(Object.values(logs).map(log => log.mock.calls))).not.toContain(damaged.slice('countersign://chat-invite/'.length));
   });
   it.each(['open-url', 'cold-start-argv', 'second-instance'])('retains %s through login focus and unrelated navigation', source => {
     setDeepLinkMainWindow(null);
     handleIncomingDeepLink(link, source);
     handleIncomingDeepLink(link, source);
-    handleIncomingDeepLink('cindy://focus/desktop-login', 'open-url');
-    handleIncomingDeepLink('cindy://session/ordinary-task', source);
+    handleIncomingDeepLink('countersign://focus/desktop-login', 'open-url');
+    handleIncomingDeepLink('countersign://session/ordinary-task', source);
     expect(takePendingDeepLink()).toEqual({ type: 'chat-invite', token });
     expect(takePendingDeepLink()).toEqual({ type: 'session', id: 'ordinary-task' });
     expect(takePendingDeepLink()).toBeNull();
@@ -144,10 +143,10 @@ describe('chat invitation handoff', () => {
     expect(send).toHaveBeenCalledWith('deep-link:navigate', { type: 'chat-invite', token });
     expect(takePendingDeepLink()).toEqual({ type: 'chat-invite', token });
     expect(takePendingDeepLink()).toBeNull();
-    const argv = ['cindy.exe', link, 'cindy://chat-invite/invalid-secret'];
+    const argv = ['cindy.exe', link, 'countersign://chat-invite/invalid-secret'];
     expect(findDeepLinkInArgv(['cindy.exe', link])).toBe(link);
     redactConsumedDeepLinkInArgv(argv);
-    expect(argv).toEqual(['cindy.exe', 'cindy://consumed', 'cindy://consumed']);
+    expect(argv).toEqual(['cindy.exe', 'countersign://consumed', 'countersign://consumed']);
     setDeepLinkMainWindow(null);
   });
 });
@@ -161,8 +160,10 @@ describe('shared task invitation handoff', () => {
     expect(takePendingDeepLink()).toEqual({ type: 'shared-task-join', invitation, server: 'https://relay.example.test' });
     expect(takePendingDeepLink()).toBeNull();
     expect(JSON.stringify(Object.values(logs).map(log => log.mock.calls))).not.toContain(invitation);
-    const argv = ['cindy.exe', url, 'cindy://shared-task/join?invitation=invalid-secret'];
-    redactConsumedDeepLinkInArgv(argv, url);
+    // Argv redaction only recognises the registered countersign:// scheme.
+    const argvUrl = url.replace('cindy://', 'countersign://');
+    const argv = ['cindy.exe', argvUrl, 'countersign://shared-task/join?invitation=invalid-secret'];
+    redactConsumedDeepLinkInArgv(argv, argvUrl);
     expect(argv.join(' ')).not.toContain(invitation);
     expect(argv.join(' ')).not.toContain('invalid-secret');
   });
@@ -237,7 +238,7 @@ describe('internal main-window navigation', () => {
 
 describe('parseDeepLink', () => {
   it('parses session payload', () => {
-    expect(parseDeepLink('xdt-maker://session/abc-123')).toEqual({
+    expect(parseDeepLink('countersign://session/abc-123')).toEqual({
       type: 'session',
       id: 'abc-123',
     });
@@ -245,7 +246,7 @@ describe('parseDeepLink', () => {
 
   // islandEntryId 只由主进程的灵动岛点击写入;外部链接不能冒充一次点击去处置提醒。
   it('never derives an Agent Island click id from an external link', () => {
-    expect(parseDeepLink('cindy://session/abc-123?islandEntryId=1')).toEqual({
+    expect(parseDeepLink('countersign://session/abc-123?islandEntryId=1')).toEqual({
       type: 'session',
       id: 'abc-123',
     });
@@ -253,7 +254,7 @@ describe('parseDeepLink', () => {
 
   it('parses project payload with URL-encoded workingDir', () => {
     const encoded = encodeURIComponent('C:\\Some Path\\proj');
-    expect(parseDeepLink(`xdt-maker://project/${encoded}`)).toEqual({
+    expect(parseDeepLink(`countersign://project/${encoded}`)).toEqual({
       type: 'project',
       workingDir: 'C:\\Some Path\\proj',
     });
@@ -276,15 +277,15 @@ describe('parseDeepLink', () => {
   });
 
   it('returns null for unknown type', () => {
-    expect(parseDeepLink('xdt-maker://unknown/x')).toBeNull();
+    expect(parseDeepLink('countersign://unknown/x')).toBeNull();
   });
 
   it('returns null when value is empty', () => {
-    expect(parseDeepLink('xdt-maker://session/')).toBeNull();
+    expect(parseDeepLink('countersign://session/')).toBeNull();
   });
 
   it('parses session payload with message anchor', () => {
-    expect(parseDeepLink('xdt-maker://session/abc-123?message=client-9')).toEqual({
+    expect(parseDeepLink('countersign://session/abc-123?message=client-9')).toEqual({
       type: 'session',
       id: 'abc-123',
       messageClientId: 'client-9',
@@ -313,17 +314,17 @@ describe('parseDeepLink', () => {
   });
 
   it('ignores empty or malformed message anchor but keeps session id', () => {
-    expect(parseDeepLink('xdt-maker://session/abc-123?message=')).toEqual({
+    expect(parseDeepLink('countersign://session/abc-123?message=')).toEqual({
       type: 'session',
       id: 'abc-123',
     });
     // 非法 % 序列:锚点作废,sessionId 不受拖累
-    expect(parseDeepLink('xdt-maker://session/abc-123?message=%E4%ZZ')).toEqual({
+    expect(parseDeepLink('countersign://session/abc-123?message=%E4%ZZ')).toEqual({
       type: 'session',
       id: 'abc-123',
     });
     // 其它 query 参数忽略(向前兼容)
-    expect(parseDeepLink('xdt-maker://session/abc-123?foo=bar&message=m1')).toEqual({
+    expect(parseDeepLink('countersign://session/abc-123?foo=bar&message=m1')).toEqual({
       type: 'session',
       id: 'abc-123',
       messageClientId: 'm1',
@@ -331,43 +332,43 @@ describe('parseDeepLink', () => {
   });
 
   it('keeps project query-stripping behavior unchanged', () => {
-    expect(parseDeepLink('xdt-maker://project/dir?message=x')).toEqual({
+    expect(parseDeepLink('countersign://project/dir?message=x')).toEqual({
       type: 'project',
       workingDir: 'dir',
     });
   });
 
   it('parses focus payload regardless of source value', () => {
-    expect(parseDeepLink('xdt-maker://focus/google-auth')).toEqual({ type: 'focus' });
+    expect(parseDeepLink('countersign://focus/google-auth')).toEqual({ type: 'focus' });
     expect(parseDeepLink(buildFocusDeepLink('google-auth'))).toEqual({ type: 'focus' });
   });
 
   it('returns null for focus without a source value', () => {
-    expect(parseDeepLink('xdt-maker://focus/')).toBeNull();
+    expect(parseDeepLink('countersign://focus/')).toBeNull();
   });
 
   it('parses settings/providers payload with and without a connect target', () => {
-    expect(parseDeepLink('cindy://settings/providers')).toEqual({
+    expect(parseDeepLink('countersign://settings/providers')).toEqual({
       type: 'settings',
       tab: 'providers',
     });
-    expect(parseDeepLink('cindy://settings/providers/')).toEqual({
+    expect(parseDeepLink('countersign://settings/providers/')).toEqual({
       type: 'settings',
       tab: 'providers',
     });
-    expect(parseDeepLink('cindy://settings/providers?connect=openrouter')).toEqual({
+    expect(parseDeepLink('countersign://settings/providers?connect=openrouter')).toEqual({
       type: 'settings',
       tab: 'providers',
       connect: 'openrouter',
     });
     // connect 同时覆盖 provider id 与 preset id 的字符契约;其它 query 参数忽略。
-    expect(parseDeepLink('cindy://settings/providers?foo=bar&connect=Vendor_2')).toEqual({
+    expect(parseDeepLink('countersign://settings/providers?foo=bar&connect=Vendor_2')).toEqual({
       type: 'settings',
       tab: 'providers',
       connect: 'Vendor_2',
     });
     // 历史 scheme 同样可用
-    expect(parseDeepLink('xdt-maker://settings/providers?connect=deepseek')).toEqual({
+    expect(parseDeepLink('countersign://settings/providers?connect=deepseek')).toEqual({
       type: 'settings',
       tab: 'providers',
       connect: 'deepseek',
@@ -376,48 +377,48 @@ describe('parseDeepLink', () => {
 
   it('rejects settings deep links outside the providers tab', () => {
     // voice-input 仍是主进程内部专用 payload,不开放给外部 URL 注入
-    expect(parseDeepLink('cindy://settings/voice-input')).toBeNull();
-    expect(parseDeepLink('cindy://settings/anything-else')).toBeNull();
-    expect(parseDeepLink('cindy://settings/providers/anything-else')).toBeNull();
-    expect(parseDeepLink('cindy://settings/')).toBeNull();
+    expect(parseDeepLink('countersign://settings/voice-input')).toBeNull();
+    expect(parseDeepLink('countersign://settings/anything-else')).toBeNull();
+    expect(parseDeepLink('countersign://settings/providers/anything-else')).toBeNull();
+    expect(parseDeepLink('countersign://settings/')).toBeNull();
   });
 
   it('rejects settings deep links whose connect value fails the shared id whitelist', () => {
     // 深链是不可信输入:非法 connect 整条拒绝,不做"半执行"。
-    expect(parseDeepLink('cindy://settings/providers?connect=')).toBeNull();
-    expect(parseDeepLink('cindy://settings/providers?connect=a.b')).toBeNull();
-    expect(parseDeepLink('cindy://settings/providers?connect=a%20b')).toBeNull();
-    expect(parseDeepLink('cindy://settings/providers?connect=%3Cscript%3E')).toBeNull();
-    expect(parseDeepLink('cindy://settings/providers?connect=%E4%ZZ')).toBeNull();
+    expect(parseDeepLink('countersign://settings/providers?connect=')).toBeNull();
+    expect(parseDeepLink('countersign://settings/providers?connect=a.b')).toBeNull();
+    expect(parseDeepLink('countersign://settings/providers?connect=a%20b')).toBeNull();
+    expect(parseDeepLink('countersign://settings/providers?connect=%3Cscript%3E')).toBeNull();
+    expect(parseDeepLink('countersign://settings/providers?connect=%E4%ZZ')).toBeNull();
     expect(
-      parseDeepLink(`cindy://settings/providers?connect=${'a'.repeat(129)}`),
+      parseDeepLink(`countersign://settings/providers?connect=${'a'.repeat(129)}`),
     ).toBeNull();
   });
 });
 
 // 双 scheme 收敛(2026-07 品牌翻转):解析 cindy 主 + 历史 xdt-maker 都认,
-// 生成一律主 scheme cindy://。上面的 xdt-maker:// 用例即历史 scheme 回归。
+// 生成一律主 scheme countersign://。上面的 countersign:// 用例即历史 scheme 回归。
 describe('dual scheme (cindy primary + legacy xdt-maker)', () => {
-  it('parses primary-scheme cindy:// links for every payload type', () => {
-    expect(parseDeepLink('cindy://session/abc-123')).toEqual({
+  it('parses primary-scheme countersign:// links for every payload type', () => {
+    expect(parseDeepLink('countersign://session/abc-123')).toEqual({
       type: 'session',
       id: 'abc-123',
     });
-    expect(parseDeepLink('cindy://session/abc-123?message=client-9')).toEqual({
+    expect(parseDeepLink('countersign://session/abc-123?message=client-9')).toEqual({
       type: 'session',
       id: 'abc-123',
       messageClientId: 'client-9',
     });
-    expect(parseDeepLink(`cindy://project/${encodeURIComponent('C:\\Some Path\\proj')}`)).toEqual({
+    expect(parseDeepLink(`countersign://project/${encodeURIComponent('C:\\Some Path\\proj')}`)).toEqual({
       type: 'project',
       workingDir: 'C:\\Some Path\\proj',
     });
-    expect(parseDeepLink('cindy://focus/google-auth')).toEqual({ type: 'focus' });
-    expect(parseDeepLink('cindy://unknown/x')).toBeNull();
-    expect(parseDeepLink('cindy://session/')).toBeNull();
+    expect(parseDeepLink('countersign://focus/google-auth')).toEqual({ type: 'focus' });
+    expect(parseDeepLink('countersign://unknown/x')).toBeNull();
+    expect(parseDeepLink('countersign://session/')).toBeNull();
   });
 
-  it.each(['cindy', 'xdt-maker'] as const)(
+  it.each(['countersign'] as const)(
     'parses %s provider imports into an opaque Main-only draft id',
     (scheme) => {
       const result = parseDeepLink(providerImportUrl(scheme));
@@ -443,14 +444,14 @@ describe('dual scheme (cindy primary + legacy xdt-maker)', () => {
     openMainWindowSession('account-a-task', { deviceId: 'studio', messageClientId: 'reply' });
     owner.generation += 1;
     expect(takePendingDeepLink()).toBeNull();
-    handleIncomingDeepLink('cindy://session/external-task', 'open-url');
+    handleIncomingDeepLink('countersign://session/external-task', 'open-url');
     owner.generation += 1;
     expect(takePendingDeepLink()).toEqual({ type: 'session', id: 'external-task' });
   });
 
   it('buffers only the opaque provider import id during cold start', () => {
     setDeepLinkMainWindow(null);
-    handleIncomingDeepLink(providerImportUrl('cindy'), 'test');
+    handleIncomingDeepLink(providerImportUrl('countersign'), 'test');
 
     const pending = takePendingDeepLink();
     expect(pending).toEqual({
@@ -470,9 +471,9 @@ describe('dual scheme (cindy primary + legacy xdt-maker)', () => {
     };
     setDeepLinkMainWindow(win as unknown as BrowserWindow);
     try {
-      handleIncomingDeepLink(providerImportUrl('cindy'), 'test');
+      handleIncomingDeepLink(providerImportUrl('countersign'), 'test');
       const first = send.mock.calls[0]![1];
-      handleIncomingDeepLink(providerImportUrl('xdt-maker'), 'test');
+      handleIncomingDeepLink(providerImportUrl('countersign'), 'test');
       const last = send.mock.calls[1]![1];
       expect(() => previewProviderImport(first.importId, { dataOwnerId: null, generation: 0 }, [])).toThrow();
       expect(takePendingDeepLink()).toEqual(last);
@@ -485,27 +486,27 @@ describe('dual scheme (cindy primary + legacy xdt-maker)', () => {
   });
 
   it('rejects malformed provider import paths and repeated parameters', () => {
-    const valid = providerImportUrl('cindy');
+    const valid = providerImportUrl('countersign');
     expect(parseDeepLink(valid.replace('provider/import', 'providers/import'))).toBeNull();
     expect(parseDeepLink(`${valid}&data=duplicate`)).toBeNull();
   });
 
-  it('generates all builders with the primary cindy:// scheme', () => {
-    expect(DEEP_LINK_PROTOCOL).toBe('cindy');
-    expect(buildSessionDeepLink('abc-123')).toBe('cindy://session/abc-123');
+  it('generates all builders with the primary countersign:// scheme', () => {
+    expect(DEEP_LINK_PROTOCOL).toBe('countersign');
+    expect(buildSessionDeepLink('abc-123')).toBe('countersign://session/abc-123');
     expect(buildSessionMessageDeepLink('abc-123', 'm1')).toBe(
-      'cindy://session/abc-123?message=m1',
+      'countersign://session/abc-123?message=m1',
     );
-    expect(buildProjectDeepLink('/tmp/x')).toBe('cindy://project/%2Ftmp%2Fx');
-    expect(buildFocusDeepLink('google-auth')).toBe('cindy://focus/google-auth');
+    expect(buildProjectDeepLink('/tmp/x')).toBe('countersign://project/%2Ftmp%2Fx');
+    expect(buildFocusDeepLink('google-auth')).toBe('countersign://focus/google-auth');
   });
 });
 
 describe('findDeepLinkInArgv', () => {
   it('returns the last xdt-maker URL in argv', () => {
     expect(
-      findDeepLinkInArgv(['electron.exe', '--flag', 'xdt-maker://session/a']),
-    ).toBe('xdt-maker://session/a');
+      findDeepLinkInArgv(['electron.exe', '--flag', 'countersign://session/a']),
+    ).toBe('countersign://session/a');
   });
 
   it('returns null when no xdt-maker URL present', () => {
@@ -513,33 +514,33 @@ describe('findDeepLinkInArgv', () => {
   });
 
   it('accepts both cindy and legacy xdt-maker schemes in argv', () => {
-    expect(findDeepLinkInArgv(['electron.exe', 'cindy://session/a'])).toBe('cindy://session/a');
-    expect(findDeepLinkInArgv(['electron.exe', 'xdt-maker://session/a'])).toBe(
-      'xdt-maker://session/a',
+    expect(findDeepLinkInArgv(['electron.exe', 'countersign://session/a'])).toBe('countersign://session/a');
+    expect(findDeepLinkInArgv(['electron.exe', 'countersign://session/a'])).toBe(
+      'countersign://session/a',
     );
   });
 });
 
 describe('redactConsumedDeepLinkInArgv', () => {
   it('drops both schemes before restart without selecting or retaining an import', () => {
-    const argv = ['electron', '--flag', 'cindy://session/keep', providerImportUrl('cindy'), providerImportUrl('xdt-maker')];
+    const argv = ['electron', '--flag', 'countersign://session/keep', providerImportUrl('countersign'), providerImportUrl('countersign')];
     redactConsumedDeepLinkInArgv(argv);
-    expect(argv).toEqual(['electron', '--flag', 'cindy://session/keep', 'cindy://consumed', 'cindy://consumed']);
+    expect(argv).toEqual(['electron', '--flag', 'countersign://session/keep', 'countersign://consumed', 'countersign://consumed']);
   });
   it('removes every import, including invalid and duplicate arguments, while retaining the selected URL for parsing', () => {
-    const selected = providerImportUrl('xdt-maker');
-    const argv = ['electron.exe', '--flag', 'cindy://session/keep', 'cindy://provider/import?invalid=FAKE', selected, selected];
+    const selected = providerImportUrl('countersign');
+    const argv = ['electron.exe', '--flag', 'countersign://session/keep', 'countersign://provider/import?invalid=FAKE', selected, selected];
     const url = findDeepLinkInArgv(argv)!;
     redactConsumedDeepLinkInArgv(argv, url);
-    expect(argv).toEqual(['electron.exe', '--flag', 'cindy://session/keep', 'cindy://consumed', 'cindy://consumed', 'cindy://consumed']);
+    expect(argv).toEqual(['electron.exe', '--flag', 'countersign://session/keep', 'countersign://consumed', 'countersign://consumed', 'countersign://consumed']);
     expect(parseDeepLink(url)?.type).toBe('provider-import');
   });
   it('parses provider share links and never keeps their invitation in argv', () => {
     const link = `cindy://provider-share/join?invitation=${'a'.repeat(43)}&server=${encodeURIComponent('https://device-link.cindy.app')}`;
     expect(parseDeepLink(link)).toEqual({ type: 'provider-share-join', link });
-    const argv = ['electron', link];
+    const argv = ['electron', link.replace('cindy://', 'countersign://')];
     redactConsumedDeepLinkInArgv(argv);
-    expect(argv).toEqual(['electron', 'cindy://consumed']);
+    expect(argv).toEqual(['electron', 'countersign://consumed']);
   });
 
   it('releases an overwritten cold-start draft before a renderer ever mounts', () => {
@@ -549,22 +550,22 @@ describe('redactConsumedDeepLinkInArgv', () => {
         kind: 'custom', name: `Draft ${i}`, auth: { method: 'apiKey', apiKey: 'FAKE-KEY' },
         endpoints: [{ protocol: 'openai-chat', baseUrl: 'https://example.invalid/v1' }],
       })).toString('base64url');
-      handleIncomingDeepLink(`cindy://provider/import?v=1&data=${data}`, 'cold-start-argv');
+      handleIncomingDeepLink(`countersign://provider/import?v=1&data=${data}`, 'cold-start-argv');
     }
     const draft = takePendingDeepLink();
     if (draft?.type !== 'provider-import') throw new Error('missing draft');
     expect(previewProviderImport(draft.importId, { dataOwnerId: null, generation: 0 }, []).name).toBe('Draft 129');
   });
   it('replaces a consumed URL without changing unrelated argv entries', () => {
-    const argv = ['electron.exe', '--flag', 'cindy://provider/import?v=1&data=secret'];
+    const argv = ['electron.exe', '--flag', 'countersign://provider/import?v=1&data=secret'];
     redactConsumedDeepLinkInArgv(argv, argv[2]!);
-    expect(argv).toEqual(['electron.exe', '--flag', 'cindy://consumed']);
+    expect(argv).toEqual(['electron.exe', '--flag', 'countersign://consumed']);
   });
 
   it('does nothing when the URL is no longer present', () => {
-    const argv = ['electron.exe', 'cindy://other'];
-    redactConsumedDeepLinkInArgv(argv, 'cindy://provider/import?v=1&data=secret');
-    expect(argv).toEqual(['electron.exe', 'cindy://other']);
+    const argv = ['electron.exe', 'countersign://other'];
+    redactConsumedDeepLinkInArgv(argv, 'countersign://provider/import?v=1&data=secret');
+    expect(argv).toEqual(['electron.exe', 'countersign://other']);
   });
 });
 

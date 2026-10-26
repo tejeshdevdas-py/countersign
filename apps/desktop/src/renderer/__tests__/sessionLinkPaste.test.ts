@@ -14,7 +14,7 @@ import {
 // 粘贴文本的分段(text / session / project / path)用例在 pastePipeline.test.ts;
 // 本文件只覆盖 session 段落地后的专属逻辑(attrs 构造 / 标题清洗 / 序列化)。
 
-const SESSION_URL = 'xdt-maker://session/ee59672a-5591-48a7-a44d-aa97e3808c64';
+const SESSION_URL = 'countersign://session/ee59672a-5591-48a7-a44d-aa97e3808c64';
 const SHORT_ID = 'ee59672a…8c64';
 const MESSAGE_URL = `${SESSION_URL}?message=client-message-12345678`;
 

@@ -14,8 +14,8 @@ import {
   LONG_PASTE_MAX_CHARS,
 } from '../components/new-chat/pastePipeline';
 
-const SESSION_URL = 'xdt-maker://session/ee59672a-5591-48a7-a44d-aa97e3808c64';
-const PROJECT_URL = 'xdt-maker://project/%2FUsers%2Fdash%2FCode%2FTools%2Fxdt-maker';
+const SESSION_URL = 'countersign://session/ee59672a-5591-48a7-a44d-aa97e3808c64';
+const PROJECT_URL = 'countersign://project/%2FUsers%2Fdash%2FCode%2FTools%2Fxdt-maker';
 const WORKDIR = '/Users/alice/Code/Tools/xdt-maker';
 const WIN_WORKDIR = 'C:\\Code\\XDMaker';
 
@@ -56,7 +56,7 @@ describe('isLongPasteText / countPasteLines', () => {
 describe('segmentPastedContent — deep links', () => {
   it('returns null when nothing is transformable', () => {
     expect(segmentPastedContent('普通文本 https://example.com')).toBeNull();
-    expect(segmentPastedContent('xdt-maker://other/foo')).toBeNull();
+    expect(segmentPastedContent('countersign://other/foo')).toBeNull();
   });
 
   it('splits bare session and project links out of surrounding text', () => {
@@ -117,15 +117,15 @@ describe('segmentPastedContent — deep links', () => {
   });
 
   it('leaves malformed deep links as plain text', () => {
-    expect(segmentPastedContent('xdt-maker://session/')).toBeNull();
-    expect(segmentPastedContent('xdt-maker://project/')).toBeNull();
+    expect(segmentPastedContent('countersign://session/')).toBeNull();
+    expect(segmentPastedContent('countersign://project/')).toBeNull();
   });
 
-  // 双 scheme 收敛:主 scheme cindy:// 与历史 xdt-maker://(上方全部用例)
+  // 双 scheme 收敛:主 scheme countersign:// 与历史 countersign://(上方全部用例)
   // 走同一条分段管线。
-  it('segments primary-scheme cindy:// links (bare + markdown, mixed with legacy)', () => {
-    const cindySession = 'cindy://session/ee59672a-5591-48a7-a44d-aa97e3808c64';
-    const cindyProject = 'cindy://project/%2Ftmp%2Fx';
+  it('segments primary-scheme countersign:// links (bare + markdown, mixed with legacy)', () => {
+    const cindySession = 'countersign://session/ee59672a-5591-48a7-a44d-aa97e3808c64';
+    const cindyProject = 'countersign://project/%2Ftmp%2Fx';
     expect(segmentPastedContent(`看 ${cindySession} 和 [主仓](${cindyProject})`)).toEqual([
       { kind: 'text', text: '看 ' },
       { kind: 'session', href: cindySession, label: null },
@@ -137,15 +137,15 @@ describe('segmentPastedContent — deep links', () => {
       { kind: 'text', text: ' 与 ' },
       { kind: 'session', href: cindySession, label: null },
     ]);
-    expect(segmentPastedContent('cindy://session/')).toBeNull();
-    expect(segmentPastedContent('cindy://other/foo')).toBeNull();
+    expect(segmentPastedContent('countersign://session/')).toBeNull();
+    expect(segmentPastedContent('countersign://other/foo')).toBeNull();
   });
 
   it('rejects legacy project links with raw delimiters instead of prefix-matching (review P2)', () => {
     // 旧编码(普通 encodeURIComponent)放行 `'()`,历史已复制的链接可能含
     // 裸字符;白名单在此截断会得到「合法但指错项目」的前缀——整段降级纯文本。
-    expect(segmentPastedContent('xdt-maker://project/%2Ftmp%2Ffoo(copy)')).toBeNull();
-    expect(segmentPastedContent("xdt-maker://project/%2FJohn's%20Repo")).toBeNull();
+    expect(segmentPastedContent('countersign://project/%2Ftmp%2Ffoo(copy)')).toBeNull();
+    expect(segmentPastedContent("countersign://project/%2FJohn's%20Repo")).toBeNull();
   });
 
   it('still matches a bare project link wrapped in prose parentheses', () => {

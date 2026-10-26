@@ -543,7 +543,7 @@ describe('personal source integration and packaging', () => {
         'apps',
         'desktop',
         'out',
-        'Cindy-' + process.platform + '-' + process.arch,
+        'Countersign-' + process.platform + '-' + process.arch,
       );
       vi.spyOn(versionStore, 'retainPersonalVersion').mockImplementation(async (input) => {
         expect(h.locked()).toBe(true);

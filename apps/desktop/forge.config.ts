@@ -709,18 +709,18 @@ function applyMacPackagedDisplayName(buildPath: string, platform: string): void 
     // 否则 Electron 找不到 Helper app(见函数头 ⚠️)。
     const key = 'CFBundleDisplayName';
     // packager 必写该键,Set 即可;Add 兜底防未来 packager 行为变化。
-    const set = spawnSync('/usr/libexec/PlistBuddy', ['-c', `Set :${key} Cindy`, plistPath]);
+    const set = spawnSync('/usr/libexec/PlistBuddy', ['-c', `Set :${key} Countersign`, plistPath]);
     if (set.status !== 0) {
       const add = spawnSync('/usr/libexec/PlistBuddy', [
         '-c',
-        `Add :${key} string Cindy`,
+        `Add :${key} string Countersign`,
         plistPath,
       ]);
       if (add.status !== 0) {
         throw new Error(`[forge:postPackage] PlistBuddy failed to set ${key} in ${plistPath}`);
       }
     }
-    console.log(`[forge:postPackage] mac display name → Cindy (${appDir}/Contents/Info.plist)`);
+    console.log(`[forge:postPackage] mac display name → Countersign (${appDir}/Contents/Info.plist)`);
   }
 }
 
@@ -1672,7 +1672,7 @@ const makers: ForgeConfig['makers'] = [
         icon: path.join(__dirname, 'resources', 'icon.png'),
         // 双 scheme:cindy 主 + xdt-maker 兼容(老分享链接不死)。
         mimeType: allDeepLinkSchemes().map((s) => `x-scheme-handler/${s}`),
-        maintainer: 'Lizi <feedback@cindy.app>',
+        maintainer: 'Countersign contributors',
         // deb 包名规范要求小写;跟随区域 exe 名(cn/global cindy / dev cindydev)。
         name: CINDY_EXE.toLowerCase(),
         bin: CINDY_EXE,
@@ -1808,7 +1808,7 @@ const config: ForgeConfig = {
     // 与主 exe 的「说明」字段必须同值,否则 dev 包会安装前后显示两个名字。
     win32metadata: {
       CompanyName: 'XD',
-      ProductName: 'Cindy',
+      ProductName: 'Countersign',
       FileDescription: BRAND_IDENTITY.displayName,
     },
     icon: 'resources/icon',
@@ -1819,7 +1819,7 @@ const config: ForgeConfig = {
     //          main/deepLink.ts registerDeepLinkProtocol()。
     protocols: [
       // 双 scheme 注册:cindy:// 主 + xdt-maker:// 永久兼容(存量分享链接不死)。
-      { name: 'Cindy Deep Link', schemes: [...allDeepLinkSchemes()] },
+      { name: 'Countersign Deep Link', schemes: [...allDeepLinkSchemes()] },
     ],
     // macOS 文件夹右键 "打开方式 → Cindy" 入口:
     //   声明 app 能接受 public.folder, Finder 自动把 Cindy 出现在 "打开方式" 列表。
@@ -1863,7 +1863,7 @@ const config: ForgeConfig = {
         // 兜底(LSItemContentTypes 存在时会被忽略)。Owner 表示本 app 是该类型
         // 的归属方。⚠️ 仅打包生效,mac 真机轮验证。
         {
-          CFBundleTypeName: 'Cindy Cartridge',
+          CFBundleTypeName: 'Countersign Cartridge',
           CFBundleTypeRole: 'Viewer',
           LSHandlerRank: 'Owner',
           LSItemContentTypes: [`${CINDY_UTI_PREFIX}.cindy`],

@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { DEEP_LINK_URL_PREFIX } from '../../../shared/deepLinkSchemes';
 import { ChatInviteDialog } from './ChatInviteDialog';
 
 // An invitation is a navigation intent, not account data. Keep only its target
@@ -40,7 +41,7 @@ export function ChatInviteHost() {
   const [token] = useSyncExternalStore(subscribe, getSnapshot);
   const navigate = useNavigate();
   if (token === MALFORMED) return <ChatInviteDialog key={token} malformedLink onClose={() => dismiss(token)} />;
-  return token ? <ChatInviteDialog key={token} initialLink={`cindy://chat-invite/${token}`}
+  return token ? <ChatInviteDialog key={token} initialLink={`${DEEP_LINK_URL_PREFIX}chat-invite/${token}`}
     onClose={() => dismiss(token)}
     onJoined={id => navigate(`/bots/groups/${encodeURIComponent(id)}`)} /> : null;
 }

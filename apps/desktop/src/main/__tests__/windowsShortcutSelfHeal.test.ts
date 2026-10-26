@@ -13,7 +13,7 @@ vi.mock('electron', () => ({
 }));
 vi.mock('../../shared/brandRegion', () => ({
   CURRENT_CINDY_REGION: 'cn',
-  CURRENT_APP_ID: 'com.xd.cindycn',
+  CURRENT_APP_ID: 'io.github.tejeshdevdas-py.countersign',
 }));
 vi.mock('../logger', () => ({
   createLogger: () => ({ info: vi.fn(), warn: vi.fn(), debug: vi.fn(), error: vi.fn() }),
@@ -24,7 +24,7 @@ import { brandAppId, brandExecutableName } from '@cindy/maker-shared/brand-ident
 
 // 本文件专测 CN 产物的历史快捷方式修复，显式固定区域，避免继承宿主环境。
 const EXPECTED_APP_ID = brandAppId('cn');
-// 重建目标 .lnk 基名(与实现的 SHORTCUT_BASENAME 同源;cn = 'Cindy')。
+// 重建目标 .lnk 基名(与实现的 SHORTCUT_BASENAME 同源;= 'Countersign')。
 const NEW_SHORTCUT_NAME = brandExecutableName('cn');
 
 const EXE = 'C:\\Program Files\\xdt-maker\\xdt-maker.exe';
