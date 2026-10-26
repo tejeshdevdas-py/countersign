@@ -1807,7 +1807,7 @@ const config: ForgeConfig = {
     // 与 NSIS maker 的 extraMetadata.description 同一表达式——安装器/卸载器
     // 与主 exe 的「说明」字段必须同值,否则 dev 包会安装前后显示两个名字。
     win32metadata: {
-      CompanyName: 'XD',
+      CompanyName: 'Countersign contributors',
       ProductName: 'Countersign',
       FileDescription: BRAND_IDENTITY.displayName,
     },

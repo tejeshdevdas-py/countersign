@@ -1,5 +1,5 @@
 /**
- * deepLinkSchemes:双 scheme(cindy 主 + 历史 xdt-maker)收敛单点的行为契约。
+ * deepLinkSchemes: behaviour contract of the single-scheme (countersign) hub.
  * 生成一律主 scheme;解析两种 scheme 都认;切片按实际命中前缀长度。
  */
 
@@ -40,11 +40,12 @@ describe('deepLinkSchemes constants', () => {
 });
 
 describe('matchDeepLinkPrefix / isDeepLinkUrl', () => {
-  it('matches both primary and legacy prefixes', () => {
-    expect(matchDeepLinkPrefix('countersign://session/a')).toBe('countersign://');
+  it('matches the countersign:// prefix and rejects the upstream cindy:// and xdt-maker:// schemes', () => {
     expect(matchDeepLinkPrefix('countersign://session/a')).toBe('countersign://');
     expect(isDeepLinkUrl('countersign://project/x')).toBe(true);
-    expect(isDeepLinkUrl('countersign://project/x')).toBe(true);
+    expect(matchDeepLinkPrefix('cindy://session/a')).toBeNull();
+    expect(matchDeepLinkPrefix('xdt-maker://session/a')).toBeNull();
+    expect(isDeepLinkUrl('cindy://project/x')).toBe(false);
   });
 
   it('rejects other schemes, including in-process resource schemes', () => {
@@ -56,7 +57,7 @@ describe('matchDeepLinkPrefix / isDeepLinkUrl', () => {
 });
 
 describe('isDeepLinkProtocol', () => {
-  it('accepts WHATWG URL.protocol values for both schemes only', () => {
+  it('accepts the WHATWG URL.protocol value of the countersign scheme only', () => {
     expect(isDeepLinkProtocol('countersign:')).toBe(true);
     expect(isDeepLinkProtocol('cindy:')).toBe(false);
     expect(isDeepLinkProtocol('xdt-maker:')).toBe(false);
@@ -66,16 +67,15 @@ describe('isDeepLinkProtocol', () => {
 });
 
 describe('textContainsDeepLink', () => {
-  it('detects either scheme anywhere in free text', () => {
+  it('detects the countersign scheme anywhere in free text, not the upstream schemes', () => {
     expect(textContainsDeepLink('见 countersign://session/abc 这个任务')).toBe(true);
-    expect(textContainsDeepLink('老链接 countersign://session/abc 仍可点')).toBe(true);
+    expect(textContainsDeepLink('old link cindy://session/abc')).toBe(false);
     expect(textContainsDeepLink('普通文本 https://example.com')).toBe(false);
   });
 });
 
 describe('stripDeepLinkPathPrefix / hasDeepLinkPathPrefix', () => {
-  it('slices by the actually matched prefix length (schemes differ in length)', () => {
-    expect(stripDeepLinkPathPrefix('countersign://session/abc?m=1', 'session/')).toBe('abc?m=1');
+  it('slices by the matched prefix length', () => {
     expect(stripDeepLinkPathPrefix('countersign://session/abc?m=1', 'session/')).toBe('abc?m=1');
   });
 

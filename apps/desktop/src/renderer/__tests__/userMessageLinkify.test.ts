@@ -470,7 +470,7 @@ describe('userMessageLinkify', () => {
 
   // 双 scheme 收敛:主 scheme countersign:// 与历史 countersign://(上方全部用例)
   // 同一口径匹配;长度切片按实际命中的前缀(两 scheme 长度不同)。
-  it('matches primary-scheme countersign:// session links (bare + markdown form)', () => {
+  it('matches countersign:// session links (bare + markdown form)', () => {
     const sessionUrl = 'countersign://session/03e0c22d-19db-4ac5-814f-1ea04040b471';
     expect(findLinkifyMatches(`看这个 ${sessionUrl} 的会话`)).toEqual([
       {
@@ -494,7 +494,7 @@ describe('userMessageLinkify', () => {
     ]);
   });
 
-  it('matches primary-scheme countersign:// project links and rejects empty ids per scheme', () => {
+  it('matches countersign:// project links and rejects empty ids', () => {
     const projectUrl = 'countersign://project/%2Ftmp%2Ffoo';
     expect(findLinkifyMatches(`项目在 ${projectUrl} 这里`)[0]).toMatchObject({
       kind: 'project',
@@ -505,13 +505,13 @@ describe('userMessageLinkify', () => {
     expect(findLinkifyMatches('countersign://session/')).toEqual([]);
   });
 
-  it('matches both schemes mixed in one message', () => {
-    const legacy = 'countersign://session/aaa-111';
-    const primary = 'countersign://session/bbb-222';
-    const matches = findLinkifyMatches(`${legacy} 与 ${primary}`);
+  it('matches several countersign:// links in one message and ignores the upstream cindy:// scheme', () => {
+    const first = 'countersign://session/aaa-111';
+    const second = 'countersign://session/bbb-222';
+    const matches = findLinkifyMatches(`${first} 与 ${second} 与 cindy://session/ccc-333`);
     expect(matches.map((m) => (m.kind === 'session' ? m.href : null))).toEqual([
-      legacy,
-      primary,
+      first,
+      second,
     ]);
   });
 });

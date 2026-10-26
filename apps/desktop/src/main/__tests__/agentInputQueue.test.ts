@@ -560,15 +560,15 @@ describe('agentInputQueue', () => {
     expect(entry.chatMessage.agentReferences?.[0]).toHaveProperty('hostSnapshot');
   });
 
-  it('reconciles both current and legacy session links on queue edits', () => {
+  it('reconciles several session links on queue edits', () => {
     expect(
       reconcileSessionRefsForText(
-        'countersign://session/current?message=client-1 and countersign://session/legacy',
+        'countersign://session/current?message=client-1 and countersign://session/other',
         undefined,
       ),
     ).toEqual([
       { sessionId: 'current', messageClientId: 'client-1' },
-      { sessionId: 'legacy' },
+      { sessionId: 'other' },
     ]);
   });
 

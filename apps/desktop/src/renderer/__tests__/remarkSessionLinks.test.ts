@@ -87,7 +87,7 @@ describe('remarkSessionLinks', () => {
 
   // 双 scheme 收敛:主 scheme countersign:// 链接与历史 countersign://(上方全部用例)
   // 同一口径切 link 节点。
-  it('converts primary-scheme countersign:// session and project URLs', () => {
+  it('converts countersign:// session and project URLs', () => {
     const cindySession = 'countersign://session/03e0c22d-19db-4ac5-814f-1ea04040b471';
     expect(runOnText(`见 ${cindySession}?message=m1。`)).toEqual([
       { type: 'text', value: '见 ' },
@@ -107,11 +107,11 @@ describe('remarkSessionLinks', () => {
     ]);
   });
 
-  it('handles both schemes mixed in one text node', () => {
-    const legacy = 'countersign://session/aaa-111';
-    const primary = 'countersign://session/bbb-222';
-    const children = runOnText(`${legacy} 与 ${primary}`);
+  it('handles several countersign:// URLs in one text node and ignores the upstream cindy:// scheme', () => {
+    const first = 'countersign://session/aaa-111';
+    const second = 'countersign://session/bbb-222';
+    const children = runOnText(`${first} 与 ${second} 与 cindy://session/ccc-333`);
     expect(children.filter((node) => node.type === 'link').map((n) => (n as { url: string }).url))
-      .toEqual([legacy, primary]);
+      .toEqual([first, second]);
   });
 });

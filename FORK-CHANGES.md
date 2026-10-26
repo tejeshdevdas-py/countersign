@@ -108,3 +108,7 @@ Base: `makecindy/cindy` main at `0f70b883436cbc31b6f9338c6a304e18a3d72bb6` (2026
 | `apps/desktop/src/shared/agentInputQueue.ts` | Session-link regex built from `DEEP_LINK_SCHEME_RE_GROUP` | Hardcoded `(cindy|xdt-maker)` scheme would no longer match |
 | `packages/device-link/src/chatInvitation.ts` | Also accepts `countersign://chat-invite/` (upstream prefix kept) | Parser must read links built with the new scheme |
 | `apps/desktop/src/renderer/__tests__/pendingQueueDefer.test.ts` | Expected values updated to the Countersign identity (`countersign://` scheme, Countersign names, app id) | Upstream test pinned Cindy values |
+| `packages/maker-shared/src/brandIdentity.ts` (fix round 1) | All legacy data-dir, dialogue-dir and db-prefix lists emptied (`xdt-maker` removed) | A `cn` build must never import from or reap processes of a real Cindy install |
+| `apps/desktop/src/main/__tests__/deepLink.test.ts` (fix round 1) | Shared-task and provider-share tests split into parse (`cindy:`) and argv-redaction (`countersign:`) cases. Known gap: those two invitation parsers still require the `cindy:` scheme; the cloud features are removed in Task 4 | No single link is accepted by both the parser and the redactor |
+| `apps/desktop/forge.config.ts` (fix round 1) | win32metadata `CompanyName` is `Countersign contributors` | No upstream company name in shipped metadata |
+| `apps/desktop/package.json` (fix round 1) | `description` is `Countersign desktop client` | User-visible product name |

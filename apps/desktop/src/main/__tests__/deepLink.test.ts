@@ -160,10 +160,15 @@ describe('shared task invitation handoff', () => {
     expect(takePendingDeepLink()).toEqual({ type: 'shared-task-join', invitation, server: 'https://relay.example.test' });
     expect(takePendingDeepLink()).toBeNull();
     expect(JSON.stringify(Object.values(logs).map(log => log.mock.calls))).not.toContain(invitation);
-    // Argv redaction only recognises the registered countersign:// scheme.
-    const argvUrl = url.replace('cindy://', 'countersign://');
-    const argv = ['cindy.exe', argvUrl, 'countersign://shared-task/join?invitation=invalid-secret'];
-    redactConsumedDeepLinkInArgv(argv, argvUrl);
+  });
+  // Known gap: the shared-task and provider-share parsers still require the upstream
+  // `cindy:` scheme (those cloud features are removed in Task 4), so redaction is
+  // checked separately on the registered countersign:// scheme.
+  it('redacts shared-task invitations from argv', () => {
+    const invitation = 'A'.repeat(43);
+    const url = 'countersign://shared-task/join?invitation=' + invitation + '&server=https%3A%2F%2Frelay.example.test';
+    const argv = ['countersign.exe', url, 'countersign://shared-task/join?invitation=invalid-secret'];
+    redactConsumedDeepLinkInArgv(argv, url);
     expect(argv.join(' ')).not.toContain(invitation);
     expect(argv.join(' ')).not.toContain('invalid-secret');
   });
@@ -396,10 +401,9 @@ describe('parseDeepLink', () => {
   });
 });
 
-// 双 scheme 收敛(2026-07 品牌翻转):解析 cindy 主 + 历史 xdt-maker 都认,
-// 生成一律主 scheme countersign://。上面的 countersign:// 用例即历史 scheme 回归。
-describe('dual scheme (cindy primary + legacy xdt-maker)', () => {
-  it('parses primary-scheme countersign:// links for every payload type', () => {
+// Single scheme: parsing and generation use countersign:// only.
+describe('countersign scheme', () => {
+  it('parses countersign:// links for every payload type', () => {
     expect(parseDeepLink('countersign://session/abc-123')).toEqual({
       type: 'session',
       id: 'abc-123',
@@ -513,16 +517,15 @@ describe('findDeepLinkInArgv', () => {
     expect(findDeepLinkInArgv(['electron.exe', '--flag'])).toBeNull();
   });
 
-  it('accepts both cindy and legacy xdt-maker schemes in argv', () => {
+  it('accepts the countersign scheme in argv and ignores cindy:// and xdt-maker://', () => {
     expect(findDeepLinkInArgv(['electron.exe', 'countersign://session/a'])).toBe('countersign://session/a');
-    expect(findDeepLinkInArgv(['electron.exe', 'countersign://session/a'])).toBe(
-      'countersign://session/a',
-    );
+    expect(findDeepLinkInArgv(['electron.exe', 'cindy://session/a'])).toBeNull();
+    expect(findDeepLinkInArgv(['electron.exe', 'xdt-maker://session/a'])).toBeNull();
   });
 });
 
 describe('redactConsumedDeepLinkInArgv', () => {
-  it('drops both schemes before restart without selecting or retaining an import', () => {
+  it('drops imports before restart without selecting or retaining one', () => {
     const argv = ['electron', '--flag', 'countersign://session/keep', providerImportUrl('countersign'), providerImportUrl('countersign')];
     redactConsumedDeepLinkInArgv(argv);
     expect(argv).toEqual(['electron', '--flag', 'countersign://session/keep', 'countersign://consumed', 'countersign://consumed']);
@@ -535,10 +538,13 @@ describe('redactConsumedDeepLinkInArgv', () => {
     expect(argv).toEqual(['electron.exe', '--flag', 'countersign://session/keep', 'countersign://consumed', 'countersign://consumed', 'countersign://consumed']);
     expect(parseDeepLink(url)?.type).toBe('provider-import');
   });
-  it('parses provider share links and never keeps their invitation in argv', () => {
+  it('parses provider share links (still the upstream cindy: scheme; known gap, removed in Task 4)', () => {
     const link = `cindy://provider-share/join?invitation=${'a'.repeat(43)}&server=${encodeURIComponent('https://device-link.cindy.app')}`;
     expect(parseDeepLink(link)).toEqual({ type: 'provider-share-join', link });
-    const argv = ['electron', link.replace('cindy://', 'countersign://')];
+  });
+  it('never keeps a provider share invitation in argv', () => {
+    const link = `countersign://provider-share/join?invitation=${'a'.repeat(43)}&server=${encodeURIComponent('https://device-link.cindy.app')}`;
+    const argv = ['electron', link];
     redactConsumedDeepLinkInArgv(argv);
     expect(argv).toEqual(['electron', 'countersign://consumed']);
   });

@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { resolveRegionUserDataDirName } from '../regionUserData';
 
 /**
- * 同机双装的核心不变量:保持已发布的 Countersign fork: cn = global = Countersign (the productName default, so no override); dev = CountersignDev。，数据库 /
- * 登录态 / 单实例锁 / sessionData 随 userData 目录天然隔离。此模块跑在 main 入口
- * 最早期，回归 = 两个区域的包共库串台(P0)，所以把所有象限全部锁死。
+ * Countersign has one user-data identity: cn and global both use the productName
+ * default `Countersign` (so no override is needed) and dev uses `CountersignDev`.
+ * This module runs at the very start of main, so every region/packaging quadrant
+ * is pinned here.
  */
 describe('resolveRegionUserDataDirName', () => {
   const ARGV = ['Countersign.exe'] as const;

@@ -100,11 +100,11 @@ describe('BRAND_IDENTITY invariants', () => {
     );
   });
 
-  it('身份翻转后 legacy 数组必须携带 xdt-maker 旧值(兼容锚,只增不减)', () => {
+  it('Countersign fork carries no legacy schemes, data dirs or db prefixes', () => {
     // Countersign fork has no legacy URL schemes.
     expect(BRAND_IDENTITY.legacySchemes).toEqual([]);
-    expect(BRAND_IDENTITY.legacyUserDataDirNames).toContain('xdt-maker');
-    expect(BRAND_IDENTITY.legacyDbFilePrefixes).toContain('xdt-maker');
+    expect(BRAND_IDENTITY.legacyUserDataDirNames).toEqual([]);
+    expect(BRAND_IDENTITY.legacyDbFilePrefixes).toEqual([]);
   });
 
   it('档案与内嵌数组已冻结,消费方无法运行时篡改', () => {
@@ -158,25 +158,24 @@ describe('区域解析与派生', () => {
 });
 
 describe('派生 helper', () => {
-  it('allDeepLinkSchemes 主 scheme 恒为首位且包含全部 legacy', () => {
+  it('allDeepLinkSchemes returns only the primary scheme', () => {
     expect(allDeepLinkSchemes()).toEqual(['countersign']);
   });
 
-  it('allUserDataDirNames 本区域目录名恒为首位 + 全部历史值,且不含另一区域', () => {
+  it('allUserDataDirNames returns only the current directory (no legacy names)', () => {
     expect(allUserDataDirNames()).toEqual(['Countersign']);
-    expect(allUserDataDirNames('cn')).toEqual(['Countersign', 'xdt-maker']);
-    // global 的匹配集不含 cn 的 Cindy / xdt-maker：orphan-reaper 按路径认领
-    // 进程，跨区域匹配会误杀另一个安装的进程。
+    expect(allUserDataDirNames('cn')).toEqual(['Countersign']);
+    // No legacy names: orphan-reaper must never claim processes of another install.
     expect(allUserDataDirNames('global')).toEqual(['Countersign']);
   });
 
-  it('legacyBrandUserDataDirNames 只返回品牌翻转前的共享 mToc 来源', () => {
-    expect(legacyBrandUserDataDirNames()).toEqual(['xdt-maker']);
+  it('legacyBrandUserDataDirNames is empty', () => {
+    expect(legacyBrandUserDataDirNames()).toEqual([]);
   });
 
-  it('dialogue cwd 迁移来源按区域保留旧品牌目录', () => {
+  it('dialogue cwd migration has no legacy sources in any region', () => {
     expect(legacyDialogueUserDataDirNames()).toEqual([]);
-    expect(legacyDialogueUserDataDirNames('cn')).toEqual(['xdt-maker']);
+    expect(legacyDialogueUserDataDirNames('cn')).toEqual([]);
     expect(legacyDialogueUserDataDirNames('global')).toEqual([]);
     expect(legacyDialogueUserDataDirNames('dev')).toEqual([]);
   });

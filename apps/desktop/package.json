@@ -2,7 +2,7 @@
   "name": "desktop",
   "productName": "Countersign",
   "version": "0.0.0",
-  "description": "Cindy desktop client",
+  "description": "Countersign desktop client",
   "main": ".vite/build/index.js",
   "private": true,
   "scripts": {

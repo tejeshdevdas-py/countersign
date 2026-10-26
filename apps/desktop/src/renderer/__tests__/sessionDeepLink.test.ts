@@ -128,9 +128,8 @@ describe('session deep link device parameter', () => {
   });
 });
 
-// 双 scheme 收敛:生成一律 countersign://,解析 cindy + 历史 xdt-maker 都认
-// (上面的 countersign:// 用例即历史 scheme 回归)。
-describe('dual scheme (cindy primary + legacy xdt-maker)', () => {
+// Single scheme: builders emit countersign:// and parsers accept only it.
+describe('countersign scheme', () => {
   it('builders emit the primary countersign:// scheme', () => {
     expect(buildSessionDeepLink('abc-123')).toBe('countersign://session/abc-123');
     expect(buildSessionMessageDeepLink('abc-123', 'm1')).toBe(
@@ -139,7 +138,7 @@ describe('dual scheme (cindy primary + legacy xdt-maker)', () => {
     expect(buildProjectDeepLink('/tmp/x')).toBe('countersign://project/%2Ftmp%2Fx');
   });
 
-  it('parsers accept primary-scheme countersign:// hrefs', () => {
+  it('parsers accept countersign:// hrefs and reject cindy:// and xdt-maker://', () => {
     expect(parseSessionDeepLinkHref('countersign://session/abc-123?message=m1')).toEqual({
       sessionId: 'abc-123',
       messageClientId: 'm1',
@@ -149,5 +148,7 @@ describe('dual scheme (cindy primary + legacy xdt-maker)', () => {
       workingDir: '/tmp/x',
     });
     expect(parseSessionDeepLinkHref('countersign://session/')).toBeNull();
+    expect(parseSessionDeepLinkHref('cindy://session/abc-123')).toBeNull();
+    expect(parseSessionDeepLinkHref('xdt-maker://session/abc-123')).toBeNull();
   });
 });

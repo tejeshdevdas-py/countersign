@@ -167,21 +167,21 @@ export const BRAND_IDENTITY: BrandIdentity = Object.freeze({
     global: 'Countersign',
     dev: 'CountersignDev',
   }),
-  legacyUserDataDirNames: Object.freeze(['xdt-maker']),
+  legacyUserDataDirNames: Object.freeze([]),
   legacyUserDataDirNamesByRegion: Object.freeze({
-    cn: Object.freeze(['xdt-maker']),
+    cn: Object.freeze([]),
     global: Object.freeze([]),
     dev: Object.freeze([]),
   }),
   legacyDialogueUserDataDirNamesByRegion: Object.freeze({
-    cn: Object.freeze(['xdt-maker']),
+    cn: Object.freeze([]),
     global: Object.freeze([]),
     dev: Object.freeze([]),
   }),
   cdnPrefix: 'cindy',
   updaterName: 'cindy-updater',
   dbFilePrefix: 'countersign',
-  legacyDbFilePrefixes: Object.freeze(['xdt-maker']),
+  legacyDbFilePrefixes: Object.freeze([]),
 });
 
 /** 按区域取 appId(AUMID / bundle id);默认 global。 */

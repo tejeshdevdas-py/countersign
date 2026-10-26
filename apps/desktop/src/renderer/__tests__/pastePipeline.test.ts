@@ -121,9 +121,8 @@ describe('segmentPastedContent — deep links', () => {
     expect(segmentPastedContent('countersign://project/')).toBeNull();
   });
 
-  // 双 scheme 收敛:主 scheme countersign:// 与历史 countersign://(上方全部用例)
-  // 走同一条分段管线。
-  it('segments primary-scheme countersign:// links (bare + markdown, mixed with legacy)', () => {
+  // Single scheme: every case runs through the countersign:// pipeline.
+  it('segments countersign:// links (bare + markdown, several per paste)', () => {
     const cindySession = 'countersign://session/ee59672a-5591-48a7-a44d-aa97e3808c64';
     const cindyProject = 'countersign://project/%2Ftmp%2Fx';
     expect(segmentPastedContent(`看 ${cindySession} 和 [主仓](${cindyProject})`)).toEqual([
@@ -131,11 +130,6 @@ describe('segmentPastedContent — deep links', () => {
       { kind: 'session', href: cindySession, label: null },
       { kind: 'text', text: ' 和 ' },
       { kind: 'project', href: cindyProject, label: '主仓' },
-    ]);
-    expect(segmentPastedContent(`${SESSION_URL} 与 ${cindySession}`)).toEqual([
-      { kind: 'session', href: SESSION_URL, label: null },
-      { kind: 'text', text: ' 与 ' },
-      { kind: 'session', href: cindySession, label: null },
     ]);
     expect(segmentPastedContent('countersign://session/')).toBeNull();
     expect(segmentPastedContent('countersign://other/foo')).toBeNull();
