@@ -3999,6 +3999,8 @@ export function listSavedAccounts(): DesktopAccountSwitcherSnapshot {
 }
 
 export async function syncSavedAccounts(): Promise<DesktopAccountSwitcherSnapshot> {
+  // No refresh-token exchange or membership lookup: just report what is saved.
+  if (LOCAL_ONLY) return listSavedAccounts();
   if (isPassiveSharedUserDataInstance()) return listSavedAccounts();
   const initial = readAuthAccountVault();
   for (const passport of Object.values(initial.passports)) {
@@ -4382,6 +4384,8 @@ export async function confirmAccountDeletion(input: {
 
 /** Query the persisted receipt without requiring an authenticated session. */
 export async function getAccountDeletionStatus(): Promise<AccountDeletionStatus | null> {
+  // A receipt left by an earlier cloud profile must not trigger a network call.
+  if (LOCAL_ONLY) return null;
   const receipt = readPersistedAccountDeletionReceipt();
   if (!receipt) return null;
   await loadClientEndpointsForRealm(receipt.realm);

@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   exitLocalMode: vi.fn(),
   logout: vi.fn(),
   warn: vi.fn(),
+  lastOnBackToLogin: 'unset' as unknown,
 }));
 
 vi.mock('@/contexts/AuthContext', () => ({
@@ -27,14 +28,18 @@ vi.mock('@/lib/logger', () => ({
 }));
 
 vi.mock('@/components/error/LocalDbFatalScreen', () => ({
-  LocalDbFatalScreen: ({ onBackToLogin }: { onBackToLogin?: () => void }) => (
-    <button type="button" onClick={onBackToLogin}>
-      back to login
-    </button>
-  ),
+  LocalDbFatalScreen: ({ onBackToLogin }: { onBackToLogin?: () => void }) => {
+    mocks.lastOnBackToLogin = onBackToLogin;
+    return (
+      <button type="button" onClick={onBackToLogin}>
+        {onBackToLogin ? 'back to login' : 'fatal screen'}
+      </button>
+    );
+  },
 }));
 
 import { LocalDbGate } from '../LocalDbGate';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 
 describe('LocalDbGate fatal recovery', () => {
   beforeEach(() => {
@@ -52,7 +57,7 @@ describe('LocalDbGate fatal recovery', () => {
     };
   });
 
-  it('navigates back to login even when leaving local mode rejects', async () => {
+  it.skipIf(LOCAL_ONLY)('navigates back to login even when leaving local mode rejects', async () => {
     render(
       <MemoryRouter initialEntries={['/app']}>
         <Routes>
@@ -72,5 +77,22 @@ describe('LocalDbGate fatal recovery', () => {
       'failed to leave the current session from local-db fatal screen',
       expect.any(Error),
     );
+  });
+
+  it('offers no way back to login in Countersign', async () => {
+    mocks.lastOnBackToLogin = 'unset';
+    render(
+      <MemoryRouter initialEntries={['/app']}>
+        <Routes>
+          <Route path="/app" element={<LocalDbGate />}>
+            <Route index element={<div>main</div>} />
+          </Route>
+          <Route path="/login" element={<div>login page</div>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await screen.findByText('fatal screen');
+    expect(mocks.lastOnBackToLogin).toBeUndefined();
+    expect(mocks.exitLocalMode).not.toHaveBeenCalled();
   });
 });

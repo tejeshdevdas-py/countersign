@@ -94,6 +94,15 @@ describe('authManager makes no cloud call', () => {
     expect(fetchStub).not.toHaveBeenCalled();
   });
 
+  it('syncSavedAccounts() returns the saved list without any network call', async () => {
+    const auth = await import('../authManager.js');
+    const synced = await auth.syncSavedAccounts();
+    expect(synced).toEqual(auth.listSavedAccounts());
+    expect(Array.isArray(synced.accounts)).toBe(true);
+    expect(await auth.getAccountDeletionStatus()).toBeNull();
+    expect(fetchStub).not.toHaveBeenCalled();
+  });
+
   it('initialize() performs no fetch', async () => {
     const auth = await import('../authManager.js');
     auth.setProjectionRepairTeardown(async () => undefined);

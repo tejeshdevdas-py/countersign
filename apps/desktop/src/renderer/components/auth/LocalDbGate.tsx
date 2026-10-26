@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
@@ -177,7 +178,8 @@ export function LocalDbGate() {
           setDecision({ phase: 'checking' });
           setRetryNonce((n) => n + 1);
         }}
-        onBackToLogin={() => {
+        // Countersign has no login page to go back to.
+        onBackToLogin={LOCAL_ONLY ? undefined : () => {
           const leave = mode === 'local' ? exitLocalMode() : logout();
           void leave.then(
             () => navigate('/login', { replace: true }),
