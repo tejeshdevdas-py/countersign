@@ -62,7 +62,7 @@ describe('区域确认文案排版预算(标准 26/40，最多 3 行)', () => {
       0,
     );
 
-  it.each(LOCALES)('%s:CN / Global 正文固定两行且每行无需二次折行', (locale) => {
+  it.each(LOCALES)('%s:CN / Global 正文固定两行且最多 3 行（两行正文可各折一次，总行数不超过 3）', (locale) => {
     const realmConsent = loadLogin(locale).realmConsent as {
       bodyCn: string;
       bodyGlobal: string;

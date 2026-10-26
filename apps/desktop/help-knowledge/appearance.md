@@ -9,7 +9,7 @@ Settings > Appearance controls how the app looks. It starts with the theme and a
 
 - **Theme**: pick from the registered theme families; each family supplies its own colors for light and dark. The app uses a VSCode-style token system (see docs/design-rules/cindy-design-system.md) so themes only override what they need. Families with only one variant are tagged Light only / Dark only; while one is selected the appearance mode is fixed to that variant, and your saved mode returns when you pick a two-variant theme.
 - **Appearance mode**: light, dark, or system (follows your OS).
-- **Wallpaper**: choose a Cindy scene, your own image, or a video for the whole app. The wallpaper is independent of the theme.
+- **Wallpaper**: choose a Countersign scene, your own image, or a video for the whole app. The wallpaper is independent of the theme.
 - **Fonts**: choose fonts and sizes for interface text and code. Code font size changes code blocks, change comparisons, and editors; inline code, status numbers, badges, and path labels keep their size.
 - **Pinned Style**: show pinned sessions as Text, Cards, or List. **List Style** controls unpinned sessions: Text uses one line; List adds a preview.
 - **Local theme brand identity**: this is an optional power-user feature configured in the local theme JSON. The settings page intentionally keeps only create-copy, open-folder, and refresh actions. New copies include self-explanatory example paths directly in the JSON.

@@ -115,7 +115,7 @@ describe('HELP_KNOWLEDGE invariants', () => {
     const providers = HELP_KNOWLEDGE.find((d) => d.id === 'providers');
 
     expect(providers?.tab).toBe('providers');
-    expect(providers?.title).toContain('Cindy AI');
+    expect(providers?.title).toContain('Countersign AI');
     expect(providers?.summary).toContain('Model Providers');
 
     // 「工具密钥」(api-keys) 面板已于 2026-07-13 下架:Mivo / 搜索 key 改由
