@@ -33,6 +33,8 @@ const {
   };
 });
 
+// Countersign: the start-up update is off; these upstream cases exercise the upstream policy.
+vi.mock('../countersign/services.js', () => ({ isServiceDisabled: () => false }));
 vi.mock('electron', () => ({
   app: appMock,
   BrowserWindow: { getAllWindows: () => [] },

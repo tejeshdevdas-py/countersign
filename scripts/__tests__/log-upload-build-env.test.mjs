@@ -298,3 +298,13 @@ test('仓内 .example 是合法配置骨架(照抄改值即可用,dev 为 null)'
   assert.ok(targets.global, 'example 的 global 应可解析');
   assert.equal(targets.dev, null);
 });
+
+test('Countersign: packaging env treats a missing config as log upload off for every region', async () => {
+  const { packagingLogUploadBuildEnv } = await import('../shared/log-upload-build-env.mjs');
+  const missing = path.join(os.tmpdir(), 'countersign-no-such-dir', 'log-upload.json');
+  for (const authRegion of ['cn', 'global']) {
+    assert.deepEqual(packagingLogUploadBuildEnv({ authRegion, configPath: missing }), {
+      XDT_LOG_UPLOAD_TARGET: '',
+    });
+  }
+});

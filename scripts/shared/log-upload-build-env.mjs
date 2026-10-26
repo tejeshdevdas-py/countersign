@@ -210,3 +210,12 @@ export function mobileLogUploadBuildEnv(options = {}) {
   const env = desktopLogUploadBuildEnv(options);
   return { EXPO_PUBLIC_CINDY_LOG_UPLOAD_TARGET: env[LOG_UPLOAD_TARGET_ENV] };
 }
+
+/**
+ * Countersign packaging: log upload is off, so a missing `config/log-upload.json` means
+ * "off" for every region (empty target), never a hard failure. A present but corrupt
+ * file still fails.
+ */
+export function packagingLogUploadBuildEnv(options = {}) {
+  return desktopLogUploadBuildEnv({ ...options, allowMissing: true });
+}

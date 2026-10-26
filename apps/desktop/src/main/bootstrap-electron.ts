@@ -2666,6 +2666,7 @@ import started from 'electron-squirrel-startup';
 
 import { APPLICATION_MENU_LABELS, type ApplicationMenuLocale } from './applicationMenuLabels.js';
 import { installCindyCliCommand, CLI_COMMAND_NAME } from './installCliCommand.js';
+import { isServiceDisabled } from './countersign/services.js';
 
 if (started) {
   app.quit();
@@ -9897,11 +9898,15 @@ app.on('ready', async () => {
   // tapdbClient 一挂载就 invoke analytics:settings-get 来决定是否初始化 SDK,
   // handler 还没注册的话那次 invoke 会 reject,而它是 fail closed 的 —— 已同意
   // 的用户会一直不上报,直到手动去设置里拨一下开关。
-  initAnalyticsSettingsService();
+  if (!isServiceDisabled('analytics')) {
+    initAnalyticsSettingsService();
+  }
   // 日志上报:同样必须在 createWindow 之前注册 —— 设置页一挂载就 invoke
   // log-upload:settings-get 决定入口可用性;更重要的是崩溃即时路径要在
   // onFatalShutdown 上就位,否则 createWindow 之后立刻崩的那一次拿不到标记。
-  initLogUploadService();
+  if (!isServiceDisabled('logUpload')) {
+    initLogUploadService();
+  }
   // Local profiles bypass authManager's cloud claim path. Await the same
   // asynchronous PID provenance scan before the first BrowserWindow exists so
   // sidebar's synchronous legacy migration reads can consume an exact proof.
@@ -9918,9 +9923,13 @@ app.on('ready', async () => {
   setTimeout(() => {
     prewarmMacComputerPermissionGuideHelper();
   }, 3_000);
-  initUpdateService();
+  if (!isServiceDisabled('updater')) {
+    initUpdateService();
+  }
   // 在线人数心跳:App 启动即上报,内部走 deviceId / userId 兜底,登录前后都活
-  initHeartbeatService();
+  if (!isServiceDisabled('heartbeat')) {
+    initHeartbeatService();
+  }
   // 设备互联(跨设备远程控制):登录后连 relay,登出即断;开关与设备列表 IPC 一并注册
   let updateRelaunchRemoteBusy = false;
   initDeviceLinkService({

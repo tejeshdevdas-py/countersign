@@ -48,11 +48,13 @@ import {
 } from '../manifestService.js';
 import { ProgressNormalizer } from '../updateProgressNormalizer.js';
 import { createLogger } from '../logger.js';
+import { isServiceDisabled } from '../countersign/services.js';
 import { consumeStartupBinaryUpdateMarker, type StartupBinaryUpdateScope } from './startup-update.js';
 
 let startupUpdateScope: StartupBinaryUpdateScope | undefined;
 
 function resolveUpdateCheck(kind: AgentBinaryKind, checkForUpdates?: boolean): boolean {
+  if (isServiceDisabled('agentBinaryUpdate')) return false;
   startupUpdateScope ??= app.isPackaged
     && consumeStartupBinaryUpdateMarker(app.getPath('userData'), app.getVersion());
   if (checkForUpdates !== undefined) return checkForUpdates;

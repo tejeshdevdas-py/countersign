@@ -20,6 +20,7 @@ import { app } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import { desktopMakerLogger } from './maker-host/logger-adapter.js';
 import {
   createOverrideSettingsFile,
@@ -251,7 +252,8 @@ let buildGateLogged = false;
  * 严格判 `=== true`:非 Electron 宿主或测试 mock 拿不到 isPackaged 时按 dev 处理
  * (fail closed,宁可少报不可乱报)。
  */
-function isReportingBuild(): boolean {
+export function isReportingBuild(): boolean {
+  if (LOCAL_ONLY) return false;
   if (app.isPackaged === true) return true;
   const devOptIn = process.env[DEV_REPORTING_ENV] === '1';
   if (!buildGateLogged) {

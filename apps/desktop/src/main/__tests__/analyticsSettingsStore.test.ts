@@ -20,6 +20,12 @@ let userDataDir = '';
 /** 除「构建闸」那一组之外,所有用例测的都是正式构建下的同意语义。 */
 let isPackaged = true;
 
+// Countersign: reporting is off; these upstream cases exercise the upstream consent gate.
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
+
 vi.mock('electron', () => ({
   app: {
     getPath: (name: string) => (name === 'userData' ? userDataDir : userDataDir),
