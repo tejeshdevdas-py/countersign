@@ -39,6 +39,7 @@ import {
   fetch as undiciFetch,
 } from 'undici';
 
+import { assertEgressAllowed } from '../countersign/egressPolicy.js';
 import {
   isLoopbackHostname,
   parseOutboundProxyUrl,
@@ -606,6 +607,8 @@ export async function guardedOutboundFetch(
   approval?: { targetUrl: string; allowHttp?: boolean; allowPrivateNetwork?: boolean },
 ): Promise<{ response: Response; release: () => Promise<void> }> {
   const upstream = new URL(url);
+  // Countersign: refuse blocked hosts before proxy resolution or DNS.
+  assertEgressAllowed(upstream);
   // Host-owned, single-target exception. Never inherit it across a redirect.
   if (approval && approval.targetUrl !== upstream.href) {
     throw new Error('Download approval target mismatch');
@@ -790,6 +793,8 @@ export const outboundFetch = (async (
       : input instanceof URL
         ? input.href
         : ((input as { url?: string }).url ?? '');
+  // Countersign: one choke point for both the direct and the proxy path.
+  assertEgressAllowed(target);
   const signal = signalOf(input, init);
   const dispatcher = await resolveOutboundDispatcher(target, { signal });
   if (!dispatcher) return globalThis.fetch(input, init);
@@ -860,6 +865,8 @@ async function followRedirectsThroughProxy(
   let dispatcher: Dispatcher | undefined = initialDispatcher;
 
   for (let hop = 0; ; hop += 1) {
+    // Countersign: every hop, so a redirect cannot reach a blocked host.
+    assertEgressAllowed(url);
     const res = (await undiciFetch(url as never, {
       method,
       headers: [...headers] as Array<[string, string]>,
@@ -956,6 +963,8 @@ export const outboundUndiciFetch: typeof undiciFetch = async (input, init) => {
       : input instanceof URL
         ? input.href
         : ((input as { url?: string }).url ?? '');
+  // Countersign: the direct branch below calls undici without any other guard.
+  assertEgressAllowed(target);
   // signal 必须透传:选路在请求出发之前,不传就等于让调用方的取消晚生效(最多多等
   // 一次解析超时),与 outboundFetch 的语义不一致。
   const signal = signalOf(

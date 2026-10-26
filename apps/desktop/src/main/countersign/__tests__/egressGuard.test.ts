@@ -82,8 +82,8 @@ describe('isBlockedHost', () => {
   });
 });
 
-function recorder(): EgressRecorder & { entries: Array<{ host: string; url: string; blocked: boolean }> } {
-  const entries: Array<{ host: string; url: string; blocked: boolean }> = [];
+function recorder(): EgressRecorder & { entries: Array<{ protocol: string; host: string; blocked: boolean }> } {
+  const entries: Array<{ protocol: string; host: string; blocked: boolean }> = [];
   return {
     entries,
     record: (entry) => {
@@ -124,7 +124,7 @@ describe('guardFetch', () => {
     await guarded(request);
     expect(original).toHaveBeenCalledWith(request);
     expect(rec.entries).toEqual([
-      { host: 'api.anthropic.com', url: 'https://api.anthropic.com/v1/messages', blocked: false },
+      { protocol: 'https:', host: 'api.anthropic.com', blocked: false },
     ]);
   });
 });
@@ -213,19 +213,50 @@ describe('file recorder', () => {
     for (const dir of dirs.splice(0)) fs.rmSync(dir, { recursive: true, force: true });
   });
 
-  it('appends one JSON line per outbound request', async () => {
+  it('writes time, protocol, host and blocked only, once per host state per minute', async () => {
+    const { createFileRecorder } = await import('../egressGuard');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'countersign-egress-'));
+    dirs.push(dir);
+    const logFile = path.join(dir, 'egress.jsonl');
+    let clock = 1_000_000;
+    const rec = createFileRecorder(logFile, () => clock);
+    rec.record({ protocol: 'https:', host: 'cindy.app', blocked: true });
+    rec.record({ protocol: 'https:', host: 'cindy.app', blocked: true });
+    rec.record({ protocol: 'https:', host: 'github.com', blocked: false });
+    clock += 60_000;
+    rec.record({ protocol: 'https:', host: 'cindy.app', blocked: true });
+    const lines = fs.readFileSync(logFile, 'utf8').trim().split('\n').map((line) => JSON.parse(line));
+    expect(lines).toHaveLength(3);
+    expect(Object.keys(lines[0]).sort()).toEqual(['blocked', 'host', 'protocol', 'time']);
+    expect(lines[0]).toMatchObject({ protocol: 'https:', host: 'cindy.app', blocked: true });
+    expect(lines[1]).toMatchObject({ host: 'github.com', blocked: false });
+  });
+
+  it('never records path, query, fragment or userinfo from real requests', async () => {
     const { createFileRecorder } = await import('../egressGuard');
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'countersign-egress-'));
     dirs.push(dir);
     const logFile = path.join(dir, 'egress.jsonl');
     const rec = createFileRecorder(logFile);
-    rec.record({ host: 'cindy.app', url: 'https://cindy.app/', blocked: true });
-    rec.record({ host: 'github.com', url: 'https://github.com/', blocked: false });
-    const lines = fs.readFileSync(logFile, 'utf8').trim().split('\n').map((line) => JSON.parse(line));
-    expect(lines).toHaveLength(2);
-    expect(lines[0]).toMatchObject({ host: 'cindy.app', url: 'https://cindy.app/', blocked: true });
-    expect(typeof lines[0].time).toBe('string');
-    expect(lines[1]).toMatchObject({ host: 'github.com', blocked: false });
+    const original = vi.fn(async () => new Response('ok'));
+    const guarded = guardFetch(original as unknown as typeof fetch, rec);
+    await guarded('https://user:pass@api.openai.com/oauth/callback?code=SECRET&state=XYZ#frag');
+    await expect(
+      guarded('https://auth.cindy.app/path/with/token123?sig=abc'),
+    ).rejects.toBeInstanceOf(LocalOnlyError);
+    const { webRequest, send } = fakeWebRequest();
+    guardWebRequest(webRequest, rec);
+    await send('https://bucket.example.com/upload/key?X-Amz-Signature=deadbeef');
+    const text = fs.readFileSync(logFile, 'utf8');
+    const lines = text.trim().split('\n');
+    expect(lines).toHaveLength(3);
+    for (const line of lines) {
+      expect(line).not.toContain('?');
+      expect(line).not.toContain('@');
+      expect(line).not.toMatch(/SECRET|pass|token123|deadbeef|frag|oauth|upload/);
+      const entry = JSON.parse(line) as Record<string, string>;
+      expect(entry.host).not.toContain('/');
+    }
   });
 });
 

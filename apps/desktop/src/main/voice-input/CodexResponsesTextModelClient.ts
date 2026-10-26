@@ -1,3 +1,4 @@
+import { assertEgressAllowed } from '../countersign/egressPolicy.js';
 import { createHash } from 'node:crypto';
 
 import { fetch as undiciFetch, type Agent } from 'undici';
@@ -54,6 +55,8 @@ export async function prewarmCodexResponsesEndpoint(): Promise<void> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 3_000);
   try {
+    // Countersign: bundled undici is not wrapped by the egress guard.
+    assertEgressAllowed(DEFAULT_PREWARM_URL);
     const response = await undiciFetch(DEFAULT_PREWARM_URL, {
       method: 'HEAD',
       signal: controller.signal,
@@ -222,6 +225,7 @@ export class CodexResponsesTextModelClient implements TextModelClient {
     let firstByteAt: number | null = null;
     let lastTextSnapshot = '';
     try {
+      assertEgressAllowed(this.baseUrl);
       const response = await undiciFetch(this.baseUrl, {
         method: 'POST',
         signal: controller.signal,

@@ -11,6 +11,7 @@
  * OSS. That bias is conservative: abort after enqueue may commit and then
  * see UPLOAD_OBJECT_MISSING, never overwrite or double-publish.
  */
+import { assertEgressAllowed } from '../countersign/egressPolicy.js';
 import type { FileHandle } from 'node:fs/promises';
 import { Transform, type Readable } from 'node:stream';
 import { request, type Dispatcher } from 'undici';
@@ -125,6 +126,8 @@ export async function putLocalFile(
   }, 1_000);
 
   try {
+    // Countersign: bundled undici is not wrapped by the egress guard.
+    assertEgressAllowed(options.putUrl);
     const dispatcher = await (options.resolveDispatcher ?? resolveOutboundDispatcher)(options.putUrl, {
       signal: abortController.signal,
     });

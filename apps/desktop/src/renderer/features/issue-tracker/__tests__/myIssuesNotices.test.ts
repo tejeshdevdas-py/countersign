@@ -2,7 +2,13 @@
  * 顶部提示的选取规则 —— 钉住「哪些降级值得打扰用户」这个产品判断。
  */
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+// Countersign forces LOCAL_ONLY; this upstream test pins the sign-in hint.
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
 
 import type { MyIssueItem, MyIssuesResult } from '@/../shared/myIssues';
 

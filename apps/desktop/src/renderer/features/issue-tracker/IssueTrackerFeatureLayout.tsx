@@ -36,7 +36,8 @@ import { useRegisterCCAgentSidebar } from '@/features/cc-agent/useRegisterCCAgen
 
 import { MyIssueList } from './MyIssueList';
 import { useMyIssues } from './hooks/useMyIssues';
-import { canTrustEmptyList, selectMyIssuesNotices } from './lib/myIssuesNotices';
+import { canTrustEmptyList, MY_ISSUES_LOCAL_ONLY_NOTICE, selectMyIssuesNotices } from './lib/myIssuesNotices';
+import { localOnlyMessage } from '@/lib/countersignLocalOnly';
 import { prefillIssueCommandDraft } from './lib/startIssueChat';
 
 const GITHUB_ISSUES_URL = 'https://github.com/makecindy/cindy/issues';
@@ -164,7 +165,7 @@ function Notices({ data }: { data: MyIssuesResult | null }) {
     <div className="mb-2 flex flex-col gap-1.5 rounded-xl bg-sidebar-item-hover px-3 py-2">
       {notices.map((key) => (
         <p key={key} className="text-11 leading-relaxed text-sidebar-muted">
-          {t(key)}
+          {key === MY_ISSUES_LOCAL_ONLY_NOTICE ? localOnlyMessage('Issue reporting') : t(key)}
         </p>
       ))}
     </div>

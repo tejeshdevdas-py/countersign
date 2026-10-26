@@ -1,3 +1,4 @@
+import { assertEgressAllowed } from '../countersign/egressPolicy.js';
 import { Agent, fetch as undiciFetch } from 'undici';
 import { randomUUID } from 'node:crypto';
 import { ghostPreviewUrlAllowed, type InstalledGhost } from '../../shared/ghost.js';
@@ -88,10 +89,13 @@ export class MobilePluginPreview {
 }
 
 const directAgent = new Agent();
-const directFetch: typeof fetch = (url, init) =>
-  undiciFetch(String(url), { ...init, dispatcher: directAgent } as Parameters<
+const directFetch: typeof fetch = async (url, init) => {
+  // Countersign: bundled undici is not wrapped by the egress guard.
+  assertEgressAllowed(String(url));
+  return undiciFetch(String(url), { ...init, dispatcher: directAgent } as Parameters<
     typeof undiciFetch
   >[1]) as unknown as Promise<Response>;
+};
 
 /** Fetch redirects only within the same approved origin, and never inherit computer browser credentials. */
 export async function readMobilePreview(

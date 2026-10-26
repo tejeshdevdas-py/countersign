@@ -23,6 +23,8 @@ import {
   type IssueConfirmDraft,
 } from '@/lib/issueConfirmDraftStore';
 import { cn } from '@/lib/utils';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
+import { localOnlyMessage } from '@/lib/countersignLocalOnly';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import type { PendingIssueConfirm } from '@/lib/makerChatStore';
 import { shouldLabelRegion } from '../../../shared/regionCode';
@@ -87,7 +89,10 @@ export function IssueConfirmCard({ sessionId, pending, onRespond }: IssueConfirm
 
   const confirmedPublicName =
     selectedIdentity.kind === 'platform' ? normalizeIssuePublicName(publicName) : null;
+  // Countersign: the platform identity submits through Cindy's issue proxy.
+  const platformLocalOnly = LOCAL_ONLY && selectedIdentity.kind === 'platform';
   const canSubmit =
+    !platformLocalOnly &&
     privacyConfirmed &&
     title.trim().length > 0 &&
     body.trim().length > 0 &&
@@ -305,7 +310,9 @@ export function IssueConfirmCard({ sessionId, pending, onRespond }: IssueConfirm
         <p className="mt-1 text-12 leading-snug text-[var(--status-bar-meta)]">
           {selectedIdentity.kind === 'github-user'
             ? t('issueAgent.confirm.identityGithubUserHint')
-            : t('issueAgent.confirm.identityPlatformHint')}
+            : platformLocalOnly
+              ? localOnlyMessage('Issue reporting')
+              : t('issueAgent.confirm.identityPlatformHint')}
         </p>
 
         {selectedIdentity.kind === 'platform' && (

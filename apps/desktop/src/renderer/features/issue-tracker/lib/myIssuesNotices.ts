@@ -9,6 +9,7 @@
  */
 
 import type { MyIssuesResult } from '@/../shared/myIssues';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 
 /**
  * 列表里是否有远端数据。判据用 state —— 账本兜底项一律 `unknown`,任何带真实状态的
@@ -60,6 +61,9 @@ export function canTrustEmptyList(data: MyIssuesResult): boolean {
   );
 }
 
+/** Countersign: rendered as the LocalOnlyError message, not as an i18n key. */
+export const MY_ISSUES_LOCAL_ONLY_NOTICE = 'countersign:local-only:issue-reporting';
+
 export function selectMyIssuesNotices(data: MyIssuesResult): string[] {
   const notices: string[] = [];
 
@@ -69,7 +73,8 @@ export function selectMyIssuesNotices(data: MyIssuesResult): string[] {
   // 未登录:文案讲的是「登录后能看到全部与最新状态」,不含「仅本机」结论,
   // 无论列表里有没有远端内容都成立,所以只有这一条不需要分版本。
   if (data.degraded === 'not-signed-in') {
-    notices.push('issueTracker.mine.notSignedInHint');
+    // Countersign: there is no sign-in; say the platform list is a cloud feature.
+    notices.push(LOCAL_ONLY ? MY_ISSUES_LOCAL_ONLY_NOTICE : 'issueTracker.mine.notSignedInHint');
   }
   if (data.degraded === 'fetch-failed') {
     notices.push(platformNoticeKey(data, 'fetchFailed'));

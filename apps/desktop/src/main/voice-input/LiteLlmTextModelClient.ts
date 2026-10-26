@@ -1,3 +1,4 @@
+import { assertEgressAllowed } from '../countersign/egressPolicy.js';
 import { createHash } from 'node:crypto';
 import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 
@@ -46,6 +47,8 @@ export async function prewarmLiteLlmRefinerEndpoint(baseUrl: string): Promise<vo
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 3_000);
   try {
+    // Countersign: bundled undici is not wrapped by the egress guard.
+    assertEgressAllowed(target);
     const response = await undiciFetch(target, {
       method: 'HEAD',
       signal: controller.signal,
@@ -181,6 +184,7 @@ export class LiteLlmTextModelClient implements TextModelClient {
         const dispatcher = await resolveRefinerDispatcher(target.url, refinerDispatcher);
         this.beforeDispatch?.();
         armIdleTimeout('response headers');
+        assertEgressAllowed(target.url);
         return undiciFetch(target.url, {
           method: 'POST',
           signal: controller.signal,

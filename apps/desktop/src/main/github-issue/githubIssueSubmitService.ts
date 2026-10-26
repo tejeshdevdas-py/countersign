@@ -10,6 +10,7 @@
  * 模块保持 electron-free,全部依赖注入(规则 14),单测直接调 submitGithubIssueWithConfirm。
  */
 
+import { LocalOnlyError } from '@cindy/maker-shared/local-only';
 import type { CindyRegion } from '@cindy/maker-shared/brand-identity';
 
 import { CINDY_REGION_CODE } from '../../shared/regionCode.js';
@@ -333,6 +334,15 @@ function recordSubmission(
  * 用户路径按 issueErrorCode 映射,避免本模块 import 真实网络实现。
  */
 function mapSubmitError(err: unknown): GithubIssueSubmitResult & { ok: false } {
+  // Countersign: the platform route is Cindy's issue proxy. Keep the contract's
+  // error code and put the LocalOnlyError text first so the user sees it.
+  if (err instanceof LocalOnlyError) {
+    return {
+      ok: false,
+      errorCode: 'SERVER_ERROR',
+      message: `${err.message} The issue was not submitted. Tell the user; they can submit it with their own GitHub account instead.`,
+    };
+  }
   const issueErrorCode =
     err && typeof err === 'object' && 'issueErrorCode' in err
       ? (err as { issueErrorCode?: unknown }).issueErrorCode

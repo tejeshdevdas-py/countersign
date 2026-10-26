@@ -4,6 +4,7 @@
  */
 
 import { describe, expect, it, vi } from 'vitest';
+import { LocalOnlyError } from '@cindy/maker-shared/local-only';
 
 import {
   submitGithubIssueWithConfirm,
@@ -598,5 +599,18 @@ describe('submitGithubIssueWithConfirm', () => {
     expect(res).toMatchObject({ ok: false, errorCode: 'AUTH_NOT_READY' });
     expect(postIssue).toHaveBeenCalledTimes(1);
     expect(postIssue.mock.calls[0]![0]).toEqual(identity);
+  });
+});
+
+describe('Countersign: issue proxy switched off', () => {
+  it('a LocalOnlyError from the platform route reaches the user as "not available in Countersign"', async () => {
+    const { deps } = makeDeps({
+      postIssue: vi.fn(async () => Promise.reject(new LocalOnlyError('Issue reporting'))),
+    });
+    const res = await submitGithubIssueWithConfirm(deps, REQ);
+    expect(res).toMatchObject({ ok: false, errorCode: 'SERVER_ERROR' });
+    expect((res as { message: string }).message.startsWith(
+      "Issue reporting is not available in Countersign: it needs Cindy's cloud service.",
+    )).toBe(true);
   });
 });

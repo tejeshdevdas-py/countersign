@@ -280,3 +280,17 @@ describe('IssueTrackerFeatureLayout 内容区分支', () => {
     expect(screen.queryByText('issueTracker.mine.emptyTitle')).toBeNull();
   });
 });
+
+describe('Countersign: platform issue list switched off', () => {
+  it('shows the LocalOnlyError message instead of a sign-in hint, with local records listed', () => {
+    useMyIssuesMock.mockReturnValue(
+      state({ data: result([item({ state: 'unknown' })], { degraded: 'not-signed-in' }) }),
+    );
+    render(<IssueTrackerFeatureLayout />);
+    expect(
+      screen.getByText("Issue reporting is not available in Countersign: it needs Cindy's cloud service."),
+    ).toBeTruthy();
+    expect(screen.queryByText('issueTracker.mine.notSignedInHint')).toBeNull();
+    expect(screen.getByText('已经加载出来的那条 issue')).toBeTruthy();
+  });
+});

@@ -1,87 +1,62 @@
 /**
- * Countersign egress guard: the last line of defence that keeps every request
- * away from upstream's cloud, telemetry and log hosts, whatever code path
- * makes it.
+ * Countersign egress guard: keeps requests away from upstream's cloud,
+ * telemetry and log hosts (`BLOCKED_HOST_SUFFIXES` in egressPolicy.ts).
  *
+ * Covered:
  * - Renderer, webview and partition traffic: `webRequest.onBeforeRequest` on
  *   the default session and on every session the app creates. An app-installed
  *   `onBeforeRequest` listener (Electron allows one per session) is composed
  *   behind the guard instead of replacing it.
- * - Main process: `globalThis.fetch`, Electron `net.request` / `net.fetch` and
- *   Node `http(s).request` / `http(s).get` throw `LocalOnlyError` for a blocked
- *   host.
+ * - Main process, wrapped here: `globalThis.fetch`, Electron `net.request` /
+ *   `net.fetch`, Node `http(s).request` / `http(s).get` (so also `ws`).
+ * - Main process, explicit checks (`assertEgressAllowed`): npm `undici` is
+ *   bundled into the main build, so its functions cannot be patched from
+ *   outside. Every first-party undici call site checks first:
+ *   `maker-host/outbound-fetch.ts` (`outboundFetch`, `outboundUndiciFetch`,
+ *   `guardedOutboundFetch`, and every redirect hop of the proxy path; this is
+ *   the proxy path ~40 callers use), `cindy-brain/mobilePreview.ts`,
+ *   `maker-host/title-one-shot.ts`, `plugin-publisher/putObject.ts`,
+ *   `voice-input/LiteLlmTextModelClient.ts`,
+ *   `voice-input/CodexResponsesTextModelClient.ts`.
  *
- * Not covered: raw sockets (`net.connect`, `tls.connect`), a library that kept
- * its own reference to one of these functions before the guard was installed,
- * and child processes. The endpoint getters fail closed independently.
+ * Not covered: raw sockets (`net.connect`, `tls.connect`); undici or fetch
+ * copies inside workspace packages that call it directly
+ * (`browser-control-runtime` SSRF helpers beyond `guardedOutboundFetch`'s own
+ * check, `opencli-vendor`); a library that kept its own reference to a wrapped
+ * function before the guard was installed; child processes (agent CLIs, git).
+ * The endpoint getters fail closed independently of this guard.
  *
- * `COUNTERSIGN_EGRESS_LOG=<path>` appends one JSON line per outbound host
- * (`{time, host, url, blocked}`); unset means no log.
+ * `COUNTERSIGN_EGRESS_LOG=<path>` writes JSON lines `{time, protocol, host,
+ * blocked}` (no path, query or credentials), at most one line per
+ * protocol+host+blocked state per minute. Unset means no log.
  */
-import fs from 'node:fs';
 import http from 'node:http';
 import https from 'node:https';
 import { syncBuiltinESMExports } from 'node:module';
 
-import { LocalOnlyError } from '@cindy/maker-shared/local-only';
 import { app, net, session } from 'electron';
 
-/** Hosts (and all their subdomains) that Countersign never contacts. */
-export const BLOCKED_HOST_SUFFIXES: readonly string[] = [
-  'cindy.app',
-  'cindy.com.cn',
-  'tapdb.com',
-  'tapapis.com',
-  'log.aliyuncs.com',
-];
+import {
+  blockedError,
+  checkEgressTarget,
+  createFileRecorder,
+  getEgressRecorder,
+  NO_RECORD,
+  setEgressRecorder,
+  targetFromUrl,
+  type EgressRecorder,
+  type EgressTarget,
+} from './egressPolicy.js';
 
-export function isBlockedHost(host: string): boolean {
-  const normalized = host.trim().toLowerCase().replace(/\.+$/, '');
-  if (!normalized) return false;
-  return BLOCKED_HOST_SUFFIXES.some(
-    (suffix) => normalized === suffix || normalized.endsWith(`.${suffix}`),
-  );
-}
-
-export interface EgressEntry {
-  host: string;
-  url: string;
-  blocked: boolean;
-}
-
-export interface EgressRecorder {
-  record(entry: EgressEntry): void;
-}
-
-const NO_RECORD: EgressRecorder = { record: () => {} };
-
-export function createFileRecorder(logFile: string): EgressRecorder {
-  return {
-    record(entry) {
-      const line = JSON.stringify({ time: new Date().toISOString(), ...entry });
-      try {
-        fs.appendFileSync(logFile, `${line}\n`);
-      } catch {
-        // Logging is a diagnostic aid; a full disk must not break requests.
-      }
-    },
-  };
-}
-
-interface Target {
-  host: string;
-  url: string;
-}
-
-function targetFromUrl(raw: string | URL): Target | null {
-  try {
-    const url = raw instanceof URL ? raw : new URL(raw);
-    if (!url.hostname) return null;
-    return { host: url.hostname.replace(/^\[|\]$/g, ''), url: url.href };
-  } catch {
-    return null;
-  }
-}
+export {
+  assertEgressAllowed,
+  BLOCKED_HOST_SUFFIXES,
+  createFileRecorder,
+  EGRESS_LOG_DEDUPE_MS,
+  isBlockedHost,
+  type EgressEntry,
+  type EgressRecorder,
+} from './egressPolicy.js';
 
 function stripPort(host: string): string {
   if (host.startsWith('[')) return host.slice(1, host.indexOf(']'));
@@ -89,13 +64,13 @@ function stripPort(host: string): string {
   return colon > 0 && host.indexOf(':') === colon ? host.slice(0, colon) : host;
 }
 
-/** Host and URL of a `fetch`, `net.request` or `http(s).request` call. */
-export function hostFromRequestArgs(args: readonly unknown[]): Target | null {
+/** Protocol and host of a `fetch`, `net.request` or `http(s).request` call. */
+export function hostFromRequestArgs(args: readonly unknown[]): EgressTarget | null {
   const first = args[0];
   if (typeof first === 'string' || first instanceof URL) return targetFromUrl(first);
   if (typeof Request !== 'undefined' && first instanceof Request) return targetFromUrl(first.url);
   if (first && typeof first === 'object') {
-    const options = first as { url?: unknown; hostname?: unknown; host?: unknown; protocol?: unknown; path?: unknown };
+    const options = first as { url?: unknown; hostname?: unknown; host?: unknown; protocol?: unknown };
     if (typeof options.url === 'string') return targetFromUrl(options.url);
     const rawHost =
       typeof options.hostname === 'string'
@@ -105,31 +80,17 @@ export function hostFromRequestArgs(args: readonly unknown[]): Target | null {
           : null;
     if (!rawHost) return null;
     const protocol = typeof options.protocol === 'string' ? options.protocol : 'https:';
-    const pathPart = typeof options.path === 'string' ? options.path : '/';
-    return { host: rawHost, url: `${protocol}//${rawHost}${pathPart}` };
+    return { protocol, host: rawHost };
   }
   return null;
 }
 
-function blockedError(host: string): LocalOnlyError {
-  return new LocalOnlyError(`Network access to ${host}`);
-}
-
-/** Returns the target when the request must be refused, after recording it. */
-function check(args: readonly unknown[], recorder: EgressRecorder): Target | null {
-  const target = hostFromRequestArgs(args);
-  if (!target) return null;
-  const blocked = isBlockedHost(target.host);
-  recorder.record({ host: target.host, url: target.url, blocked });
-  return blocked ? target : null;
-}
-
 export function guardFetch<F extends (...args: never[]) => Promise<unknown>>(
   original: F,
-  recorder: EgressRecorder = NO_RECORD,
+  recorder?: EgressRecorder,
 ): F {
   const guarded = function (this: unknown, ...args: Parameters<F>) {
-    const refused = check(args, recorder);
+    const refused = checkEgressTarget(hostFromRequestArgs(args), recorder ?? getEgressRecorder());
     if (refused) return Promise.reject(blockedError(refused.host));
     return original.apply(this, args);
   };
@@ -138,10 +99,10 @@ export function guardFetch<F extends (...args: never[]) => Promise<unknown>>(
 
 export function guardRequestFunction<F extends (...args: never[]) => unknown>(
   original: F,
-  recorder: EgressRecorder = NO_RECORD,
+  recorder?: EgressRecorder,
 ): F {
   const guarded = function (this: unknown, ...args: Parameters<F>) {
-    const refused = check(args, recorder);
+    const refused = checkEgressTarget(hostFromRequestArgs(args), recorder ?? getEgressRecorder());
     if (refused) throw blockedError(refused.host);
     return original.apply(this, args);
   };
@@ -160,13 +121,14 @@ function patternToRegExp(pattern: string): RegExp {
   return new RegExp(`^${escaped}$`);
 }
 
+const NETWORK_PROTOCOL = /^(https?|wss?):$/;
 const guardedWebRequests = new WeakSet<object>();
 
 /**
  * Installs the guard on one session's `webRequest` and keeps it in front of
  * any listener the app installs later on the same session.
  */
-export function guardWebRequest(webRequest: WebRequestLike, recorder: EgressRecorder = NO_RECORD): void {
+export function guardWebRequest(webRequest: WebRequestLike, recorder?: EgressRecorder): void {
   if (guardedWebRequests.has(webRequest)) return;
   guardedWebRequests.add(webRequest);
   const original = webRequest.onBeforeRequest.bind(webRequest);
@@ -174,10 +136,8 @@ export function guardWebRequest(webRequest: WebRequestLike, recorder: EgressReco
   const install = (appListener: BeforeRequestListener | null, patterns: RegExp[] | null) => {
     original((details: { url: string }, callback: BeforeRequestCallback) => {
       const target = targetFromUrl(details.url);
-      if (target && /^(https?|wss?):$/.test(new URL(target.url).protocol)) {
-        const blocked = isBlockedHost(target.host);
-        recorder.record({ host: target.host, url: target.url, blocked });
-        if (blocked) {
+      if (target && NETWORK_PROTOCOL.test(target.protocol)) {
+        if (checkEgressTarget(target, recorder ?? getEgressRecorder())) {
           callback({ cancel: true });
           return;
         }
@@ -211,10 +171,10 @@ let installed = false;
 export function installEgressGuard(opts: { logFile: string | null }): void {
   if (installed) return;
   installed = true;
-  const recorder = opts.logFile ? createFileRecorder(opts.logFile) : NO_RECORD;
+  setEgressRecorder(opts.logFile ? createFileRecorder(opts.logFile) : NO_RECORD);
 
   if (typeof globalThis.fetch === 'function') {
-    globalThis.fetch = guardFetch(globalThis.fetch.bind(globalThis), recorder);
+    globalThis.fetch = guardFetch(globalThis.fetch.bind(globalThis));
   }
   const electronNet = net as unknown as Record<string, unknown>;
   for (const name of ['request', 'fetch'] as const) {
@@ -224,8 +184,8 @@ export function installEgressGuard(opts: { logFile: string | null }): void {
     try {
       electronNet[name] =
         name === 'fetch'
-          ? guardFetch(bound as (...args: never[]) => Promise<unknown>, recorder)
-          : guardRequestFunction(bound, recorder);
+          ? guardFetch(bound as (...args: never[]) => Promise<unknown>)
+          : guardRequestFunction(bound);
     } catch {
       // A read-only property stays covered by the session webRequest guard.
     }
@@ -234,7 +194,7 @@ export function installEgressGuard(opts: { logFile: string | null }): void {
     for (const name of ['request', 'get'] as const) {
       const fn = mod[name];
       if (typeof fn === 'function') {
-        mod[name] = guardRequestFunction(fn as (...args: never[]) => unknown, recorder);
+        mod[name] = guardRequestFunction(fn as (...args: never[]) => unknown);
       }
     }
   }
@@ -243,10 +203,10 @@ export function installEgressGuard(opts: { logFile: string | null }): void {
   // Registered before ready, so every session (including the default one)
   // passes through here; the whenReady branch covers a late install.
   app.on('session-created', (created) => {
-    guardWebRequest(created.webRequest as unknown as WebRequestLike, recorder);
+    guardWebRequest(created.webRequest as unknown as WebRequestLike);
   });
   const guardDefault = () => {
-    guardWebRequest(session.defaultSession.webRequest as unknown as WebRequestLike, recorder);
+    guardWebRequest(session.defaultSession.webRequest as unknown as WebRequestLike);
   };
   if (app.isReady()) guardDefault();
   else void app.whenReady().then(guardDefault);

@@ -708,3 +708,25 @@ describe('organization catalog access notice', () => {
     expect(screen.queryByText('settings.ghosts.market.errors.organizationUnavailable')).toBeNull();
   });
 });
+
+describe('Countersign: plugin market switched off', () => {
+  it.each(['not-configured', 'authentication-required'])(
+    'shows the LocalOnlyError message for %s and still lists installed plugins',
+    async (unavailableReason) => {
+      window.electronAPI.pluginMarket.snapshot = async () => ({
+        items: [],
+        unavailableReason,
+        customSourceNames: [],
+        unavailableCustomSourceNames: [],
+      });
+      render(page('/plugins'));
+      expect(
+        await screen.findByText(
+          "Plugin market is not available in Countersign: it needs Cindy's cloud service.",
+        ),
+      ).toBeTruthy();
+      expect(screen.queryByText('settings.ghosts.market.notConfigured')).toBeNull();
+      expect(screen.queryByText('settings.ghosts.market.authenticationRequired')).toBeNull();
+    },
+  );
+});

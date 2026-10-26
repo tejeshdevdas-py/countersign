@@ -4,6 +4,19 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+// Countersign forces LOCAL_ONLY; the upstream cases here exercise the platform
+// (cloud proxy) identity, so the flag is off except in the Countersign case.
+const localOnlyFlag = vi.hoisted(() => ({ value: false }));
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@cindy/maker-shared/local-only')>();
+  return {
+    ...actual,
+    get LOCAL_ONLY() {
+      return localOnlyFlag.value;
+    },
+  };
+});
+
 import { IssueConfirmCard } from '../IssueConfirmCard';
 import { clearIssueConfirmDraftsForSession } from '@/lib/issueConfirmDraftStore';
 import type { PendingIssueConfirm } from '@/lib/makerChatStore';
@@ -389,5 +402,33 @@ describe('IssueConfirmCard submission identity', () => {
     confirmPublicContent();
     fireEvent.click(submit);
     expect(onRespond).toHaveBeenCalledWith(expect.objectContaining({ body: '重新编辑后的正文' }));
+  });
+});
+
+describe('Countersign: platform issue proxy switched off', () => {
+  afterEach(() => {
+    localOnlyFlag.value = false;
+  });
+
+  it('shows the LocalOnlyError message and blocks a platform submission', () => {
+    localOnlyFlag.value = true;
+    const onRespond = vi.fn();
+    render(<IssueConfirmCard sessionId="session-b" pending={platformPending} onRespond={onRespond} />);
+    expect(
+      screen.getByText("Issue reporting is not available in Countersign: it needs Cindy's cloud service."),
+    ).toBeTruthy();
+    confirmPublicContent();
+    const submit = screen.getByRole('button', { name: /issueAgent\.confirm\.submit/ }) as HTMLButtonElement;
+    expect(submit.disabled).toBe(true);
+    fireEvent.click(submit);
+    expect(onRespond).not.toHaveBeenCalled();
+  });
+
+  it('a GitHub-account submission stays available', () => {
+    localOnlyFlag.value = true;
+    render(<IssueConfirmCard sessionId="session-b" pending={legacyGithubPending} onRespond={vi.fn()} />);
+    expect(
+      screen.queryByText("Issue reporting is not available in Countersign: it needs Cindy's cloud service."),
+    ).toBeNull();
   });
 });

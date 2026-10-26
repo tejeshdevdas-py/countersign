@@ -672,3 +672,26 @@ describe('MobileDownloadDialog', () => {
     expect(images[0]?.getAttribute('alt')).toBe('sidebar.mobileDownload.qrAlt');
   });
 });
+
+describe('Countersign: no website endpoint', () => {
+  it('shows the LocalOnlyError message instead of a QR code or spinner', async () => {
+    window.electronAPI.clientEndpoints.websiteUrl = '';
+    render(
+      <MobileDownloadDialog
+        open
+        onOpenChange={vi.fn()}
+        remoteAvailable={false}
+        onOpenRemoteSettings={vi.fn()}
+        onOpenDevices={vi.fn()}
+        triggerRef={detachedTriggerRef}
+      />,
+    );
+    expect(
+      await screen.findByText(
+        "Mobile app download is not available in Countersign: it needs Cindy's cloud service.",
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText('sidebar.mobileDownload.preparing')).toBeNull();
+    expect(toDataURL).not.toHaveBeenCalled();
+  });
+});
