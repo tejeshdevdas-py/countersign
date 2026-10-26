@@ -36,6 +36,12 @@ const mocks = vi.hoisted(() => ({
   },
 }));
 
+// Countersign forces local mode; this upstream test exercises the cloud-capable path.
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     // 带 id 插值的 key(copyUserId.display)拼上实际值,便于断言 ID 真的渲染了出来。

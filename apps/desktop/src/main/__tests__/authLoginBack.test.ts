@@ -4,6 +4,7 @@ import { AuthApiError, reduceAuthFlow, type ProviderConfig } from '@cindy/auth-c
 import { describe, expect, it, vi } from 'vitest';
 import { loginPreparingErrorState, parseDesktopLoginAction } from '../../shared/authIpc';
 
+
 // Exercise production flow functions without initializing Electron or credentials.
 const source = readFileSync(new URL('../authManager.ts', import.meta.url), 'utf8');
 function functionSource(start: string, end: string): string {
@@ -35,6 +36,9 @@ function setup({ cached = false, sealed = false, credentialStoreUnavailable = fa
   const getProviders = vi.fn<() => Promise<ProviderConfig>>();
   const cancelActive = vi.fn();
   const deps = {
+    // Countersign gates cloud sign-in on LOCAL_ONLY; these tests exercise the gated flow.
+    LOCAL_ONLY: false,
+    LocalOnlyError: Error,
     AuthApiError,
     reduceAuthFlow,
     parseDesktopLoginAction,

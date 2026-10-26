@@ -14,6 +14,7 @@
     "./auto-review-intent": "./src/autoReviewIntent.ts",
     "./agent-task": "./src/agentTask.ts",
     "./branding": "./src/branding.ts",
+    "./local-only": "./src/localOnly.ts",
     "./brand-identity": "./src/brandIdentity.ts",
     "./chat-quotes": "./src/chatQuotes.ts",
     "./chat-history": "./src/chatHistory.ts",

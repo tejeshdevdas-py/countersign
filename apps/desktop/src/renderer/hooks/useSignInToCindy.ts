@@ -11,6 +11,7 @@
  * 本地模式可找回)。
  */
 
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -21,6 +22,8 @@ export function useSignInToCindy(): () => Promise<void> {
   const navigate = useNavigate();
 
   return useCallback(async () => {
+    // Countersign has no cloud sign-in: the action does nothing.
+    if (LOCAL_ONLY) return;
     if (mode === 'local') {
       try {
         await exitLocalMode();

@@ -17,6 +17,12 @@ const mocks = vi.hoisted(() => {
   };
 });
 
+// Countersign forces local mode; this upstream test exercises the cloud-capable path.
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
+
 vi.mock('electron', () => ({
   app: { getPath: mocks.appGetPath },
   BrowserWindow: { getAllWindows: vi.fn(() => [mocks.window]) },

@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import { cleanup, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -55,7 +56,7 @@ describe('ProtectedRoute', () => {
     expect(screen.queryByTestId('login-page')).toBeNull();
   });
 
-  it('leaves the shell during a real owner-change window', () => {
+  it.skipIf(LOCAL_ONLY)('leaves the shell during a real owner-change window', () => {
     authState.current = {
       mode: 'cloud',
       isInitializing: false,
@@ -67,7 +68,7 @@ describe('ProtectedRoute', () => {
     expect(screen.queryByTestId('app-shell')).toBeNull();
   });
 
-  it('sends a real signed-out session to login', () => {
+  it.skipIf(LOCAL_ONLY)('sends a real signed-out session to login', () => {
     authState.current = {
       mode: 'signed-out',
       isInitializing: false,
@@ -88,5 +89,17 @@ describe('ProtectedRoute', () => {
     };
     renderAt('/');
     expect(screen.getByTestId('app-shell')).toBeTruthy();
+  });
+
+  it('never redirects to login in Countersign, even when entry is denied', () => {
+    authState.current = {
+      mode: 'signed-out',
+      isInitializing: false,
+      dataOwnerId: null,
+      canEnterApp: false,
+    };
+    renderAt('/');
+    expect(screen.getByTestId('app-shell')).toBeTruthy();
+    expect(screen.queryByTestId('login-page')).toBeNull();
   });
 });

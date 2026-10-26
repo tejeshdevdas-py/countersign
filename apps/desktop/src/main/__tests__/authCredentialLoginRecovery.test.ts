@@ -5,6 +5,7 @@ import { AuthApiError as ClientAuthApiError } from '@cindy/auth-client';
 import { loginPreparingErrorState } from '../../shared/authIpc';
 import { mapLoginProvidersLoadFailure } from '../authStartupGate';
 
+
 // Execute the production login action and eligibility predicate without loading
 // Electron or opening a real credential store (same boundary as the wiring tests).
 const source = readFileSync(new URL('../authManager.ts', import.meta.url), 'utf8');
@@ -35,6 +36,9 @@ function setup({
   const previous = { step: 'verification-code', kind: 'email', identifier: 'user@example.invalid' };
   const backend = { available: !backendUnavailable };
   const deps = {
+    // Countersign gates cloud sign-in on LOCAL_ONLY; these tests exercise the gated flow.
+    LOCAL_ONLY: false,
+    LocalOnlyError: Error,
     AuthApiError,
     loginPreparingErrorState,
     createAuthClient: () => ({ verifyCode: vi.fn(async () => ({ status: 'ok' })) }),
@@ -113,6 +117,8 @@ describe('credential failure during fresh sign-in', () => {
       )
       .mockResolvedValue({ step: 'identifier', providers: {} });
     const deps = {
+      LOCAL_ONLY: false,
+      LocalOnlyError: Error,
       loadLoginProviders,
       mapLoginProvidersLoadFailure,
       isOwnerChangeShellPending: () => false,

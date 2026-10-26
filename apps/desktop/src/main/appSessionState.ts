@@ -10,6 +10,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
+
 import { createLogger } from './logger.js';
 import { createOverrideSettingsFile } from './maker-host/override-settings-file.js';
 import { LOCAL_PROFILE_DATA_OWNER_ID } from './profile/profileRegistryModel.js';
@@ -108,7 +110,12 @@ function ensureLoaded(): ActiveAppSession {
   const persistedMode = store.read().activeMode;
   // Cloud is only an intent at process start. It becomes an active session
   // after auth verifies the persisted refresh token and supplies its owner.
-  const initialMode: AppSessionMode = persistedMode === 'local' ? 'local' : 'signed-out';
+  // Countersign is local-only: any persisted choice (including cloud) is ignored.
+  const initialMode: AppSessionMode = LOCAL_ONLY
+    ? 'local'
+    : persistedMode === 'local'
+      ? 'local'
+      : 'signed-out';
   active = {
     mode: initialMode,
     dataOwnerId: initialMode === 'local' ? LOCAL_DATA_OWNER_ID : null,

@@ -28,6 +28,12 @@ const { providersState, authState, regionState, detectState, exitLocalModeMock }
 );
 
 // 与 hook 内 `../../shared/brandRegion` 解析到同一模块(都落 src/shared/)。
+// Countersign forces local mode; this upstream test exercises the cloud-capable path.
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
+
 vi.mock('../../shared/brandRegion', () => ({
   get CURRENT_CINDY_REGION() {
     return regionState.value;

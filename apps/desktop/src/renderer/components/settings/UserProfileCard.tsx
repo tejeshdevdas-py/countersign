@@ -1,3 +1,4 @@
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import { Button } from '@/components/ui/button';
 import { useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -59,6 +60,7 @@ export function UserProfileCard() {
   }, [orgLogoUrl]);
 
   const handleLocalSignIn = async () => {
+    if (LOCAL_ONLY) return;
     try {
       await exitLocalMode();
     } catch {
@@ -90,17 +92,19 @@ export function UserProfileCard() {
             {t('settings.userProfile.local.description')}
           </p>
         </div>
-        <div className="flex shrink-0 items-center">
-          <Button
-            variant="secondary"
-            size="sm"
-            compact
-            type="button"
-            onClick={() => void handleLocalSignIn()}
-          >
-            {t('settings.userProfile.local.signIn')}
-          </Button>
-        </div>
+        {!LOCAL_ONLY && (
+          <div className="flex shrink-0 items-center">
+            <Button
+              variant="secondary"
+              size="sm"
+              compact
+              type="button"
+              onClick={() => void handleLocalSignIn()}
+            >
+              {t('settings.userProfile.local.signIn')}
+            </Button>
+          </div>
+        )}
       </div>
     );
   }

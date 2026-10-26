@@ -49,6 +49,7 @@ import { readReloginFlag, clearReloginFlag, enableUncustomizedBetaChannel } from
 import { probeBetaManifest } from './manifestService';
 import { isEnableBetaUserCustomized, readUpdateChannelSettings } from './updateChannelStore';
 import { BRAND_IDENTITY } from '@cindy/maker-shared/brand-identity';
+import { LOCAL_ONLY, LocalOnlyError } from '@cindy/maker-shared/local-only';
 import * as canaryFlagStore from './canaryFlagStore';
 import { decodeAccessTokenOrgSlug } from './authTokenClaims';
 import { AuthRefreshBackoff } from './authRefreshBackoff';
@@ -4036,6 +4037,7 @@ export async function switchSavedAccount(
     validateBeforeCommit?: (loginEpoch: number) => void;
   } = {},
 ): Promise<void> {
+  if (LOCAL_ONLY) throw new LocalOnlyError('Sign-in');
   const switchLoginFlowEpoch = loginFlowEpoch;
   const parsedKey = parseDesktopAccountKey(rawAccountKey);
   if (!parsedKey) throw new AuthApiError('INVALID_AUTH_ACTION', 400, 'Invalid account key');
@@ -4140,6 +4142,7 @@ export async function switchSavedAccount(
 }
 
 export async function beginAddAccountLogin(): Promise<DesktopLoginActionResult> {
+  if (LOCAL_ONLY) throw new LocalOnlyError('Sign-in');
   if (isPassiveSharedUserDataInstance()) {
     throw new AuthApiError(
       'PASSIVE_AUTH_MUTATION_BLOCKED',
@@ -4211,6 +4214,7 @@ export async function enterLocalMode(): Promise<AuthState> {
 
 /** Leave local mode without deleting its owner-scoped data. */
 export async function exitLocalMode(): Promise<AuthState> {
+  if (LOCAL_ONLY) throw new LocalOnlyError('Sign-in');
   if (getActiveAppSession().mode !== 'local') return snapshotAuthState();
   await withAccountFreeOwnerCommit({
     reason: 'exit-local-mode',
@@ -5146,6 +5150,7 @@ async function lookupOrganizationRealm(org: string, expectedLoginFlowEpoch: numb
 }
 
 export async function getLoginState(): Promise<DesktopLoginActionResult> {
+  if (LOCAL_ONLY) throw new LocalOnlyError('Sign-in');
   // A logout publishes the signed-out shell before its owner transition has
   // finished. Start provider discovery only after that transition settles so
   // this request captures the post-logout login epoch instead of reporting a
@@ -5788,6 +5793,7 @@ async function runLoginAction(
 }
 
 export async function dispatchLoginAction(action: unknown): Promise<DesktopLoginActionResult> {
+  if (LOCAL_ONLY) throw new LocalOnlyError('Sign-in');
   const dispatchLoginFlowEpoch = loginFlowEpoch;
   // Terminal logout clears credentials synchronously, then tears down the old
   // account boundary in the background so the rejecting request can unwind.

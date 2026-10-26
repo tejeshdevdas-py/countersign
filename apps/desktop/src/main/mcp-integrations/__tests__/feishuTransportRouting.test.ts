@@ -6,6 +6,12 @@ import type { FeishuToolTransport } from '../../im/shared/channelToolScope.js';
 import { createFeishuTransportResolver } from '../feishuTransportRouting.js';
 import { beginAppSessionBoundary, commitVolatileAppSession } from '../../appSessionState.js';
 
+// Countersign forces local mode; this upstream test exercises the cloud-capable path.
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
+
 vi.mock('../../logger.js', () => ({ createLogger: () => ({ info: vi.fn() }) }));
 vi.mock('../../maker-host/override-settings-file.js', () => ({
   createOverrideSettingsFile: () => ({ read: () => ({ activeMode: 'signed-out' }) }),
