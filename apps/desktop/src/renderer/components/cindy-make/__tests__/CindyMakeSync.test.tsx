@@ -2,6 +2,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createInstance } from 'i18next';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { I18nextProvider } from 'react-i18next';
 import { MemoryRouter } from 'react-router-dom';
 import zhCN from '@/i18n/locales/zh-CN/common.json';
@@ -27,7 +28,7 @@ async function show(
   await i18n.init({
     lng: locale,
     fallbackLng: false,
-    interpolation: { escapeValue: false },
+    interpolation: { escapeValue: false, defaultVariables: { appName: BRAND_NAME } },
     resources: { [locale]: { translation: locales[locale] } },
   });
   return render(
@@ -110,9 +111,7 @@ describe('Sync status line', () => {
     const onGenerate = vi.fn();
     await show({ done: { at: 1, ref: 'v1.2.0' } }, 'zh-CN', { needsGenerate: true, onGenerate });
     expect(screen.getByText(zhCN.cindyMake.sync.needsGenerate)).toBeTruthy();
-    fireEvent.click(
-      screen.getByRole('button', { name: zhCN.cindyMake.history.generatePersonal }),
-    );
+    fireEvent.click(screen.getByRole('button', { name: zhCN.cindyMake.history.generatePersonal }));
     expect(onGenerate).toHaveBeenCalledOnce();
   });
 
@@ -136,7 +135,9 @@ describe('Sync status line', () => {
   it('explains a personal version already ahead of this computer’s Cindy', async () => {
     const { container } = await show({ done: { at: 1, ahead: true } });
     expect(container.textContent).toContain(zhCN.cindyMake.sync.doneCurrent);
-    expect(container.textContent).toContain(zhCN.cindyMake.sync.ahead);
+    expect(container.textContent).toContain(
+      zhCN.cindyMake.sync.ahead.replaceAll('{{appName}}', BRAND_NAME),
+    );
   });
 
   it.each(Object.keys(locales) as (keyof typeof locales)[])(

@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { describe, expect, it } from 'vitest';
 
 import { parseLegalSegments } from '../LoginControls';
@@ -66,14 +67,17 @@ describe('区域确认文案排版预算(标准 26/40，最多 3 行)', () => {
       bodyCn: string;
       bodyGlobal: string;
     };
-    for (const body of [realmConsent.bodyCn, realmConsent.bodyGlobal]) {
+    for (const rawBody of [realmConsent.bodyCn, realmConsent.bodyGlobal]) {
+      // {{appName}} is filled with the product name at render time; measure the real text.
+      const body = rawBody.replaceAll('{{appName}}', BRAND_NAME);
       const lines = body.split('\n');
       expect(lines, `${locale}: ${body}`).toHaveLength(2);
-      for (const line of lines) {
-        expect(estimatedUnits(line), `${locale}: ${line}`).toBeLessThanOrEqual(
-          maxEstimatedUnits / 3,
-        );
-      }
+      // The longer product name may wrap a line once; the 3-line cap still has to hold.
+      const rows = lines.reduce(
+        (sum, line) => sum + Math.ceil(estimatedUnits(line) / (maxEstimatedUnits / 3)),
+        0,
+      );
+      expect(rows, `${locale}: ${body}`).toBeLessThanOrEqual(3);
     }
   });
 });

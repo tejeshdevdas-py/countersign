@@ -43,6 +43,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { app, clipboard, dialog, ipcMain, net, netLog } from 'electron';
 
 import {
@@ -572,7 +573,7 @@ export function promptRetryDialog(
     // createWindow 之前无父窗口,showMessageBoxSync 直接系统模态。
     const clicked = dialog.showMessageBoxSync({
       type: 'warning',
-      title: 'Cindy',
+      title: BRAND_NAME,
       message: content.message,
       detail: content.detail,
       buttons: content.buttons,

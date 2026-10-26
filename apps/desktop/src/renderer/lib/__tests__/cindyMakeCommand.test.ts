@@ -175,11 +175,11 @@ describe('native environment-check entry', () => {
   );
 
   it.each([
-    ['en', 'Cindy Make · Environment'],
-    ['zh-CN', 'Cindy Make · 环境检查'],
-    ['zh-TW', 'Cindy Make · 環境檢查'],
-    ['ja', 'Cindy Make · 環境チェック'],
-    ['ko', 'Cindy Make · 환경 검사'],
+    ['en', 'Countersign Make · Environment'],
+    ['zh-CN', 'Countersign Make · 环境检查'],
+    ['zh-TW', 'Countersign Make · 環境檢查'],
+    ['ja', 'Countersign Make · 環境チェック'],
+    ['ko', 'Countersign Make · 환경 검사'],
   ])('uses the selected language for a new Doctor title, keeping Cindy Make fixed: %s', async (locale, title) => {
     await i18n.changeLanguage(locale);
     await tryStartCindyMakeCommand(input({ text: '/cindy-make-doctor', sessionId: undefined }));

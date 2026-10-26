@@ -785,7 +785,7 @@ describe('notificationService — channels 分发', () => {
     // 文案断言 — 锁住对外可见的飞书消息格式,后续如要改文案需主动调整测试。
     expect(feishuIm.sendMarkdownText).toHaveBeenCalledWith(
       'ou_owner',
-      'Cindy · 任务「Hello」需要你回复',
+      'Countersign · 任务「Hello」需要你回复',
     );
   });
 
@@ -805,7 +805,7 @@ describe('notificationService — channels 分发', () => {
     expect(feishuIm.sendMarkdownText).toHaveBeenCalledTimes(1);
     expect(feishuIm.sendMarkdownText).toHaveBeenCalledWith(
       'ou_owner',
-      'Cindy · 任务「Hello」已完成 ✓',
+      'Countersign · 任务「Hello」已完成 ✓',
     );
     expect(feishuIm.sendText).not.toHaveBeenCalled();
   });
@@ -905,7 +905,7 @@ describe('notificationService — channels 分发', () => {
     );
     expect(feishuIm.sendMarkdownText).toHaveBeenCalledWith(
       'ou_owner',
-      'Cindy · 任务「Broken model」执行失败',
+      'Countersign · 任务「Broken model」执行失败',
     );
   });
 
@@ -931,7 +931,7 @@ describe('notificationService — channels 分发', () => {
     );
     expect(feishuIm.sendMarkdownText).toHaveBeenCalledWith(
       'ou_owner',
-      'Cindy · 任務「整理報告」需要你回覆',
+      'Countersign · 任務「整理報告」需要你回覆',
     );
 
     notificationCtor.mockClear();

@@ -7,6 +7,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { createComputerMcpServer } from '@cindy/mcps/computer';
 import { cleanupComputerDriverSession, getComputerMcpDeps } from '../mcp-integrations/computer.js';
 import { createLogger } from '../logger.js';
@@ -52,7 +53,7 @@ export async function runComputerUseSmokeIfRequested(): Promise<void> {
       width: 680,
       height: 440,
       show: false,
-      title: 'Cindy Computer Use Smoke',
+      title: `${BRAND_NAME} Computer Use Smoke`,
       webPreferences: {
         partition: sessionId,
         sandbox: true,

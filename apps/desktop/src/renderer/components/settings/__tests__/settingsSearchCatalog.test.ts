@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createInstance, type TFunction } from 'i18next';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { TAB_IDS, TAB_LABEL_KEY } from '@/lib/tabLabels';
 
 import {
@@ -142,6 +143,7 @@ describe('settings search catalog', () => {
         lng: language,
         resources: { [language]: { translation } },
         fallbackLng: false,
+        interpolation: { defaultVariables: { appName: BRAND_NAME } },
       });
       for (const entry of SETTINGS_SEARCH_ENTRIES) {
         for (const key of [

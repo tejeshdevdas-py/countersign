@@ -96,11 +96,11 @@ it.each([
   [{ online: false }, 'This computer is offline.'],
   [
     { remoteControlEnabled: false },
-    i18n.getResource('en', 'common', 'remoteDesktop.remoteDisabled'),
+    i18n.t('remoteDesktop.remoteDisabled'),
   ],
   [
     { controlEnabled: false },
-    i18n.getResource('en', 'common', 'remoteDesktop.shortcut.controlDisabled'),
+    i18n.t('remoteDesktop.shortcut.controlDisabled'),
   ],
 ] satisfies [Partial<DeviceLinkDeviceView>, string][])(
   'greys out with the reason, without probing, when the computer cannot be remoted now: %j',

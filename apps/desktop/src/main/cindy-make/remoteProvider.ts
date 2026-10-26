@@ -1,3 +1,4 @@
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import type { RemoteResourceProvider } from '../device-link/remoteResourceRegistry.js';
 import { RemoteResourceRegistryError } from '../device-link/remoteResourceRegistry.js';
 import {
@@ -24,7 +25,7 @@ export function createMakeRemoteProvider(deps: MakeRemoteProviderDeps): RemoteRe
     collection: {
       id: MAKE_REMOTE_COLLECTION,
       resourceKind: 'session',
-      title: 'Cindy Make',
+      title: `${BRAND_NAME} Make`,
       placement: 'session:cindy-make',
     },
     async list() {
