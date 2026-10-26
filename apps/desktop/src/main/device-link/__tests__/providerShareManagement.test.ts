@@ -1,4 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+// Countersign forces LOCAL_ONLY; this upstream test exercises the cloud-service path.
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
 import { ipcMain } from 'electron';
 
 import type { ProviderShareManagementCommand } from '../../../shared/providerManagement';

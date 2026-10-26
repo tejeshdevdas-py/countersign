@@ -11,6 +11,12 @@ import os from 'node:os';
 import path from 'node:path';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
+
+// Countersign forces LOCAL_ONLY; this upstream test exercises the cloud-service path.
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
 import { ipcMain } from 'electron';
 import {
   providerShareGuestPeer,

@@ -1,6 +1,12 @@
 import fs from 'node:fs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// Countersign forces LOCAL_ONLY; this upstream test exercises the cloud-service path.
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
+
 const TEST_ROOT = '/tmp/xdt-publish-service-test';
 const authState = vi.hoisted(() => ({
   ownerId: 'user-1' as string | null,

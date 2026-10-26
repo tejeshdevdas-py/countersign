@@ -10,6 +10,8 @@ import { Tip } from '@/components/ui/tooltip';
 import { compareDevicesByName } from '@/features/device-link/deviceSort';
 import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
+import { localOnlyMessage } from '@/lib/countersignLocalOnly';
 
 interface MobileDownloadDialogProps {
   open: boolean;
@@ -466,7 +468,9 @@ export function MobileDownloadDialog({
                     <span className="flex max-w-[160px] flex-col items-center gap-2 text-center text-[var(--error-fg-strong)]">
                       <QrCode className="h-6 w-6" aria-hidden="true" />
                       <span className="text-12 leading-[1.5]">
-                        {t('sidebar.mobileDownload.error')}
+                        {LOCAL_ONLY && !downloadUrl
+                          ? localOnlyMessage('Mobile app download')
+                          : t('sidebar.mobileDownload.error')}
                       </span>
                     </span>
                   ) : (

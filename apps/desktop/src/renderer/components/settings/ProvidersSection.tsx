@@ -58,6 +58,8 @@ import { Switch } from '@/components/ui/switch';
 import { Tip } from '@/components/ui/tooltip';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog-provider';
 import { useSignInToCindy } from '@/hooks/useSignInToCindy';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
+import { localOnlyMessage } from '@/lib/countersignLocalOnly';
 import { useProviderOAuthDeviceCode } from '@/hooks/useProviderOAuthDeviceCode';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/lib/toast';
@@ -3320,8 +3322,12 @@ export function ProvidersSection() {
                   className="mt-3 max-w-[380px] text-14 leading-[1.5]"
                   style={{ color: 'var(--text-secondary)' }}
                 >
-                  {t('settings.providers.xdSignin.desc')}
+                  {LOCAL_ONLY
+                    ? localOnlyMessage('Cindy model service')
+                    : t('settings.providers.xdSignin.desc')}
                 </span>
+                {/* Countersign: no cloud sign-in, so no balance badge or sign-in CTA. */}
+                {LOCAL_ONLY ? null : <>
                 {/* 赠送余额是一个安静的事实标签,不是促销文案:灰阶 chip、不写金额
                     (CN / Global 金额不同且服务端可调,数字只在计费页出现)。 */}
                 <span
@@ -3340,6 +3346,7 @@ export function ProvidersSection() {
                   label={t('settings.providers.xdSignin.cta')}
                   onClick={() => void signInToCindy()}
                 />
+                </>}
               </div>
             ) : effectiveSelected ? (
               renderDetailHeader(

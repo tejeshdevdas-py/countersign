@@ -8,6 +8,8 @@ import os from 'node:os';
 import { setDefaultAutoSelectFamilyAttemptTimeout } from 'node:net';
 import { exit, stderr } from 'node:process';
 import { BRAND_IDENTITY } from '@cindy/maker-shared/brand-identity';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
+import { installEgressGuard } from './countersign/egressGuard.js';
 import { refreshBrowserRuntimeConfigDir } from '@cindy/browser-control-runtime/config-dir';
 import { CURRENT_CINDY_REGION } from '../shared/brandRegion.js';
 import { resolveRegionUserDataDirName } from './regionUserData.js';
@@ -55,6 +57,14 @@ prepareCindyVersionStartup();
 setDefaultAutoSelectFamilyAttemptTimeout(2500);
 
 initLogger();
+
+// Countersign: block upstream cloud, telemetry and log hosts before anything
+// else in the main process can reach the network: before the bootstrap module
+// graph (and initClientEndpoints) loads and before any session exists.
+if (LOCAL_ONLY) {
+  installEgressGuard({ logFile: process.env.COUNTERSIGN_EGRESS_LOG?.trim() || null });
+}
+
 const log = createLogger('fix-path');
 log.debug(`[fix-path] before PATH=${process.env.PATH ?? ''}`);
 fixPath();

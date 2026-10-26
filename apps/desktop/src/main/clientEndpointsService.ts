@@ -44,6 +44,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { BRAND_NAME } from '@cindy/maker-shared/branding';
+import { LOCAL_ONLY, LocalOnlyError } from '@cindy/maker-shared/local-only';
 import { app, clipboard, dialog, ipcMain, net, netLog } from 'electron';
 
 import {
@@ -134,7 +135,11 @@ export const CLIENT_ENDPOINTS_SYNC_CHANNEL = 'client-endpoints:get-sync';
 
 // ── 清单来源解析(纯函数,规则 14:内存 harness 可测) ─────────────────────
 
-export type EndpointSource = { kind: 'cdn' } | { kind: 'file'; filePath: string };
+export type EndpointSource =
+  | { kind: 'cdn' }
+  | { kind: 'file'; filePath: string }
+  // Countersign: no manifest is read or fetched; every endpoint getter throws.
+  | { kind: 'disabled' };
 
 export interface ResolveEndpointSourceInput {
   isPackaged: boolean;
@@ -154,6 +159,7 @@ export interface ResolveEndpointSourceInput {
  * XDT_ENDPOINTS_CDN='1' 切回完整 CDN 链路。
  */
 export function resolveEndpointSource(input: ResolveEndpointSourceInput): EndpointSource {
+  if (LOCAL_ONLY) return { kind: 'disabled' };
   if (input.isPackaged) return { kind: 'cdn' };
   if (input.env.XDT_ENDPOINTS_CDN === '1') return { kind: 'cdn' };
   const override = input.env.XDT_ENDPOINT_MANIFEST_FILE?.trim();
@@ -615,6 +621,37 @@ const BUILD_SCOPED_ENDPOINT_KEYS = new Set<ClientEndpointKey>([
   'mobileUpdateBaseUrl',
 ]);
 
+/**
+ * Countersign: user-facing feature name for each cloud endpoint. Every getter
+ * throws `LocalOnlyError(<feature>)` when `LOCAL_ONLY`, so the caller's error
+ * path shows which feature is unavailable.
+ */
+export const COUNTERSIGN_ENDPOINT_FEATURES: Readonly<Record<ClientEndpointKey, string>> = {
+  authApiBaseUrl: 'Cindy account',
+  authDesktopCallbackUrl: 'Cindy account',
+  chatApiBaseUrl: 'Cloud chat',
+  deviceLinkApiBaseUrl: 'Phone link and sharing',
+  oauthBrokerApiBaseUrl: 'Cloud app connections',
+  ossApiBaseUrl: 'Cloud file upload',
+  heartbeatUrl: 'Usage heartbeat',
+  telegramHookWsUrl: 'Telegram bridge',
+  xHookWsUrl: 'X bridge',
+  slackHookWsUrl: 'Slack bridge',
+  websiteUrl: 'Cindy website',
+  modelAccessApiBaseUrl: 'Cindy model service',
+  voiceApiBaseUrl: 'Cloud voice',
+  githubApiBaseUrl: 'Issue reporting',
+  skillhubApiBaseUrl: 'Skill Hub',
+  cindySkillHubApiBaseUrl: 'Skill Hub',
+  pluginApiBaseUrl: 'Plugin market',
+  cdnBaseUrl: 'Cloud downloads and updates',
+  mobileUpdateBaseUrl: 'Mobile app download',
+};
+
+function localOnlyEndpointError(key: ClientEndpointKey): LocalOnlyError {
+  return new LocalOnlyError(COUNTERSIGN_ENDPOINT_FEATURES[key] ?? 'Cloud service');
+}
+
 /** 弹框语言:跟随系统语言偏好列表,与原生菜单栏同一套解析。 */
 function resolveDialogLocale(): EndpointManifestDialogLocale {
   const langs = app.getPreferredSystemLanguages();
@@ -992,6 +1029,12 @@ function getLogDirSafe(): string | null {
  * 错误框选择退出(app.exit 已调用,调用方必须立即 return,不再继续启动流程)。
  */
 export async function initClientEndpoints(): Promise<boolean> {
+  // Countersign: no manifest, no network, no retry dialog. Endpoints stay
+  // unresolved and every getter throws LocalOnlyError.
+  if (LOCAL_ONLY) {
+    log.info('endpoint discovery disabled (Countersign is local-only)');
+    return true;
+  }
   // A verified Make profile carries the original Dev's public service configuration.
   // Ordinary packaged apps still use CDN; ambient file/env overrides cannot enable this path.
   const versionSnapshot = getCindyVersionEndpointOverride();
@@ -1006,6 +1049,7 @@ export async function initClientEndpoints(): Promise<boolean> {
         // dev 下 app.getAppPath() = apps/desktop;packaged 不走 file 分支,该值无消费。
         repoRoot: path.resolve(app.getAppPath(), '..', '..'),
       });
+  if (source.kind === 'disabled') return true;
   const manifestUrl = `${ENDPOINT_MANIFEST_BASE_URL}/${MANIFEST_FILE_NAME}`;
   const sourceLabel = source.kind === 'cdn' ? manifestUrl : source.filePath;
   const dialogLocale = resolveDialogLocale();
@@ -1125,6 +1169,7 @@ export function isUsingCachedClientEndpoints(): boolean {
  * 炸出来(随包兜底也必须先经过启动解析;--smoke-test 旁路不消费端点)。
  */
 export function getClientEndpoint(key: ClientEndpointKey): string {
+  if (LOCAL_ONLY) throw localOnlyEndpointError(key);
   if (resolvedEndpoints === null) {
     throw new Error(
       `client endpoints not initialized (getClientEndpoint('${key}') called before initClientEndpoints)`,
@@ -1142,6 +1187,7 @@ export function getClientEndpoint(key: ClientEndpointKey): string {
 
 /** 安装包身份/更新链始终读取启动时清单，不随组织会话区域切换。 */
 export function getBuildClientEndpoint(key: ClientEndpointKey): string {
+  if (LOCAL_ONLY) throw localOnlyEndpointError(key);
   if (resolvedEndpoints === null) {
     throw new Error('client endpoints not initialized');
   }
@@ -1153,6 +1199,7 @@ export function getClientEndpointRealmConfig(): {
   crossRealmOrgLoginEnabled: boolean;
   realmManifestBaseUrls: RealmManifestBaseUrls;
 } {
+  if (LOCAL_ONLY) throw new LocalOnlyError('Cindy account');
   if (resolvedEndpoints === null) {
     throw new Error('client endpoints not initialized');
   }
@@ -1171,6 +1218,7 @@ export function getClientEndpointRealmConfig(): {
 export async function loadClientEndpointsForRealm(
   region: ClientEndpointRegion,
 ): Promise<ClientEndpointMap> {
+  if (LOCAL_ONLY) throw new LocalOnlyError('Cindy account');
   const cached = realmEndpointCache.get(region);
   if (cached) return cached;
   const baseUrl = realmManifestBaseUrls[region];
@@ -1193,6 +1241,7 @@ export function getClientEndpointForRealm(
   region: ClientEndpointRegion,
   key: ClientEndpointKey,
 ): string {
+  if (LOCAL_ONLY) throw localOnlyEndpointError(key);
   if (BUILD_SCOPED_ENDPOINT_KEYS.has(key)) return getBuildClientEndpoint(key);
   const endpoints = realmEndpointCache.get(region);
   if (!endpoints) {
@@ -1213,6 +1262,7 @@ export function resetClientEndpointRealm(): void {
 }
 
 export function getResolvedClientEndpoints(): ClientEndpointMap {
+  if (LOCAL_ONLY) throw new LocalOnlyError('Cloud services');
   if (resolvedEndpoints === null) {
     throw new Error('client endpoints not initialized');
   }
@@ -1222,6 +1272,12 @@ export function getResolvedClientEndpoints(): ClientEndpointMap {
 /** renderer 首帧同步读取(preload 模块级 sendSync);必须在 createWindow() 前注册。 */
 export function registerClientEndpointsIpc(): void {
   ipcMain.on(CLIENT_ENDPOINTS_SYNC_CHANNEL, (event) => {
+    // Countersign: preload reads only websiteUrl; an empty string means "no
+    // website" to every renderer consumer, and the preload never sees a throw.
+    if (LOCAL_ONLY) {
+      event.returnValue = { websiteUrl: '' };
+      return;
+    }
     event.returnValue = getResolvedClientEndpoints();
   });
 }

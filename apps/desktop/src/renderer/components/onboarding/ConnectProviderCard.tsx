@@ -27,6 +27,7 @@ import { hasProviderLogo, ProviderLogoMark } from '@/components/icons/ProviderLo
 import { providerMonogram } from '@/lib/providerModels';
 import { useProviderOnboarding } from '@/hooks/useProviderOnboarding';
 import { useSignInToCindy } from '@/hooks/useSignInToCindy';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import type { ProviderOnboardingRow } from '@/hooks/useProviderOnboarding';
 import type { ProviderLogoRouting } from '@/components/icons/ProviderLogoMark';
 
@@ -109,7 +110,8 @@ export function ConnectProviderCard({ className, dismissible = true }: {
           );
         })}
         {/* 推荐行:Cindy AI(cloud)/ 登录 Cindy(signed-out・local) */}
-        <ProviderRow
+        {/* Countersign: no cloud sign-in row; the user's own providers stay. */}
+        {LOCAL_ONLY && !cloudMode ? null : <ProviderRow
           icon={rowIcon('xd', xdProvider?.name ?? 'Cindy AI')}
           label={
             cloudMode
@@ -123,7 +125,7 @@ export function ConnectProviderCard({ className, dismissible = true }: {
           }
           badge={t('onboarding.connectProvider.recommendedLabel')}
           onClick={() => (cloudMode ? goConnect('xd') : void signInToCindy())}
-        />
+        />}
         {primaryRows.map(renderRow)}
 
         {moreRows.length > 0 && (

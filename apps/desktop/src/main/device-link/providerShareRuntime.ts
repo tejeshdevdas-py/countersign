@@ -1,3 +1,4 @@
+import { LOCAL_ONLY, LocalOnlyError } from '@cindy/maker-shared/local-only';
 import { isRemoteAgentLimitsPatch } from '../../shared/remoteAgentLimits.js';
 import { supportsSubscriptionFastPolicy } from '@cindy/model-providers';
 import { providerFastPolicy } from '../maker-host/provider-fast-policy-store.js';
@@ -1050,6 +1051,8 @@ export function registerProviderShareIpc(): void {
     // 账号级操作：只接受本机应用窗口，不经设备互联代理。
     if (getDeviceLinkInvokeContext()) throwIpcError('PERMISSION_DENIED', 'Provider sharing is local only');
     assertTrustedAppRendererEvent(event);
+    // Countersign: provider sharing runs on Cindy's relay; fail before any work.
+    if (LOCAL_ONLY) throw new LocalOnlyError('Phone link and sharing');
     return execute(parseProviderShareCommand(raw));
   });
 }

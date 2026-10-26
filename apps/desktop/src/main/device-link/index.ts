@@ -169,6 +169,7 @@ import {
 import { createSubscriptionReplayScheduler, isPermanentSubscriptionReplayError } from './subscriptionReplayScheduler';
 import { getNotificationImageLabel, getSessionNotificationBody } from '../sessionNotificationCopy';
 import { getClientEndpoint } from '../clientEndpointsService';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import {
   handleContactsDeviceLinkStatusChanged,
   handleContactsPeerPresenceChanged,
@@ -1310,7 +1311,8 @@ export function initDeviceLinkService(options: DeviceLinkServiceOptions = {}): v
     'async',
   );
 
-  log.info(`device-link service initialized → ${wsUrl()}`);
+  // Countersign: the relay is a cloud service; never resolve its URL here.
+  log.info(`device-link service initialized → ${LOCAL_ONLY ? 'relay disabled (local-only)' : wsUrl()}`);
 }
 
 function syncWithAuthState(isAuthenticated: boolean, realmChanged = false): void {

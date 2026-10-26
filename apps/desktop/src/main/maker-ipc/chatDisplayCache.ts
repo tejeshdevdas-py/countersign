@@ -3,7 +3,7 @@ import { mkdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { z } from 'zod';
 import { getActiveAppSession, isAppSessionBoundaryPending, ownerScopedUserDataPath } from '../appSessionState.js';
-import { getClientEndpoint } from '../clientEndpointsService.js';
+import { tryGetClientEndpoint } from '../countersign/optionalEndpoint.js';
 import { atomicWriteFileSync, readAtomicFileSync } from '../utils/atomicWriteFile.js';
 
 const schema = z.intersection(z.object({ owner: z.object({ dataOwnerId: z.string().min(1), generation: z.number().int() }),
@@ -17,7 +17,7 @@ export function accessChatDisplayCache(input: unknown): unknown {
   const active = getActiveAppSession();
   if (isAppSessionBoundaryPending() || active.dataOwnerId !== request.owner.dataOwnerId || active.generation !== request.owner.generation)
     throw new Error('OWNER_CHANGED');
-  const digest = createHash('sha256').update(JSON.stringify([getClientEndpoint('chatApiBaseUrl'), request.key])).digest('hex');
+  const digest = createHash('sha256').update(JSON.stringify([tryGetClientEndpoint('chatApiBaseUrl') ?? '', request.key])).digest('hex');
   const root = ownerScopedUserDataPath('chat-display');
   const file = path.join(root, `${digest}.json`);
   if (request.action === 'read') {

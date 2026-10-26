@@ -1,3 +1,4 @@
+import { LOCAL_ONLY, LocalOnlyError } from '@cindy/maker-shared/local-only';
 import { registerVoiceConversationIpc } from '../voice-conversation/index.js';
 import { hasVoiceConversationLease } from '../voice-conversation/lease.js';
 import { VOICE_CONVERSATION_ACTIVE_MESSAGE } from '../../shared/voiceInputErrors.js';
@@ -168,8 +169,11 @@ let customAsrCredentialRevision = 0;
 // consumer. A voice-server outage must never spend the user's general model
 // credential as an implicit ASR or refiner fallback. The only way user
 // credentials are spent is the explicit BYOK service mode below.
-const CINDY_VOICE_SERVICE_UNAVAILABLE_MESSAGE =
-  '语音服务暂时不可用，请稍后重试。';
+// Countersign: the managed voice service is a cloud service; say so instead
+// of "temporarily unavailable, retry later". Own-provider (BYOK) mode is unaffected.
+const CINDY_VOICE_SERVICE_UNAVAILABLE_MESSAGE = LOCAL_ONLY
+  ? new LocalOnlyError('Cloud voice').message
+  : '语音服务暂时不可用，请稍后重试。';
 
 /**
  * ASR candidates that are allowed to use the managed voice-server data plane.

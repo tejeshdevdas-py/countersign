@@ -28,7 +28,7 @@ import {
 } from './accountCurrencyStore.js';
 import { currentLedgerCurrency, isLedgerCurrencyKnown, setActiveLedgerCurrency } from './ledgerCurrency.js';
 import { createLogger } from '../logger.js';
-import { getClientEndpoint } from '../clientEndpointsService.js';
+import { tryGetClientEndpoint } from '../countersign/optionalEndpoint.js';
 import { resolveOwnerScopedSecretStorageKey } from '../secrets/providerSecretStore.js';
 
 export { getModelPriceQuote } from '../../shared/modelPriceQuote.js';
@@ -118,7 +118,9 @@ function currentScope(userId?: string): string {
   return [
     'v1',
     `region=${CURRENT_CINDY_REGION}`,
-    `base=${getClientEndpoint('modelAccessApiBaseUrl').trim()}`,
+    // Countersign: the scope is a cache key; with no Cindy model service the
+    // base is empty instead of a throw that would break local usage accounting.
+    `base=${(tryGetClientEndpoint('modelAccessApiBaseUrl') ?? '').trim()}`,
     `user=${userId ?? getCurrentDbClientUserId() ?? 'anonymous'}`,
     currentKeyCacheIdentity(),
   ].join('|');

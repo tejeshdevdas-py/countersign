@@ -14,6 +14,7 @@ import type { CSSProperties } from 'react';
 import { cn } from '@/lib/utils';
 import { useProviderOnboarding } from '@/hooks/useProviderOnboarding';
 import { useSignInToCindy } from '@/hooks/useSignInToCindy';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 
 export function ConnectProviderBanner({
   className,
@@ -31,7 +32,8 @@ export function ConnectProviderBanner({
 
   if (!onboarding.visible) return null;
 
-  const cloudMode = onboarding.authMode === 'cloud';
+  // Countersign: no cloud sign-in; the banner leads to adding your own provider.
+  const cloudMode = LOCAL_ONLY || onboarding.authMode === 'cloud';
 
   return (
     <div

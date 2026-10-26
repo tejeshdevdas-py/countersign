@@ -1,4 +1,6 @@
 import { CatalogDeviceScope, type CatalogDeviceControl } from './useCatalogDevice';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
+import { localOnlyMessage } from '@/lib/countersignLocalOnly';
 import { RemotePluginPage } from './RemotePluginPage';
 import { featureRetirementById, type FeatureRetirement } from '../../../shared/featureRetirements';
 import { RetiredFeatureDetail } from './RetiredFeatureDetail';
@@ -2020,13 +2022,16 @@ function LocalGhostPluginPage({
                 </p>
                 {marketSnapshot?.unavailableReason ? (
                   <p className="mb-4 rounded-xl border border-[var(--border-default)] bg-[var(--surface-chip)] px-4 py-3 text-12 text-[var(--text-secondary)]">
-                    {t(
-                      marketSnapshot.unavailableReason === 'authentication-required'
-                        ? 'settings.ghosts.market.authenticationRequired'
-                        : marketSnapshot.unavailableReason === 'not-configured'
-                          ? 'settings.ghosts.market.notConfigured'
-                          : 'settings.ghosts.market.unavailable',
-                    )}
+                    {LOCAL_ONLY && (marketSnapshot.unavailableReason === 'authentication-required'
+                      || marketSnapshot.unavailableReason === 'not-configured')
+                      ? localOnlyMessage('Plugin market')
+                      : t(
+                          marketSnapshot.unavailableReason === 'authentication-required'
+                            ? 'settings.ghosts.market.authenticationRequired'
+                            : marketSnapshot.unavailableReason === 'not-configured'
+                              ? 'settings.ghosts.market.notConfigured'
+                              : 'settings.ghosts.market.unavailable',
+                        )}
                   </p>
                 ) : null}
 

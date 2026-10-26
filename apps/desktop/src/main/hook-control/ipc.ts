@@ -65,7 +65,12 @@ import {
   ensureDialogueWorkspaceDir,
 } from '../localDb/dialogueWorkspace.js';
 import * as authManager from '../authManager.js';
-import { getClientEndpoint } from '../clientEndpointsService.js';
+import { tryGetClientEndpoint } from '../countersign/optionalEndpoint.js';
+
+/** Countersign: '' (upstream's "not rolled out" value) when the bridge service is switched off. */
+function hookEndpoint(key: 'slackHookWsUrl' | 'telegramHookWsUrl' | 'xHookWsUrl'): string {
+  return tryGetClientEndpoint(key) ?? '';
+}
 import { CURRENT_CINDY_REGION } from '../../shared/brandRegion.js';
 import { getAppCapabilities } from '../appCapabilities.js';
 import { ownerScopedUserDataPath } from '../appSessionState.js';
@@ -151,7 +156,7 @@ function disabledHookView(): SlackHookView {
   return {
     enabled: false,
     lifecycleAnnouncement: DEFAULT_SLACK_LIFECYCLE_ANNOUNCEMENT,
-    url: getClientEndpoint('slackHookWsUrl'),
+    url: hookEndpoint('slackHookWsUrl'),
     workspaces: {},
     status: 'disabled',
     lastError: null,
@@ -161,7 +166,7 @@ function disabledHookView(): SlackHookView {
     serverMultiTeam: false,
     telegram: {
       enabled: false,
-      url: getClientEndpoint('telegramHookWsUrl'),
+      url: hookEndpoint('telegramHookWsUrl'),
       status: 'disabled',
       lastError: null,
       available: false,
@@ -171,7 +176,7 @@ function disabledHookView(): SlackHookView {
     },
     x: {
       enabled: false,
-      url: getClientEndpoint('xHookWsUrl'),
+      url: hookEndpoint('xHookWsUrl'),
       status: 'disabled',
       lastError: null,
       available: false,
@@ -472,7 +477,7 @@ function ensureInstances(): { store: SlackHookStore; manager: HookControlManager
       filePath: ownerScopedUserDataPath('slack-hook.json'),
       legacyFilePath: ownerScopedUserDataPath('hook-connections.json'),
       // 无覆写时跟随运行期端点清单(清单全权,烘焙兜底已随 2026-07 端点重构退役)
-      defaultUrl: () => getClientEndpoint('slackHookWsUrl'),
+      defaultUrl: () => hookEndpoint('slackHookWsUrl'),
       getAccountFingerprint: currentAccountFingerprint,
       // 旧多连接时代的 secret 加密文件按 id 清理(best-effort)
       cleanupLegacySecrets: (legacyIds) => {
@@ -506,12 +511,12 @@ function ensureInstances(): { store: SlackHookStore; manager: HookControlManager
         > = {
           telegram: {
             name: `${BRAND_NAME} Telegram`,
-            url: getClientEndpoint('telegramHookWsUrl'),
+            url: hookEndpoint('telegramHookWsUrl'),
             enabled: config.telegramEnabled,
           },
           x: {
             name: `${BRAND_NAME} X`,
-            url: getClientEndpoint('xHookWsUrl'),
+            url: hookEndpoint('xHookWsUrl'),
             enabled: config.xEnabled,
           },
           slack: {
@@ -626,8 +631,8 @@ function ensureInstances(): { store: SlackHookStore; manager: HookControlManager
       store,
       isAvailable: hookControlAvailable,
       createTransport: createHookTransport,
-      getTelegramUrl: () => getClientEndpoint('telegramHookWsUrl'),
-      getXUrl: () => getClientEndpoint('xHookWsUrl'),
+      getTelegramUrl: () => hookEndpoint('telegramHookWsUrl'),
+      getXUrl: () => hookEndpoint('xHookWsUrl'),
       // 与 device-link 同款 token 源: 现值优先, 缺失 refresh 一次
       getAuthToken: async () => {
         if (!hookControlAvailable()) return null;

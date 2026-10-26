@@ -5,6 +5,12 @@ import React from 'react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+// Countersign forces LOCAL_ONLY; this upstream test exercises the cloud-service path.
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
+
 const signInMock = vi.fn();
 
 vi.mock('react-i18next', () => ({

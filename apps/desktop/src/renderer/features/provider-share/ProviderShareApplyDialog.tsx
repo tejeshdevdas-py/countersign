@@ -16,6 +16,7 @@ import type { ProviderShareLinkPreview, ProviderShareRequestState } from '@cindy
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { toast } from '@/lib/toast';
+import { localOnlyMessageFromError } from '@/lib/countersignLocalOnly';
 import { extractIpcError, mapIpcErrorToI18nKey } from '@/utils/ipcError';
 
 import {
@@ -81,6 +82,8 @@ export function ProviderShareApplyDialog({
 
   const failure = useCallback(
     (error: unknown, preview: Preview | null, retry: 'preview' | 'send'): ProviderShareApplyView => {
+      const localOnly = localOnlyMessageFromError(error);
+      if (localOnly) return { kind: 'error', preview, retry, message: localOnly };
       const kind = providerShareJoinErrorKind(extractIpcError(error)?.code);
       if (kind === 'error') return { kind, preview, retry, message: tRef.current(mapIpcErrorToI18nKey(error)) };
       return { kind, preview };

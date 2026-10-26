@@ -9,8 +9,14 @@
  */
 import { ServerApiError, serverApiFetch, type ApiFetchOptions } from '../serverApiClient';
 import { getClientEndpoint } from '../clientEndpointsService';
+import { LOCAL_ONLY, LocalOnlyError } from '@cindy/maker-shared/local-only';
 
 function requireSkillhubApiBaseUrl(): string {
+  // Countersign: keep upstream's "Skill Hub switched off" error code (callers
+  // branch on it) and carry the LocalOnlyError text. Local skills are unaffected.
+  if (LOCAL_ONLY) {
+    throw new ServerApiError('UNSUPPORTED_CAPABILITY', 0, new LocalOnlyError('Skill Hub').message);
+  }
   const baseUrl = getClientEndpoint('cindySkillHubApiBaseUrl');
   if (!baseUrl) {
     throw new ServerApiError(

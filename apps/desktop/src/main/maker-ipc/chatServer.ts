@@ -7,6 +7,7 @@ import { app, net, nativeImage } from 'electron';
 import { validateAvatarUpload } from '../profileEdit.js';
 import { uploadPublicAsset } from '../ossPublicUpload.js';
 import { getClientEndpoint } from '../clientEndpointsService.js';
+import { tryGetClientEndpoint } from '../countersign/optionalEndpoint.js';
 import { signalBotAutonomyBotsChanged, subscribeBotProfilesChanged } from '../bot-autonomy/botsChangedSignal.js';
 import { t } from '../i18n.js';
 import { readFile as readMedia } from '../cindy-media/blobStore.js';
@@ -302,7 +303,9 @@ export function withChatServer(local: BotGroupChatService, deps: BotGroupChatSer
       return z.object({ baseUrl: z.literal('http://127.0.0.1:3018'), auth: z.literal('cindy') }).strict()
         .parse(JSON.parse(readFileSync(file, 'utf8'))).baseUrl;
     }
-    return getClientEndpoint('chatApiBaseUrl');
+    // Countersign: '' is upstream's "no chat endpoint" state (requests reject
+    // with CHAT_ENDPOINT_UNAVAILABLE); local group chat keeps working.
+    return tryGetClientEndpoint('chatApiBaseUrl') ?? '';
   };
   let baseUrl = endpoint();
   let activeScope = deps.captureOwnerScope?.();

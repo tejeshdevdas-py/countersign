@@ -6,6 +6,19 @@ import path from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
+// Countersign forces LOCAL_ONLY; the upstream tests here exercise the cloud-service
+// path, so the flag is off except in the Countersign case at the end.
+const localOnlyFlag = vi.hoisted(() => ({ value: false }));
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@cindy/maker-shared/local-only')>();
+  return {
+    ...actual,
+    get LOCAL_ONLY() {
+      return localOnlyFlag.value;
+    },
+  };
+});
+
 const h = vi.hoisted(() => ({
   endpoint: 'https://model.cn.example',
   buildEndpoint: 'https://model.cn.example',
@@ -1359,5 +1372,22 @@ describe('provider catalog realm reload', () => {
     h.request.mockReturnValueOnce(request);
     await expect(h.catalogIo!.fetchText!('https://catalog.example.test', 100)).rejects.toThrow('HTTP 404');
     expect(request.abort).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('Countersign catalog source', () => {
+  it('uses the bundled catalog with no fetch and no Cindy endpoint when LOCAL_ONLY', () => {
+    const previousUrl = process.env.XDT_MODELS_URL;
+    delete process.env.XDT_MODELS_URL;
+    localOnlyFlag.value = true;
+    try {
+      const source = __testing.buildSource();
+      expect(source.disableFetch).toBe(true);
+      expect(source.baseUrl).toBeUndefined();
+      expect(source.fallbackBaseUrl).toBeUndefined();
+    } finally {
+      localOnlyFlag.value = false;
+      if (previousUrl !== undefined) process.env.XDT_MODELS_URL = previousUrl;
+    }
   });
 });

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
 import { useSignInToCindy } from '@/hooks/useSignInToCindy';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 
 /** 首页零模型单行动卡:未登录走 states.html B,已登录无来源走开通官方服务。 */
 export function HomeZeroModelAction({
@@ -18,6 +19,8 @@ export function HomeZeroModelAction({
   const navigate = useNavigate();
   const signInToCindy = useSignInToCindy();
   const cloud = authMode === 'cloud';
+  // Countersign: no cloud sign-in; only the own-provider action remains.
+  const localSignInHidden = LOCAL_ONLY && !cloud;
 
   return (
     <div data-testid="home-zero-model" className="mt-4 w-full">
@@ -29,13 +32,17 @@ export function HomeZeroModelAction({
       >
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <p className="text-15 font-medium leading-snug text-[var(--text-primary)]">
-            {t(cloud ? 'onboarding.homeZeroModel.cloudTitle' : 'onboarding.homeZeroModel.title')}
+            {localSignInHidden
+              ? t('onboarding.connectProvider.title')
+              : t(cloud ? 'onboarding.homeZeroModel.cloudTitle' : 'onboarding.homeZeroModel.title')}
           </p>
           <p className="text-13 leading-relaxed text-[var(--text-secondary)]">
-            {t(cloud ? 'onboarding.homeZeroModel.cloudDesc' : 'onboarding.homeZeroModel.desc')}
+            {localSignInHidden
+              ? t('onboarding.connectProvider.desc')
+              : t(cloud ? 'onboarding.homeZeroModel.cloudDesc' : 'onboarding.homeZeroModel.desc')}
           </p>
         </div>
-        <Button
+        {localSignInHidden ? null : <Button
           variant="cta"
           size="lg"
           compact
@@ -51,7 +58,7 @@ export function HomeZeroModelAction({
           className={cn(narrow && 'self-end')}
         >
           {t(cloud ? 'onboarding.homeZeroModel.cloudCta' : 'onboarding.homeZeroModel.cta')}
-        </Button>
+        </Button>}
       </div>
       <button
         type="button"

@@ -56,6 +56,7 @@ import { hasCustomProviderCredential } from './provider-connection-state.js';
 import { getBaseUrl } from '../manifestService.js';
 import { throwIpcError } from '../utils/ipcValidate.js';
 import { getBuildClientEndpoint, getClientEndpoint } from '../clientEndpointsService.js';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import {
   commitActiveCatalogSnapshot,
   clearDiscoveredProviderModels,
@@ -375,6 +376,17 @@ const io: CatalogIO = {
  */
 function buildSource(): CatalogSourceConfig {
   const explicitUrl = process.env.XDT_MODELS_URL;
+  // Countersign: no Cindy model service. Use the local override when set,
+  // otherwise the bundled catalog (no fetch, no remote cache). An explicit
+  // XDT_MODELS_URL set by the user is still honoured.
+  if (LOCAL_ONLY) {
+    return {
+      url: explicitUrl,
+      localPath: process.env.XDT_MODELS_PATH,
+      remoteBudgetMs: DEFAULT_REMOTE_CATALOG_BUDGET_MS,
+      disableFetch: !explicitUrl?.trim() || process.env.XDT_DISABLE_MODELS_FETCH === '1',
+    };
+  }
   const baseUrl = getClientEndpoint('modelAccessApiBaseUrl');
   const usesBuildRealm = baseUrl === getBuildClientEndpoint('modelAccessApiBaseUrl');
   return {
@@ -1133,6 +1145,7 @@ export function getDesktopProviderService(options: { allowSideEffects?: boolean 
 }
 
 export const __testing = {
+  buildSource,
   catalogLkgEnvelope,
   catalogLkgPath,
   catalogLkgTemporaryPath,

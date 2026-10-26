@@ -71,7 +71,15 @@ import {
   ownerScopedUserDataPath,
   type ActiveAppSession,
 } from '../appSessionState.js';
-import { getClientEndpoint } from '../clientEndpointsService.js';
+import { tryGetClientEndpoint } from '../countersign/optionalEndpoint.js';
+
+/**
+ * Countersign: '' (upstream's "not configured" value) when the plugin market
+ * service is switched off; custom local marketplace sources keep working.
+ */
+function pluginApiBaseUrl(): string {
+  return tryGetClientEndpoint('pluginApiBaseUrl') ?? '';
+}
 import { createLogger } from '../logger.js';
 import { throwIpcError } from '../utils/ipcValidate.js';
 import {
@@ -831,7 +839,7 @@ interface MarketSnapshotFlight {
 }
 
 function marketOwnerKey(owner: ActiveAppSession): string {
-  return JSON.stringify([owner.mode, owner.dataOwnerId, owner.generation, getClientEndpoint('pluginApiBaseUrl')]);
+  return JSON.stringify([owner.mode, owner.dataOwnerId, owner.generation, pluginApiBaseUrl()]);
 }
 
 function listMarketInstallations(): InstalledGhost[] {
@@ -1099,7 +1107,7 @@ export class PluginMarketService {
    * Startup, resume and periodic full passes still independently recheck disk. */
   async refreshCatalogForForeground(): Promise<'completed' | 'failed'> {
     const owner = captureMarketOwner();
-    if (!getClientEndpoint('pluginApiBaseUrl')) return 'completed';
+    if (!pluginApiBaseUrl()) return 'completed';
     const key = marketOwnerKey(owner);
     const catalog = await this.loadCatalog(owner);
     requireSameMarketOwner(owner);
@@ -1187,7 +1195,7 @@ export class PluginMarketService {
           unavailableCustomSourceNames: [],
         };
       }
-      if (!getClientEndpoint('pluginApiBaseUrl')) {
+      if (!pluginApiBaseUrl()) {
         return {
           items: [],
           unavailableReason: 'not-configured',
@@ -1260,7 +1268,7 @@ export class PluginMarketService {
       }
       return snapshot;
     };
-    if (!getClientEndpoint('pluginApiBaseUrl')) {
+    if (!pluginApiBaseUrl()) {
       const customDiscovery = await customDiscoveryPromise;
       return customOnlySnapshot(
         customDiscovery,
@@ -1274,7 +1282,7 @@ export class PluginMarketService {
     let customDiscovery: CustomMarketDiscovery;
     let catalogFingerprint: string | null = null;
     const catalogOwnerKey = marketOwnerKey(owner);
-    const catalogServerRoot = getClientEndpoint('pluginApiBaseUrl').replace(/\/+$/, '');
+    const catalogServerRoot = pluginApiBaseUrl().replace(/\/+$/, '');
     try {
       // 官方目录与自定义发现并行；单个本地/网络盘来源卡顿不会串行拖住官方请求。
       const [catalog, discovered] = await Promise.all([prefetchedCatalog ?? this.loadCatalog(owner), customDiscoveryPromise]);
@@ -1323,7 +1331,7 @@ export class PluginMarketService {
       }
       await yieldMarketReconciliation(owner);
       // Only an exact delivered release proves a legacy installation's reporting endpoint.
-      if (catalogServerRoot === getClientEndpoint('pluginApiBaseUrl').replace(/\/+$/, '')) {
+      if (catalogServerRoot === pluginApiBaseUrl().replace(/\/+$/, '')) {
         let rebound = false;
         try {
           await this.withCapturedLedgerMutation(ledger, () => {
@@ -2546,10 +2554,10 @@ export class PluginMarketService {
       }
     }
 
-    const downloadServerRoot = getClientEndpoint('pluginApiBaseUrl').replace(/\/+$/, '');
+    const downloadServerRoot = pluginApiBaseUrl().replace(/\/+$/, '');
     const download = await this.api.download(plugin.id, plugin.currentRelease.id);
     assertInstallIdentityCurrent();
-    const verifiedServerRoot = downloadServerRoot === getClientEndpoint('pluginApiBaseUrl').replace(/\/+$/, '')
+    const verifiedServerRoot = downloadServerRoot === pluginApiBaseUrl().replace(/\/+$/, '')
       ? downloadServerRoot : undefined;
     requireSameMarketOwner(owner);
     if (
@@ -2803,7 +2811,7 @@ export class PluginMarketService {
   }
 
   private requireConfigured(): void {
-    if (!getClientEndpoint('pluginApiBaseUrl')) {
+    if (!pluginApiBaseUrl()) {
       throwIpcError('UNSUPPORTED_CAPABILITY', 'Plugin market is not configured');
     }
   }
