@@ -1,3 +1,4 @@
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -45,7 +46,7 @@ export function LocalDbFatalScreen({
       window.electronAPI.relaunchToUpdate(theme);
       return;
     }
-    if (view === 'no-update') {
+    if (view === 'no-update' && !LOCAL_ONLY) {
       // 检查会把 update-status 推成 checking/downloading → 视图自动切到 preparing。
       void window.electronAPI.checkForUpdate().catch(() => {});
     }
@@ -88,6 +89,7 @@ export function LocalDbFatalScreen({
         autoFocusConfirm
         loading={(installing && view === 'install-update') || view === 'preparing-update'}
         confirmText={confirmText}
+        hideConfirm={LOCAL_ONLY && view === 'no-update'}
         onConfirm={handleConfirm}
         content={
           <>

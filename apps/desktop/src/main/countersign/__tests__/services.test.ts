@@ -21,6 +21,10 @@ describe('Countersign upstream background services', () => {
     expect(isServiceDisabled(name)).toBe(true);
   });
 
+  it('looks the name up in the disabled set (a name outside it is not disabled)', () => {
+    expect(isServiceDisabled('somethingElse' as UpstreamService)).toBe(false);
+  });
+
   it('isReportingBuild is false even when the app is packaged', async () => {
     const { isReportingBuild } = await import('../../analytics-settings-store');
     expect(isReportingBuild()).toBe(false);

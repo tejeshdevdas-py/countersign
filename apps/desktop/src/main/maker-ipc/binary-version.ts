@@ -14,6 +14,7 @@
 
 import { registerPiKernelIpc } from './pi-kernel.js';
 import { ipcMain } from 'electron';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import { execFile } from 'node:child_process';
 
 import { createLogger } from '../logger.js';
@@ -201,7 +202,9 @@ export function registerMakerBinaryVersionIpc(): void {
 
       // The plain call never waits on the network, so About shows the local
       // version immediately even offline; the online comparison is a second call.
-      if (!checkLatest) {
+      // Countersign: no online version check (it would fetch Cindy's manifest host). The
+      // answer is "no update information", not a failure.
+      if (!checkLatest || LOCAL_ONLY) {
         return {
           ...(await probeLocalVersion(agentKind)),
           latestVersion: null,

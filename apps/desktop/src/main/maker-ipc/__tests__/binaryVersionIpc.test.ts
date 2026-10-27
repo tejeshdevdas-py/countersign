@@ -15,6 +15,12 @@ const h = vi.hoisted(() => ({
   isDeviceLink: vi.fn(() => false),
 }));
 
+// Countersign: these upstream cases exercise the upstream behaviour, so LOCAL_ONLY is mocked off.
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
+
 vi.mock('electron', () => ({
   ipcMain: {
     handle: vi.fn((channel: string, handler: (...args: unknown[]) => unknown) => {

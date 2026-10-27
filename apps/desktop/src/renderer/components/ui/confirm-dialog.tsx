@@ -40,6 +40,8 @@ export interface ConfirmDialogProps {
   confirmText?: string;
   cancelText?: string;
   showCancel?: boolean;
+  /** Countersign: omit the confirm action (used where its only effect needs a removed service). */
+  hideConfirm?: boolean;
   /** Dismiss without invoking the footer cancel action, which may have its own meaning. */
   showCloseButton?: boolean;
   /** 可选的第三按钮(如「不保存」)。设了即渲染,在 confirm/cancel 之间。
@@ -112,6 +114,7 @@ export function ConfirmDialog({
   confirmText,
   cancelText,
   showCancel = true,
+  hideConfirm = false,
   showCloseButton = false,
   tertiaryText,
   dontShowAgainLabel,
@@ -386,6 +389,7 @@ export function ConfirmDialog({
               </div>
             ) : (
               <div className="mt-6 flex shrink-0 flex-wrap justify-end gap-2.5">
+                {!hideConfirm && (
                 <AlertDialog.Action asChild>
                   <Button
                     variant="cta"
@@ -414,6 +418,7 @@ export function ConfirmDialog({
                     )}
                   </Button>
                 </AlertDialog.Action>
+                )}
                 {tertiaryText && (
                   // tertiary 走 secondary 同款轮廓样式 —— 视觉上 "中性可选";
                   // 不用 AlertDialog.Action / Cancel,自己 onClick 触发,Radix 不会

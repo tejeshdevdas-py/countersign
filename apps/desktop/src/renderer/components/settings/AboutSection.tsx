@@ -139,7 +139,8 @@ function useAgentBinaryVersion(kind: UpdatableAgentKind): { state: AgentVersionS
         },
       )
       .then(() => {
-        if (!cancelled) check();
+        // Countersign has no online version check.
+        if (!cancelled && !LOCAL_ONLY) check();
       });
     return () => {
       cancelled = true;
@@ -278,6 +279,11 @@ function AgentVersionRow({
       toast.error(t('settings.about.harnessUpdateFailed'));
     }
   };
+
+  // Countersign: only the installed version; no Update item, no latest-check text.
+  if (LOCAL_ONLY) {
+    return <InfoRow label={label} value={renderVersion(state, t)} />;
+  }
 
   return (
     <HarnessVersionMenuRow
