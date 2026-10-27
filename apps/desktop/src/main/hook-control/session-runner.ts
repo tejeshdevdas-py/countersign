@@ -27,6 +27,7 @@
  * 正确。后续要精确区分时再与 maker-core 一起演进。
  */
 
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { beginChannelToolScope } from '../im/shared/channelToolScope.js';
 
 import { randomUUID } from 'node:crypto';
@@ -1324,8 +1325,8 @@ export function createMakerHookSessionRunner(deps: {
           }
           if (handoffMessages.length > 0) {
             replacementHandoff = buildHandoffText(handoffMessages, {
-              fromLabel: 'Cindy',
-              toLabel: 'Cindy',
+              fromLabel: BRAND_NAME,
+              toLabel: BRAND_NAME,
             });
           }
         } catch (err) {
@@ -1338,7 +1339,7 @@ export function createMakerHookSessionRunner(deps: {
                   createdAt: startedAt,
                 },
               ],
-              { fromLabel: 'Cindy', toLabel: 'Cindy' },
+              { fromLabel: BRAND_NAME, toLabel: BRAND_NAME },
             );
           }
           log.warn(
