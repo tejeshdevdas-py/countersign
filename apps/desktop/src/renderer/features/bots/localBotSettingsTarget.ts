@@ -23,6 +23,7 @@ import {
 } from './botStore';
 import { botImConnectionApi } from './botImConnectionClient';
 import type { BotCapabilityEntry, BotCapabilityKind, BotSettingsTarget } from './botSettingsTarget';
+import { canAccessImBotSettings } from '@/components/settings/imBotVisibility';
 
 const api = () => window.electronAPI.localDb.bots;
 // `projects` lists folders on this computer: a remote teammate's target never offers it.
@@ -114,7 +115,8 @@ function useHiddenVendors(): MakerVendor[] {
 export const localBotSettingsTarget: BotSettingsTarget = {
   kind: 'local',
   online: true,
-  pages: new Set<string>(ALL_PAGES),
+  // Countersign: a teammate's own chat-app bots come later; no Channels page under LOCAL_ONLY.
+  pages: new Set<string>(ALL_PAGES.filter((page) => page !== 'channels' || canAccessImBotSettings())),
   // Store functions are read on use, so a module that never opens these pages never needs them.
   profile: {
     update: (...args) => updateBotProfile(...args),

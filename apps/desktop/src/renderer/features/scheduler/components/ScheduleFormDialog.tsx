@@ -23,6 +23,7 @@ import type { UtilityTextAttemptReason, UtilityTextFailure } from '../../../../s
 import { useFeishuBot } from '@/hooks/useFeishuBot';
 import { useProjectPickerOptions } from '@/hooks/useProjectPickerOptions';
 import { useWecomGroupNotificationSettings } from '@/hooks/useWecomGroupNotificationSettings';
+import { canAccessImBotSettings } from '@/components/settings/imBotVisibility';
 import type { Schedule, CreateScheduleInput, ScheduleTemplate, UpdateScheduleInput } from '@cindy/maker-scheduler';
 import { applyTemplateParams } from '@cindy/maker-scheduler/template-engine';
 import { ScriptCapabilityMultiSelect } from './ScriptCapabilityMultiSelect';
@@ -121,6 +122,9 @@ interface Props {
    */
   requestedByGhostName?: string | null;
 }
+
+/** Countersign: chat-app delivery comes later; under LOCAL_ONLY the form offers none. */
+const canAccessImBot = canAccessImBotSettings();
 
 export function ScheduleFormDialog({
   open,
@@ -394,8 +398,8 @@ export function ScheduleFormDialog({
     if (template.silentWhenIdle !== undefined) setField('silentWhenIdle', template.silentWhenIdle);
     if (template.notify) {
       setField('notifyDesktop', template.notify.desktop);
-      setField('notifyFeishu', template.notify.feishu);
-      setField('notifyWecomGroup', template.notify.wecomGroup === true);
+      setField('notifyFeishu', canAccessImBot && template.notify.feishu);
+      setField('notifyWecomGroup', canAccessImBot && template.notify.wecomGroup === true);
     }
     const initParams: Record<string, string> = {};
     for (const parameter of template.parameters ?? []) {
@@ -940,7 +944,7 @@ export function ScheduleFormDialog({
                   </span>
                 </Tip>
               </div>
-              {feishuBotReady ? (
+              {canAccessImBot && (feishuBotReady ? (
                 <button
                   type="button"
                   role="checkbox"
@@ -989,8 +993,8 @@ export function ScheduleFormDialog({
                 >
                   {t('scheduler.editor.fields.configFeishu')}
                 </button>
-              )}
-              {wecomGroupReady ? (
+              ))}
+              {canAccessImBot && (wecomGroupReady ? (
                 <button
                   type="button"
                   role="checkbox"
@@ -1028,7 +1032,7 @@ export function ScheduleFormDialog({
                 >
                   {t('scheduler.editor.fields.configWecomGroup')}
                 </button>
-              )}
+              ))}
             </div>
             {/* bound 态:单行会话选择器(换选即换绑,选择器旁带"打开会话")。
                 不再叠加绑定卡片 —— 标题在 select 里已可见,单独的"解除绑定"

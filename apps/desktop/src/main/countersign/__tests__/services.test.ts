@@ -14,7 +14,7 @@ vi.mock('../../maker-host/logger-adapter.js', () => ({
 
 import { isServiceDisabled, type UpstreamService } from '../services';
 
-const ALL: UpstreamService[] = ['analytics', 'heartbeat', 'logUpload', 'updater', 'agentBinaryUpdate'];
+const ALL: UpstreamService[] = ['analytics', 'heartbeat', 'logUpload', 'updater', 'agentBinaryUpdate', 'imConnectors'];
 
 describe('Countersign upstream background services', () => {
   it.each(ALL)('%s is disabled', (name) => {

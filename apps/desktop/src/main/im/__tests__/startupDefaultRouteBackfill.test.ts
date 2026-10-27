@@ -51,6 +51,8 @@ vi.mock('../../logger', () => ({
 }));
 vi.mock('../../security/trustedAppRenderer', () => ({}));
 vi.mock('../wechat/channelSettings', () => ({}));
+// Countersign: these upstream cases run with IM allowed; imLocalOnly.test.ts covers LOCAL_ONLY.
+vi.mock('../../countersign/services', () => ({ isServiceDisabled: () => false }));
 
 import { startImConnection } from '../index';
 

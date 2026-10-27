@@ -581,22 +581,22 @@ describe('Bot settings profile consolidation', () => {
     expect(screen.queryByRole('textbox', { name: 'bots.nameLabel' })).toBeNull();
   });
 
-  it('lists messaging platforms after capabilities and opens it from the home row or a deep link', () => {
+  // Countersign: a teammate's own chat-app bots come later. Under LOCAL_ONLY the
+  // home has no messaging-platforms row and its deep link opens the home instead.
+  it('offers no messaging platforms page under LOCAL_ONLY, from the home row or a deep link', () => {
     const view = renderSettings();
     const rows = screen
       .getAllByRole('button')
       .map((button) => button.textContent)
       .filter((text) => text === 'bots.capabilities.title' || text === 'bots.channels.title');
-    expect(rows).toEqual(['bots.capabilities.title', 'bots.channels.title']);
-    fireEvent.click(screen.getByRole('button', { name: 'bots.channels.title' }));
-    expect(screen.getByTestId('bot-channels-page').textContent).toBe('bot-1');
-    expect(screen.getByRole('heading', { name: 'bots.channels.title' })).toBeTruthy();
+    expect(rows).toEqual(['bots.capabilities.title']);
     view.unmount();
 
     render(
       <BotSettings bot={bot()} initialPage="channels" onBack={vi.fn()} onOpenSession={vi.fn()} />,
     );
-    expect(screen.getByTestId('bot-channels-page')).toBeTruthy();
+    expect(screen.queryByTestId('bot-channels-page')).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'bots.channels.title' })).toBeNull();
   });
 
   it('keeps the current inner page and its draft when saving before navigation fails', async () => {

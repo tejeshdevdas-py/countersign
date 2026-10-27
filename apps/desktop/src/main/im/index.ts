@@ -124,6 +124,7 @@ import { getUpdateStatus, isUpdateRelaunchImminent } from '../updateService';
 import { createLogger } from '../logger';
 import { assertTrustedAppRendererEvent } from '../security/trustedAppRenderer';
 import { throwIpcError } from '../utils/ipcValidate';
+import { isServiceDisabled } from '../countersign/services';
 import {
   readWechatChannelSettings,
   resetWechatWorkingDir,
@@ -892,6 +893,12 @@ export async function backfillImDefaultRoutesAtStartup(): Promise<void> {
 }
 
 export function startImConnection(): void {
+  // Countersign: chat-app bots come later; under LOCAL_ONLY no IM channel
+  // (Settings or a teammate's own) connects or polls.
+  if (isServiceDisabled('imConnectors')) {
+    log.info('startImConnection: skip (IM connectors are off in this local-only build)');
+    return;
+  }
   if (connectionLifecycle.isStarted()) {
     log.info('startImConnection: already started, skip');
     return;

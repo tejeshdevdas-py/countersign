@@ -70,6 +70,7 @@ import {
 } from './botSettingsAutosave';
 import { useBotSettingsAutosave } from './useBotSettingsAutosave';
 import { BotProjectsSettings } from './BotProjectsSettings';
+import { canAccessImBotSettings } from '@/components/settings/imBotVisibility';
 
 const DAY_MS = 24 * 60 * 60 * 1_000;
 
@@ -148,7 +149,7 @@ export function BotSettings({
     | 'routines'
     | 'memory'
     | 'projects'
-  >(initialPage);
+  >(initialPage === 'channels' && !target.pages.has('channels') ? 'home' : initialPage);
   const voiceLeaveRef = useRef<(() => Promise<boolean>) | null>(null);
   const routineLeaveRef = useRef<(() => Promise<boolean>) | null>(null);
   const routineBackRef = useRef<(() => Promise<boolean>) | null>(null);
@@ -668,7 +669,10 @@ export function BotSettings({
                     browser: 'computer-use', computer: 'computer-use', android: 'computer-use',
                     contacts: 'personalization&section=personalization.contacts',
                     ssh: 'remote-control&section=remoteControl.ssh',
-                    slack: 'im-bot&section=imBot.cindy.slack', feishu_bot: 'im-bot', wechat: 'im-bot',
+                    // Countersign: no way into IM setup under LOCAL_ONLY (chat-app bots come later).
+                    ...(canAccessImBotSettings()
+                      ? { slack: 'im-bot&section=imBot.cindy.slack', feishu_bot: 'im-bot', wechat: 'im-bot' }
+                      : {}),
                   };
                   navigate(kind === 'skill' ? '/skillhub/local' : `/settings?tab=${toolSettings[id ?? ''] ?? 'builtin-tools'}`);
                 });
@@ -704,7 +708,7 @@ export function BotSettings({
             </div>
           </div>
         )}
-        {page === 'channels' ? <BotChannelsPage bot={bot} /> : null}
+        {page === 'channels' && target.pages.has('channels') ? <BotChannelsPage bot={bot} /> : null}
         {page === 'history' ? (
           <BotLifecycleSettings
             bot={bot}

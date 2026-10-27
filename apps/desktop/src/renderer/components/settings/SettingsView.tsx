@@ -68,6 +68,7 @@ import { BillingSettingsSection } from '@/features/billing/BillingPage';
 import { BotsGlobalSettingsSection } from '@/features/bots/BotsGlobalSettingsSection';
 import { canAccessBillingSettings } from './billingVisibility';
 import { canAccessUsageSettings } from './usageVisibility';
+import { canAccessImBotSettings } from './imBotVisibility';
 import { UsageHistorySection } from './usage/UsageHistorySection';
 import { CURRENT_CINDY_REGION } from '../../../shared/brandRegion';
 
@@ -102,11 +103,15 @@ export function SettingsView() {
   // 用量历史对所有**已登录**身份开放 (local / cloud personal / cloud org),
   // 与 billing 的 canAccessBillingSettings 无关 —— #2785 维护者裁决。
   const canAccessUsage = canAccessUsageSettings({ mode });
+  const canAccessImBot = canAccessImBotSettings();
 
   const activeTab = useMemo<SettingsTab>(() => {
     const raw = rawTab;
     // legacy 别名:旧「远端机器」(remote) /「设备互联」(devices) 已并入「远程控制」(remote-control)。
     if (raw === 'remote' || raw === 'devices') return 'remote-control';
+    // Countersign: no deep link (old aliases included) opens IM setup under LOCAL_ONLY.
+    const isImTab = raw === 'im-bot' || raw === 'feishu-bot' || raw === 'slack-bot' || raw === 'tina';
+    if (isImTab && !canAccessImBot) return 'general';
     // legacy 别名:旧「飞书机器人」(feishu-bot) /「Slack 机器人」(slack-bot) 已并入「IM 机器人」(im-bot)。
     if (raw === 'feishu-bot' || raw === 'slack-bot') return 'im-bot';
     // legacy 别名:旧独立「Tina」(tina) 已并入「IM 机器人」(im-bot)。
@@ -117,7 +122,7 @@ export function SettingsView() {
     // legacy 深链:外观设置原在「通用」、回复动效原在「个性化」,旧 section 深链落到「外观」。
     if (isLegacyAppearanceDeepLink(raw, rawSection)) return 'appearance';
     return isSettingsTab(raw) ? raw : 'general';
-  }, [canAccessBilling, canAccessUsage, isMac, rawSection, rawTab]);
+  }, [canAccessBilling, canAccessImBot, canAccessUsage, isMac, rawSection, rawTab]);
   const piExtensionsPanelOpen =
     activeTab === 'general' &&
     (rawTab === 'pi-extensions' || searchParams.get('openPanel') === 'pi-extensions');
@@ -238,9 +243,10 @@ export function SettingsView() {
         (tabId) =>
           (isMac || tabId !== 'agent-island') &&
           (canAccessBilling || tabId !== 'billing') &&
-          (canAccessUsage || tabId !== 'usage'),
+          (canAccessUsage || tabId !== 'usage') &&
+          (canAccessImBot || tabId !== 'im-bot'),
       ),
-    [canAccessBilling, canAccessUsage, isMac],
+    [canAccessBilling, canAccessImBot, canAccessUsage, isMac],
   );
   const searchContext = useMemo<SettingsSearchContext>(() => ({
     region: CURRENT_CINDY_REGION,

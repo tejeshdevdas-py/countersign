@@ -1,12 +1,16 @@
 import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 
-/** Upstream background services that talk to Cindy's cloud or CDN. */
+/**
+ * Upstream background services that talk to Cindy's cloud or CDN, or (IM
+ * connectors) to chat-app hosts that are not on the egress allow-list.
+ */
 export type UpstreamService =
   | 'analytics'
   | 'heartbeat'
   | 'logUpload'
   | 'updater'
-  | 'agentBinaryUpdate';
+  | 'agentBinaryUpdate'
+  | 'imConnectors';
 
 const ALL_UPSTREAM_SERVICES: readonly UpstreamService[] = [
   'analytics',
@@ -14,6 +18,7 @@ const ALL_UPSTREAM_SERVICES: readonly UpstreamService[] = [
   'logUpload',
   'updater',
   'agentBinaryUpdate',
+  'imConnectors',
 ];
 
 /** Services that must not start. Countersign is local-only: all of them. */

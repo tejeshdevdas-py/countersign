@@ -145,3 +145,13 @@ it('preserves remote preferences while its catalog refresh is still loading', as
     effort: 'ultra', fastMode: true,
   }), true));
 });
+
+// Countersign: chat-app bots come later, so under LOCAL_ONLY the form offers no
+// Feishu or WeCom delivery and no button into IM setup.
+it('offers no chat-app delivery or IM setup button under LOCAL_ONLY', () => {
+  mount(schedule());
+  expect(screen.queryByText('scheduler.editor.fields.configFeishu')).toBeNull();
+  expect(screen.queryByText('scheduler.editor.fields.configWecomGroup')).toBeNull();
+  expect(screen.queryByText('scheduler.editor.fields.finishSendToFeishu')).toBeNull();
+  expect(screen.queryByText('scheduler.editor.fields.finishSendToWecomGroup')).toBeNull();
+});
