@@ -10,6 +10,7 @@ vi.mock('react-i18next', () => ({
 
 import type { DeviceLinkSettings } from '@/hooks/useDeviceLinkSettings';
 import { MyDevicesPanel } from '@/components/settings/MyDevicesPanel';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 
 describe('MyDevicesPanel rename guards', () => {
   afterEach(cleanup);
@@ -59,10 +60,10 @@ describe('MyDevicesPanel device identity', () => {
     for (const d of s.devices) {
       const row = document.querySelector(`[data-device-id="${d.deviceId}"]`);
       expect(row?.textContent).toContain(d.deviceId);
-      if (d.appVersion) expect(row?.textContent).toContain(`Cindy ${d.appVersion}`);
+      if (d.appVersion) expect(row?.textContent).toContain(`${BRAND_NAME} ${d.appVersion}`);
       else {
-        expect(row?.textContent).not.toContain('Cindy null');
-        expect(row?.textContent).not.toContain('Cindy undefined');
+        expect(row?.textContent).not.toContain(`${BRAND_NAME} null`);
+        expect(row?.textContent).not.toContain(`${BRAND_NAME} undefined`);
       }
     }
   });

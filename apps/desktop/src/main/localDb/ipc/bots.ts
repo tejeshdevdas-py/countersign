@@ -1,6 +1,7 @@
 import { todoAccess } from '../../maker-ipc/botTodoAccess.js';
 import { botLinkedProjectAccess } from '../../maker-ipc/botLinkedProjects.js';
 import type { TodoPatch } from '@cindy/maker-shared/teammate-todo';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 /** Cindy Bots 的 main-side 权威数据边界。
  *
  * Bot profile 与 Session 归属只在这里写入 SQLite；renderer 只读取投影，
@@ -2622,7 +2623,7 @@ export function registerBotIpc(): void {
                 fromBotId: botId,
                 fromBotName: profile.displayName,
                 toBotId: null,
-                toBotName: 'Cindy',
+                toBotName: BRAND_NAME,
                 parentSessionId: canonicalSessionId,
                 childSessionId: row.childSessionId,
                 objective: row.objective.slice(0, 400),

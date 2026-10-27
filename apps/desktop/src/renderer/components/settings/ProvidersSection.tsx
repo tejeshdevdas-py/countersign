@@ -3323,7 +3323,7 @@ export function ProvidersSection() {
                   style={{ color: 'var(--text-secondary)' }}
                 >
                   {LOCAL_ONLY
-                    ? localOnlyMessage('Cindy model service')
+                    ? localOnlyMessage('Hosted model service')
                     : t('settings.providers.xdSignin.desc')}
                 </span>
                 {/* Countersign: no cloud sign-in, so no balance badge or sign-in CTA. */}

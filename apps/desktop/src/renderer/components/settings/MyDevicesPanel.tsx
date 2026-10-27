@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 /**
  * MyDevicesPanel —— 「远程控制」页统一的「我的设备」面板。
  * ---------------------------------------------------------------------------
@@ -83,7 +84,7 @@ function deviceSubtitle(
 ): string {
   const parts = [
     platformLabel(device.platform),
-    device.appVersion?.trim() ? `Cindy ${device.appVersion.trim()}` : null,
+    device.appVersion?.trim() ? `${BRAND_NAME} ${device.appVersion.trim()}` : null,
     hardwareLabel(device.deviceInfo),
     memoryLabel(device.deviceInfo?.memoryGb),
     opts.statusOverride ?? deviceStatusLabel(device, t),

@@ -112,7 +112,7 @@ export function ConnectProviderCard({ className, dismissible = true }: {
         {/* 推荐行:Cindy AI(cloud)/ 登录 Cindy(signed-out・local) */}
         {/* Countersign: no cloud sign-in row; the user's own providers stay. */}
         {LOCAL_ONLY && !cloudMode ? null : <ProviderRow
-          icon={rowIcon('xd', xdProvider?.name ?? 'Cindy AI')}
+          icon={rowIcon('xd', xdProvider?.name ?? t('onboarding.connectProvider.cindy.title'))}
           label={
             cloudMode
               ? (xdProvider?.name ?? t('onboarding.connectProvider.cindy.title'))

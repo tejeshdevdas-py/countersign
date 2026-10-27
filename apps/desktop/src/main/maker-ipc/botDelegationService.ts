@@ -30,6 +30,7 @@ import {
 } from '../localDb/schema.js';
 import type { InteractionDecision, InteractionRequest } from '@cindy/maker-core';
 import { permissionModeOrAsk } from '@cindy/maker-shared/permission-mode';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { UI_ACTION_TRIGGER_PREFIX } from '../../shared/interruptedTurn.js';
 import { createLogger } from '../logger.js';
 import { resolveBusinessSessionId } from '../sessionIds.js';
@@ -968,8 +969,8 @@ export function createBotDelegationService(deps: BotDelegationServiceDeps) {
       fromBotId: row.requestingBotId,
       fromBotName: nameOf(row.requestingBotId),
       toBotId: row.targetBotId,
-      // 空目标 = 普通 Cindy 任务;卡片上的对方就叫 Cindy。
-      toBotName: row.targetBotId ? nameOf(row.targetBotId) : 'Cindy',
+      // 空目标 = 普通任务;卡片上的对方就叫产品名(BRAND_NAME)。
+      toBotName: row.targetBotId ? nameOf(row.targetBotId) : BRAND_NAME,
       parentSessionId: row.parentSessionId,
       childSessionId: row.childSessionId,
       objective: row.objective.slice(0, 400),
@@ -2843,7 +2844,7 @@ export function createBotDelegationService(deps: BotDelegationServiceDeps) {
         status: sessionTaskViewStatus(row),
         targetBotName: row.targetBotId
           ? (profileNames.get(row.targetBotId) ?? row.targetBotId)
-          : 'Cindy',
+          : BRAND_NAME,
         contextRefs: parseStringArray(row.contextRefsJson),
         lineage: parseStringArray(row.lineageJson),
         permissionSnapshot: parseRecord(row.permissionSnapshotJson),
