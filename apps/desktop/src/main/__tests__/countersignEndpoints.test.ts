@@ -133,3 +133,20 @@ describe('Countersign endpoints fail closed', () => {
     expect(event.returnValue).toEqual({ websiteUrl: '' });
   });
 });
+
+describe('Countersign CDN base URL', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('ignores XDT_CDN_BASE_URL: getBaseUrl throws LocalOnlyError and fetchManifest sends nothing', async () => {
+    vi.stubEnv('XDT_CDN_BASE_URL', 'https://cdn.example.invalid');
+    await initClientEndpoints();
+    const { fetchManifest, getBaseUrl } = await import('../manifestService');
+
+    expect(() => getBaseUrl()).toThrow(LocalOnlyError);
+    await expect(fetchManifest(100)).rejects.toBeInstanceOf(LocalOnlyError);
+    expect(netRequest).toHaveBeenCalledTimes(0);
+    expect(fetchStub).toHaveBeenCalledTimes(0);
+  });
+});

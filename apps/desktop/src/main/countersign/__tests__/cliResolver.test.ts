@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { resolveAgentBinary, type AgentEngine } from '../cliResolver';
+import { createPathWhich, resolveAgentBinary, type AgentEngine } from '../cliResolver';
 
 const exe = (base: string): string => (process.platform === 'win32' ? `${base}.exe` : base);
 
@@ -119,5 +119,96 @@ describe('resolveAgentBinary', () => {
       expect((result as { error: string }).error.length).toBeGreaterThan(0);
     }
     expect(fetchSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('resolveAgentBinary npm shim message', () => {
+  it('codex: names the .cmd shim it found on PATH and does not return it', () => {
+    const shim = 'C:\\Users\\someone\\AppData\\Roaming\\npm\\codex.cmd';
+    const which = vi.fn((cmd: string) => (cmd === 'codex.cmd' ? shim : null));
+
+    const result = resolveAgentBinary('codex', {
+      bundledDir: BUNDLED_DIR,
+      which,
+      exists: () => false,
+    });
+
+    expect(result).not.toHaveProperty('path');
+    const error = 'error' in result ? result.error : '';
+    expect(error).toContain(`found ${shim} (an npm shim), which Countersign does not run`);
+    expect(error).toMatch(/Codex CLI/);
+    expect(error).toMatch(/bundled build/);
+    expect(which).toHaveBeenCalledWith('codex');
+    expect(which).toHaveBeenCalledWith('codex.cmd');
+  });
+});
+
+describe('createPathWhich', () => {
+  const winDirs = ['C:\\Tools', 'C:\\Users\\someone\\.local\\bin'];
+
+  it('Windows: returns the first <name>.exe in PATH order', () => {
+    const files = new Set(['C:\\Users\\someone\\.local\\bin\\claude.exe']);
+    const which = createPathWhich({
+      pathEnv: winDirs.join(';'),
+      platform: 'win32',
+      isFile: (p) => files.has(p),
+    });
+
+    expect(which('claude')).toBe('C:\\Users\\someone\\.local\\bin\\claude.exe');
+  });
+
+  it('Windows: ignores a planted <name>.exe in the current directory when that directory is not on PATH', () => {
+    const cwd = 'C:\\Users\\someone\\Downloads\\repo';
+    const isFile = vi.fn((p: string) => p === `${cwd}\\claude.exe`);
+    const which = createPathWhich({ pathEnv: winDirs.join(';'), platform: 'win32', isFile });
+
+    expect(which('claude')).toBeNull();
+    expect(isFile).not.toHaveBeenCalledWith(`${cwd}\\claude.exe`);
+  });
+
+  it('skips relative PATH entries such as "." (the current directory)', () => {
+    const isFile = vi.fn(() => true);
+    const which = createPathWhich({ pathEnv: '.;tools;"";', platform: 'win32', isFile });
+
+    expect(which('codex')).toBeNull();
+    expect(isFile).not.toHaveBeenCalled();
+  });
+
+  it('Windows: a bare name never matches a .cmd shim; an explicit .cmd name matches exactly', () => {
+    const files = new Set(['C:\\Tools\\codex.cmd']);
+    const which = createPathWhich({
+      pathEnv: winDirs.join(';'),
+      platform: 'win32',
+      isFile: (p) => files.has(p),
+    });
+
+    expect(which('codex')).toBeNull();
+    expect(which('codex.cmd')).toBe('C:\\Tools\\codex.cmd');
+  });
+
+  it('Windows: strips quotes around a PATH entry', () => {
+    const which = createPathWhich({
+      pathEnv: '"C:\\Program Files\\rg"',
+      platform: 'win32',
+      isFile: (p) => p === 'C:\\Program Files\\rg\\rg.exe',
+    });
+
+    expect(which('rg')).toBe('C:\\Program Files\\rg\\rg.exe');
+  });
+
+  it('POSIX: searches absolute ":"-separated entries for the bare name', () => {
+    const which = createPathWhich({
+      pathEnv: '.:/usr/local/bin:/usr/bin',
+      platform: 'linux',
+      isFile: (p) => p === '/usr/bin/pi',
+    });
+
+    expect(which('pi')).toBe('/usr/bin/pi');
+  });
+
+  it('returns null when PATH is unset', () => {
+    const which = createPathWhich({ pathEnv: undefined, platform: 'win32', isFile: () => true });
+
+    expect(which('claude')).toBeNull();
   });
 });

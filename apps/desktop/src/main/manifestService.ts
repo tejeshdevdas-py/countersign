@@ -18,6 +18,7 @@ import { app, net } from 'electron';
 import * as canaryFlagStore from './canaryFlagStore';
 
 import { resolveUpdateChannel, type UpdateChannel } from '@cindy/maker-shared/update-channel';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 
 import { supportsBetaUpdateChannel } from '../shared/updateChannelCapability';
 import { createLogger } from './logger';
@@ -125,7 +126,8 @@ function currentUpdateChannel(): UpdateChannel {
 // 2026-07 退役 cdnInternalBaseUrl:内网加速镜像与 internal_test.txt 探测已下线,
 // 更新/hotfix 链一律直连 cdnBaseUrl。
 export function getBaseUrl(): string {
-  if (process.env.XDT_CDN_BASE_URL) return process.env.XDT_CDN_BASE_URL;
+  // Countersign: the override is ignored, so this always throws LocalOnlyError.
+  if (!LOCAL_ONLY && process.env.XDT_CDN_BASE_URL) return process.env.XDT_CDN_BASE_URL;
   return getClientEndpoint('cdnBaseUrl');
 }
 

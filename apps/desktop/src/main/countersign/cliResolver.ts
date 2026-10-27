@@ -7,7 +7,7 @@
  * Claude Code / Codex CLI runs with its existing login (design spec, "Calls
  * made" 6). Nothing here downloads or makes a network request.
  */
-import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
 import path from 'node:path';
 
 export type AgentEngine = 'claude' | 'codex' | 'rg' | 'pi';
@@ -84,34 +84,64 @@ export function resolveAgentBinary(
   if (onPath) {
     return { path: onPath, source: 'path' };
   }
+  // An npm shim is reported, never run: spawning a .cmd needs a shell.
+  const shim = deps.which(`${spec.command}.cmd`);
+  const notFound = shim
+    ? `found ${shim} (an npm shim), which Countersign does not run`
+    : `\`${spec.command}\` is not on PATH`;
   return {
     error:
-      `${spec.displayName} was not found: it is not bundled with Countersign and \`${spec.command}\` is not on PATH. ` +
-      `${spec.installHint}, then restart Countersign.`,
+      `${spec.displayName} was not found: it is not bundled with Countersign and ${notFound}. ` +
+      `${spec.installHint} (a standalone install, not an npm shim) or use the bundled build, then restart Countersign.`,
   };
 }
 
+export interface PathWhichOptions {
+  /** The PATH value to search. */
+  pathEnv: string | undefined;
+  platform: NodeJS.Platform;
+  isFile: (p: string) => boolean;
+}
+
 /**
- * PATH lookup through `where.exe` (Windows) or `which`. On Windows only an
- * `.exe` match is returned: npm `.cmd` shims cannot be spawned without a shell.
+ * PATH lookup that searches only the absolute directories listed in PATH, in
+ * order. Unlike `where.exe` it never looks in the current directory, and a
+ * relative PATH entry (such as `.`) is skipped. On Windows a bare command
+ * matches only `<name>.exe`; a name with an extension (`codex.cmd`) matches
+ * that exact file.
  */
-export function whichOnPath(cmd: string): string | null {
-  const isWindows = process.platform === 'win32';
-  let output: string;
-  try {
-    output = execFileSync(isWindows ? 'where.exe' : 'which', [cmd], {
-      encoding: 'utf8',
-      windowsHide: true,
-      timeout: 5_000,
-      stdio: ['ignore', 'pipe', 'ignore'],
-    });
-  } catch {
+export function createPathWhich(options: PathWhichOptions): (cmd: string) => string | null {
+  const isWindows = options.platform === 'win32';
+  const paths = isWindows ? path.win32 : path.posix;
+  const dirs = (options.pathEnv ?? '')
+    .split(isWindows ? ';' : ':')
+    .map((dir) => dir.trim().replace(/^"(.*)"$/, '$1'))
+    .filter((dir) => dir.length > 0 && paths.isAbsolute(dir));
+  return (cmd) => {
+    const name = isWindows && paths.extname(cmd) === '' ? `${cmd}.exe` : cmd;
+    for (const dir of dirs) {
+      const candidate = paths.join(dir, name);
+      if (options.isFile(candidate)) return candidate;
+    }
     return null;
+  };
+}
+
+function isExecutableFile(p: string): boolean {
+  try {
+    if (!fs.statSync(p).isFile()) return false;
+    if (process.platform !== 'win32') fs.accessSync(p, fs.constants.X_OK);
+    return true;
+  } catch {
+    return false;
   }
-  const lines = output
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0);
-  const match = isWindows ? lines.find((line) => line.toLowerCase().endsWith('.exe')) : lines[0];
-  return match ?? null;
+}
+
+/** Production PATH lookup over the live process PATH. */
+export function whichOnPath(cmd: string): string | null {
+  return createPathWhich({
+    pathEnv: process.env.PATH,
+    platform: process.platform,
+    isFile: isExecutableFile,
+  })(cmd);
 }
