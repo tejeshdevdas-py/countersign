@@ -78,6 +78,7 @@ async function resolveMobilePluginMedia(instanceId: string, url: string, current
 }
 import { getModelVisibilityOverride, waitForModelVisibilityMirror } from '../maker-host/model-visibility-mirror.js';
 import { projectGhostAgentModels } from './ghostAgentModels.js';
+import { PLUGIN_FILE_FILTER } from './fileAssociation.js';
 import { getDesktopProviderService } from '../maker-host/createDesktopProviderService.js';
 import { PluginDownloadSlot } from './downloadSlot.js';
 import { createDownloader } from '../downloader/index.js';
@@ -9600,7 +9601,7 @@ export function registerGhostIpc(): void {
     assertTrustedAppRendererEvent(event);
     const win = BrowserWindow.fromWebContents(event.sender);
     const opts = {
-      filters: [{ name: 'Cindy Ghost', extensions: ['cindy'] }],
+      filters: [PLUGIN_FILE_FILTER],
       properties: ['openFile' as const],
     };
     const picked = win ? await dialog.showOpenDialog(win, opts) : await dialog.showOpenDialog(opts);

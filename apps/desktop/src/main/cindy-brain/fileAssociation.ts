@@ -4,6 +4,8 @@ import { promisify } from 'node:util';
 import { app } from 'electron';
 
 import { brandExecutableName } from '@cindy/maker-shared/brand-identity';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import { CINDY_MIME_TYPE, SHARE_MIME_TYPE } from '../../shared/fileTypes.js';
 import { CURRENT_CINDY_REGION } from '../../shared/brandRegion.js';
 import { createLogger } from '../logger.js';
@@ -79,8 +81,14 @@ async function regSetNamed(keyPath: string, valueName: string, value: string): P
   });
 }
 
+/** The .cindy plugin package type, as the install file picker and Explorer name it. */
+export const PLUGIN_FILE_FILTER = { name: `${BRAND_NAME} plugin`, extensions: ['cindy'] };
+
 /** 启动时调用:fire-and-forget,内部吞掉一切失败。 */
 export function registerCindyFileAssociation(): void {
+  // Countersign: writing HKCU keys on every start would take the .cindy file
+  // type away from an installed Cindy, so LOCAL_ONLY never registers it.
+  if (LOCAL_ONLY) return;
   if (process.platform !== 'win32' || !app.isPackaged) return;
   void (async () => {
     try {
@@ -96,7 +104,7 @@ export function registerCindyFileAssociation(): void {
 
       await regSetDefault(KEY_EXT, PROG_ID);
       await regSetNamed(KEY_EXT, 'Content Type', CINDY_MIME);
-      await regSetDefault(KEY_PROG, 'Cindy Ghost');
+      await regSetDefault(KEY_PROG, PLUGIN_FILE_FILTER.name);
       await regSetDefault(`${KEY_PROG}\\DefaultIcon`, `"${exe}",0`);
       await regSetDefault(commandKey, command);
       await regSetNamed(KEY_EXT_SHARE, 'Content Type', SHARE_MIME);
