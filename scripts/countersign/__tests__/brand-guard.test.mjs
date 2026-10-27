@@ -162,8 +162,8 @@ test('covers built-in Skills, teammate packages and headless profiles', () => {
   for (const p of [
     'apps/desktop/resources/system-skills/learn/SKILL.md',
     'apps/desktop/resources/system-skills/learn/agents/openai.yaml',
-    'apps/desktop/resources/bot-packages/cooper/0.5.1/manifest.json',
-    'apps/desktop/resources/bot-packages/cooper/0.5.1/skills/cooper-ops/SKILL.md',
+    'apps/desktop/resources/bot-packages/cooper/0.5.2/manifest.json',
+    'apps/desktop/resources/bot-packages/cooper/0.5.2/skills/cooper-ops/SKILL.md',
     'apps/cindy-headless/profiles/cindy-production-codex/prompt.md',
     'packages/lizi-mcps/src/browser/prompts/rules/browser-workflow.md',
     'packages/maker-core/src/contacts/system-prompt-disabled.md',
