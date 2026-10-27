@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import os from 'node:os';
+import { CODEX_LOCAL_ONLY_CONFIG_ARGS } from '@cindy/maker-shared/local-only';
 import path from 'node:path';
 import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
@@ -8,6 +9,7 @@ import { prepareCodexGlobalSkillsLinks } from '../codex-global-skills.js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const state = vi.hoisted(() => ({
+  spawnArgs: [] as string[][],
   root: '',
   owner: { dataOwnerId: 'owner-a', generation: 1 },
   raw: '',
@@ -46,6 +48,7 @@ vi.mock('../codex-auth-state.js', () => ({
 }));
 vi.mock('node:child_process', () => ({
   spawn: (_binary: string, _args: string[], options: any) => {
+    state.spawnArgs.push(_args);
     const child = Object.assign(new EventEmitter(), {
       stdout: new PassThrough(),
       stderr: new PassThrough(),
@@ -220,6 +223,11 @@ describe('native Codex account credentials', () => {
     expect(parseCodexAccountIdentity(state.raw)?.principal).not.toBe(
       parseCodexAccountIdentity(credential('person-a', 'other-workspace'))?.principal,
     );
+  });
+  it('passes the Countersign telemetry switches to `codex login`', async () => {
+    state.spawnArgs.length = 0;
+    expect((await loginCodexAccount('account-a', () => true)).ok).toBe(true);
+    expect(state.spawnArgs.at(-1)).toEqual([...CODEX_LOCAL_ONLY_CONFIG_ARGS, 'login']);
   });
   it('isolates login, logout and owner directories', async () => {
     expect((await loginCodexAccount('account-a', () => true)).ok).toBe(true);

@@ -1,6 +1,7 @@
 import { app } from 'electron';
 import { createHash, randomUUID } from 'node:crypto';
 import { spawn, type ChildProcess } from 'node:child_process';
+import { CODEX_LOCAL_ONLY_CONFIG_ARGS, LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
@@ -198,7 +199,9 @@ export async function loginCodexAccount(
     );
     if (!current()) return { ok: false, reason: 'login_cancelled' };
     const exitCode = await new Promise<number | null>((resolve, reject) => {
-      proc = spawn(binary.binaryPath!, ['login'], {
+      // Countersign: same analytics / OTel / update switches as app-server.
+      const loginArgs = [...(LOCAL_ONLY ? CODEX_LOCAL_ONLY_CONFIG_ARGS : []), 'login'];
+      proc = spawn(binary.binaryPath!, loginArgs, {
         env: { ...process.env, CODEX_HOME: staging },
         shell: false,
         stdio: ['ignore', 'pipe', 'pipe'],

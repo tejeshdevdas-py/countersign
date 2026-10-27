@@ -1,12 +1,15 @@
 import type { ChildProcess } from 'node:child_process';
 
 import type { AuthState } from '@cindy/maker-core';
+import { CODEX_LOCAL_ONLY_CONFIG_ARGS, LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 
 export type CodexLoginMode = 'browser' | 'device-code';
 
 /** 官方 Codex CLI 的两种交互登录入口。 */
 export function codexLoginArgs(mode: CodexLoginMode = 'browser'): string[] {
-  return mode === 'device-code' ? ['login', '--device-auth'] : ['login'];
+  // Countersign: the login CLI gets the same analytics / OTel / update switches as app-server.
+  const localOnlyArgs = LOCAL_ONLY ? [...CODEX_LOCAL_ONLY_CONFIG_ARGS] : [];
+  return [...localOnlyArgs, ...(mode === 'device-code' ? ['login', '--device-auth'] : ['login'])];
 }
 
 /** 平台化的 Codex 登录子进程终止方案。 */

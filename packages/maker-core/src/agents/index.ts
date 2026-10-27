@@ -38,6 +38,12 @@ export {
   cleanProcessEnv,
   stripSensitiveAnthropicEnv,
 } from './claude-code/env-builder.js';
+// Countersign: engine telemetry switches, shared with the desktop's direct CLI spawns.
+export {
+  CLAUDE_LOCAL_ONLY_ENV,
+  CODEX_LOCAL_ONLY_CONFIG_ARGS,
+  applyClaudeLocalOnlyEnv,
+} from './shared/local-only-engine-config.js';
 // host 配置 LLM-context 图片预缩 resizer (注入 logger / 调阈值)
 export {
   ImageResizer,

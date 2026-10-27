@@ -17,6 +17,7 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 
 import { cleanProcessEnv } from '@cindy/maker-core';
+import { LOCAL_ONLY, applyClaudeLocalOnlyEnv } from '@cindy/maker-shared/local-only';
 import { hasProxyEnvConfig, parseOutboundProxyUrl } from '@cindy/anthropic-compat-proxy';
 
 import { getReadyBinaryPath } from '../agent-binaries/index.js';
@@ -96,11 +97,15 @@ function cliBinaryPath(): string | null {
  * 登录与登录态检查用 CLI 默认配置目录(dev 多实例也一样),凭证库因此与终端里的
  * `claude`、订阅会话共用同一份。process.env 的 CLAUDE_CONFIG_DIR 在 boot 期已被剥离。
  */
-async function cliEnv(options: { network: boolean }): Promise<NodeJS.ProcessEnv> {
-  return {
+export async function cliEnv(options: { network: boolean }): Promise<NodeJS.ProcessEnv> {
+  const env: NodeJS.ProcessEnv = {
     ...cleanProcessEnv(),
     ...(options.network ? await claudeCliNetworkEnv() : {}),
   };
+  // Countersign: `auth status`, `auth login` and the plan-usage `claude -p` start the
+  // full CLI too, so they get the same telemetry / update / marketplace switches.
+  if (LOCAL_ONLY) applyClaudeLocalOnlyEnv(env);
+  return env;
 }
 
 function optionalString(value: unknown): string | undefined {

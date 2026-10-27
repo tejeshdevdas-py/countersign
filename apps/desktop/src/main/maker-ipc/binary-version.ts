@@ -14,7 +14,7 @@
 
 import { registerPiKernelIpc } from './pi-kernel.js';
 import { ipcMain } from 'electron';
-import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
+import { CLAUDE_LOCAL_ONLY_ENV, LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import { execFile } from 'node:child_process';
 
 import { createLogger } from '../logger.js';
@@ -166,7 +166,12 @@ function spawnVersion(binaryPath: string): Promise<string> {
     execFile(
       binaryPath,
       ['--version'],
-      { timeout: 5000, windowsHide: true },
+      {
+        timeout: 5000,
+        windowsHide: true,
+        // Countersign: same switches as a session for a `claude --version` probe.
+        ...(LOCAL_ONLY ? { env: { ...process.env, ...CLAUDE_LOCAL_ONLY_ENV } } : {}),
+      },
       (err, stdout, stderr) => {
         if (err) {
           reject(err);

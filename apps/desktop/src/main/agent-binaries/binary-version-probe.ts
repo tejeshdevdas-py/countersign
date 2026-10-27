@@ -1,4 +1,5 @@
 import { execFile } from 'node:child_process';
+import { CLAUDE_LOCAL_ONLY_ENV, LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import { createRequire } from 'node:module';
 
 interface SemverApi {
@@ -63,6 +64,8 @@ export function probeBinaryVersion(
         binaryPath,
         ['--version'],
         {
+          // Countersign: a `claude --version` probe gets the same switches as a session.
+          ...(LOCAL_ONLY ? { env: { ...process.env, ...CLAUDE_LOCAL_ONLY_ENV } } : {}),
           encoding: 'utf8',
           maxBuffer: VERSION_PROBE_MAX_BUFFER,
           timeout: VERSION_PROBE_TIMEOUT_MS,

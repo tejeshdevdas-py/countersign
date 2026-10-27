@@ -1,5 +1,6 @@
 import type { ChildProcess } from 'node:child_process';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { CODEX_LOCAL_ONLY_CONFIG_ARGS } from '@cindy/maker-shared/local-only';
 
 import {
   buildCodexLoginTerminationPlan,
@@ -16,12 +17,13 @@ afterEach(() => {
 
 describe('codexLoginArgs', () => {
   it('uses the official browser flow by default', () => {
-    expect(codexLoginArgs()).toEqual(['login']);
-    expect(codexLoginArgs('browser')).toEqual(['login']);
+    // Countersign: LOCAL_ONLY prepends the telemetry switches.
+    expect(codexLoginArgs()).toEqual([...CODEX_LOCAL_ONLY_CONFIG_ARGS, 'login']);
+    expect(codexLoginArgs('browser')).toEqual([...CODEX_LOCAL_ONLY_CONFIG_ARGS, 'login']);
   });
 
   it('uses the official device authorization flow when requested', () => {
-    expect(codexLoginArgs('device-code')).toEqual(['login', '--device-auth']);
+    expect(codexLoginArgs('device-code')).toEqual([...CODEX_LOCAL_ONLY_CONFIG_ARGS, 'login', '--device-auth']);
   });
 });
 

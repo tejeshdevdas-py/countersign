@@ -84,3 +84,23 @@ describe('Countersign LOCAL_ONLY Claude Code env', () => {
     expect(env).toMatchObject(EXPECTED_SWITCHES);
   });
 });
+
+describe('Countersign LOCAL_ONLY: settings cannot re-enable a forced switch', () => {
+  it('a host behaviour flag or auth env from settings does not win', async () => {
+    const env = await buildClaudeEnv(
+      authWith({ DISABLE_AUTOUPDATER: '0', CLAUDE_CODE_ENABLE_TELEMETRY: '1' }),
+      {
+        behaviorFlags: {
+          DISABLE_TELEMETRY: '0',
+          CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '',
+          CLAUDE_CODE_ENABLE_TELEMETRY: '1',
+          ENABLE_ENHANCED_TELEMETRY_BETA: '1',
+        },
+      },
+    );
+
+    expect(env).toMatchObject(EXPECTED_SWITCHES);
+    expect(env.CLAUDE_CODE_ENABLE_TELEMETRY).toBeUndefined();
+    expect(env.ENABLE_ENHANCED_TELEMETRY_BETA).toBeUndefined();
+  });
+});

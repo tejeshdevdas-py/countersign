@@ -11,3 +11,5 @@ export class LocalOnlyError extends Error {
     this.name = 'LocalOnlyError';
   }
 }
+
+export * from './localOnlyEngine.js';

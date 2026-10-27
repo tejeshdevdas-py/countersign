@@ -13,10 +13,11 @@ const h = vi.hoisted(() => ({
   resolveError: null as Error | null,
   bridge: vi.fn(async () => 'http://127.0.0.1:5555'),
   spawn: vi.fn(),
+  shellEnv: {} as Record<string, string>,
 }));
 
 vi.mock('electron', () => ({ app: { isPackaged: true, getPath: () => '/tmp/cindy-test-user-data' } }));
-vi.mock('@cindy/maker-core', () => ({ cleanProcessEnv: () => ({ PATH: '/usr/bin' }) }));
+vi.mock('@cindy/maker-core', () => ({ cleanProcessEnv: () => ({ PATH: '/usr/bin', ...h.shellEnv }) }));
 vi.mock('../../agent-binaries/index.js', () => ({ getReadyBinaryPath: () => h.binary }));
 vi.mock('../../logger.js', () => ({
   createLogger: () => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
@@ -34,8 +35,10 @@ vi.mock('@cindy/anthropic-compat-proxy', async (original) => ({
 vi.mock('../claude-cli-proxy-bridge.js', () => ({ ensureClaudeCliProxyBridge: h.bridge }));
 vi.mock('node:child_process', () => ({ spawn: h.spawn }));
 
+import { CLAUDE_LOCAL_ONLY_ENV } from '@cindy/maker-shared/local-only';
 import {
   claudeCliNetworkEnv,
+  cliEnv,
   parseClaudeCliLoginStatus,
   parseClaudeCliPlanUsageLine,
   peekClaudeCliLoginStatus,
@@ -355,5 +358,42 @@ describe('parseClaudeCliPlanUsageLine', () => {
     expect(parseClaudeCliPlanUsageLine(line({ rate_limits_available: false }))).toEqual({ usage: null });
     expect(parseClaudeCliPlanUsageLine(line({ rate_limits_available: true }))?.error).toMatch('no rate_limits');
     expect(parseClaudeCliPlanUsageLine(line({}))?.error).toMatch('no rate_limits');
+  });
+});
+
+describe('Countersign LOCAL_ONLY: native CLI spawns', () => {
+  beforeEach(() => {
+    h.shellEnv = {};
+    h.resolved = null;
+    h.envProxy = false;
+  });
+
+  it.each([false, true])('cliEnv carries the telemetry switches (network: %s)', async (network) => {
+    const env = await cliEnv({ network });
+    expect(env).toMatchObject(CLAUDE_LOCAL_ONLY_ENV);
+  });
+
+  it('forces the switches over the user shell and drops opt-in telemetry', async () => {
+    h.shellEnv = {
+      DISABLE_TELEMETRY: '0',
+      CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '',
+      CLAUDE_CODE_ENABLE_TELEMETRY: '1',
+      CLAUDE_CODE_ENHANCED_TELEMETRY_BETA: '1',
+      ENABLE_ENHANCED_TELEMETRY_BETA: '1',
+    };
+    const env = await cliEnv({ network: true });
+    expect(env).toMatchObject(CLAUDE_LOCAL_ONLY_ENV);
+    expect(env.CLAUDE_CODE_ENABLE_TELEMETRY).toBeUndefined();
+    expect(env.CLAUDE_CODE_ENHANCED_TELEMETRY_BETA).toBeUndefined();
+    expect(env.ENABLE_ENHANCED_TELEMETRY_BETA).toBeUndefined();
+  });
+
+  it('spawns `claude auth status` with the switches', async () => {
+    resetClaudeNativeCliForTest();
+    h.spawn.mockReset().mockImplementation(() => fakeChild({ stdout: SUBSCRIPTION }));
+    await refreshClaudeCliLoginStatus({ force: true });
+    expect(h.spawn).toHaveBeenCalled();
+    const env = (h.spawn.mock.calls[0][2] as { env: Record<string, string> }).env;
+    expect(env).toMatchObject(CLAUDE_LOCAL_ONLY_ENV);
   });
 });
