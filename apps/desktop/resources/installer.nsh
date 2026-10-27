@@ -24,9 +24,12 @@
     nsProcess::_FindProcess "${APP_EXECUTABLE_FILENAME}"
     Pop $R0
     ${If} $R0 == 0
-      MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION \
-        "${PRODUCT_FILENAME} 正在运行，请先关闭后再继续安装。$\n$\n点击「确定」将在关闭后继续。" \
-        /SD IDCANCEL IDOK kill_app
+      ${If} $LANGUAGE == 2052
+        StrCpy $R1 "${PRODUCT_FILENAME} 正在运行，请先关闭后再继续安装。$\n$\n点击「确定」将在关闭后继续。"
+      ${Else}
+        StrCpy $R1 "${PRODUCT_FILENAME} is running. Close it before continuing the installation.$\n$\nClick OK to close it and continue."
+      ${EndIf}
+      MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION "$R1" /SD IDCANCEL IDOK kill_app
       SetErrorLevel 1602
       Quit
       kill_app:
@@ -138,7 +141,7 @@
     Pop $R1
   ${EndIf}
   ${If} $R0 != 0
-    MessageBox MB_OK|MB_ICONSTOP "Could not stop the Cindy remote desktop service. Run the uninstaller as administrator and try again."
+    MessageBox MB_OK|MB_ICONSTOP "Could not stop the Countersign remote desktop service. Run the uninstaller as administrator and try again."
     Abort
   ${EndIf}
   cindy_remote_service_done:
