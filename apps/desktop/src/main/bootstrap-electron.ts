@@ -219,6 +219,8 @@ async function shutdownMaker(): Promise<{ piSessionFailures: number }> {
   return { piSessionFailures };
 }
 
+import { displayVersionLabel } from './countersign/displayVersion';
+
 function readGitText(args: string[]): string | null {
   try {
     const value = execFileSync('git', args, {
@@ -238,7 +240,8 @@ interface AppDisplayVersionInfo {
 }
 
 function getAppDisplayVersionInfo(): AppDisplayVersionInfo {
-  const version = app.getVersion();
+  // Countersign: an unversioned build shows "dev" instead of 0.0.0.
+  const version = displayVersionLabel(app.getVersion());
   if (app.isPackaged) {
     return {
       display: version,

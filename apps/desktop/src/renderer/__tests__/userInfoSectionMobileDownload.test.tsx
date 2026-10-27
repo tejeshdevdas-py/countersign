@@ -29,6 +29,13 @@ const {
   switchAccount: vi.fn(),
 }));
 
+// Countersign: these cases cover the upstream (cloud) chip; LOCAL_ONLY hides it,
+// see countersignUserInfoSection.test.tsx.
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string) => key,

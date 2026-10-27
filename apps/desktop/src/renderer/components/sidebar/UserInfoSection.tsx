@@ -12,6 +12,9 @@ import {
   UserRound,
 } from 'lucide-react';
 
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
+
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOptionalConfirmDialog } from '@/components/ui/confirm-dialog-provider';
@@ -100,7 +103,10 @@ export function UserInfoSection({ isCollapsed, onOpenUpdateNotice }: UserInfoSec
   // 头像地址变化(设置页改头像 / 服务端资料更新)时重置加载失败标记,
   // 让新地址有机会渲染,而不是永远停在首字母兜底。
   const isLocal = mode === 'local';
-  const displayName = user?.name ?? (isLocal ? t('settings.userProfile.local.name') : '');
+  // Countersign: there is no account to sign in to, so a local profile shows
+  // the product name instead of a "Not signed in" state.
+  const localName = LOCAL_ONLY ? BRAND_NAME : t('settings.userProfile.local.name');
+  const displayName = user?.name ?? (isLocal ? localName : '');
   const moreLabel = t('sidebar.user.moreLabel', { name: displayName });
   const avatarUrl = user?.avatar ?? null;
   useEffect(() => {
@@ -308,7 +314,7 @@ export function UserInfoSection({ isCollapsed, onOpenUpdateNotice }: UserInfoSec
         savedAccounts.some((account) => !account.isCurrent) ? (
           <DropdownMenuSeparator />
         ) : null}
-        {mode === 'local' ? (
+        {mode === 'local' && !LOCAL_ONLY ? (
           <DropdownMenuItem
             disabled={addingAccount}
             onSelect={() => void openAddAccount()}
@@ -340,7 +346,8 @@ export function UserInfoSection({ isCollapsed, onOpenUpdateNotice }: UserInfoSec
     navigate('/settings?tab=remote-control&section=devices');
   };
 
-  const mobileDownloadEntry = (
+  // Countersign: the phone app and device link are removed, so is their entry.
+  const mobileDownloadEntry = LOCAL_ONLY ? null : (
     <Tip text={t('sidebar.user.downloadMobile')} side="right">
       <button
         ref={mobileDownloadButtonRef}
@@ -411,14 +418,14 @@ export function UserInfoSection({ isCollapsed, onOpenUpdateNotice }: UserInfoSec
           </Tip>
           {mobileDownloadEntry}
         </div>
-        <MobileDownloadDialog
+        {!LOCAL_ONLY && <MobileDownloadDialog
           open={mobileDownloadOpen}
           onOpenChange={setMobileDownloadOpen}
           remoteAvailable={remoteAvailable}
           onOpenRemoteSettings={openRemoteSettings}
           onOpenDevices={openLinkedDevices}
           triggerRef={mobileDownloadButtonRef}
-        />
+        />}
       </>
     );
   }
@@ -519,7 +526,7 @@ export function UserInfoSection({ isCollapsed, onOpenUpdateNotice }: UserInfoSec
           update 时切换为「唤回 banner」入口,视觉涂黑(fill 实心 + foreground 主色)
           告诉用户还有更新等待确认。rail 走上面的头像-only 分支,不会渲染这颗;
           busy 让路时折叠火焰才是最小化提醒,展开态才用这颗涂黑入口。 */}
-        {(onOpenUpdateNotice || isFlameReopen) && (
+        {!LOCAL_ONLY && (onOpenUpdateNotice || isFlameReopen) && (
           <Tip
             text={
               isFlameReopen
@@ -564,14 +571,14 @@ export function UserInfoSection({ isCollapsed, onOpenUpdateNotice }: UserInfoSec
         )}
       </div>
 
-      <MobileDownloadDialog
+      {!LOCAL_ONLY && <MobileDownloadDialog
         open={mobileDownloadOpen}
         onOpenChange={setMobileDownloadOpen}
         remoteAvailable={remoteAvailable}
         onOpenRemoteSettings={openRemoteSettings}
         onOpenDevices={openLinkedDevices}
         triggerRef={mobileDownloadButtonRef}
-      />
+      />}
     </div>
   );
 }
