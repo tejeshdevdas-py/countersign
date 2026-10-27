@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 200 200">
+  <!-- Placeholder monogram: replace with the generated Countersign artwork (spec: src/renderer/lib/countersignBrandAssets.ts). -->
+  <circle cx="100" cy="100" r="100" fill="#3A3A3A"/>
+  <text x="100" y="134" text-anchor="middle" font-family="Segoe UI, system-ui, -apple-system, Helvetica, Arial, sans-serif" font-size="104" font-weight="600" fill="#F2F2ED">Cs</text>
+</svg>

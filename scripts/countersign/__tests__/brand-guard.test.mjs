@@ -78,3 +78,42 @@ test('ignores code spans, fences, link targets in help and the generated module'
   assert.equal(leaks.length, 1);
   assert.equal(leaks[0].line, 1);
 });
+
+test('flags the capitalised CINDY in a locale value', () => {
+  const text = '{\n  "a": "CINDY Light"\n}\n';
+  assert.equal(findBrandLeaks([{ path: LOCALE, text }]).length, 1);
+});
+
+test('flags literal names and alt text in renderer source', () => {
+  const text = [
+    "  name: 'CINDY Light',",
+    "  name: 'Cindy',",
+    '<img alt="Cindy" />',
+    '<button aria-label="Cindy" />',
+  ].join('\n');
+  const leaks = findBrandLeaks([{ path: 'apps/desktop/src/renderer/themes/x.ts', text }]);
+  assert.deepEqual(
+    leaks.map((leak) => leak.line),
+    [1, 2, 3, 4],
+  );
+});
+
+test('leaves internal names in main-process source alone', () => {
+  const text = "clientInfo: { name: 'Cindy', version: '1' },\n";
+  assert.deepEqual(findBrandLeaks([{ path: 'apps/desktop/src/main/x.ts', text }]), []);
+});
+
+test('flags imports of the Cindy artwork in renderer source', () => {
+  const text = [
+    "import logoLight from '@/assets/logo-light.png';",
+    "import head from '@/assets/head-image-dark.png';",
+    "import portrait from '@/assets/bot-presets/cindy.png';",
+    "import cindyLogoDark from '../../assets/cindy-logo-dark.png';",
+    "import mark from '@/assets/countersign/mark-light.svg';",
+  ].join('\n');
+  const leaks = findBrandLeaks([{ path: 'apps/desktop/src/renderer/hooks/x.ts', text }]);
+  assert.deepEqual(
+    leaks.map((leak) => leak.line),
+    [1, 2, 3, 4],
+  );
+});

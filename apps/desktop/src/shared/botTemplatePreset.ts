@@ -39,8 +39,24 @@ export const CINDY_DEFAULT_IDENTITY = [
   '# 相处\n表达自然、简洁、具体。保留用户已给出的要求和授权；不编造背景、能力或完成状态，不反复询问已经明确的事情。',
 ].join('\n\n');
 
+/**
+ * Countersign: the name the default teammate is created with, and its identity.
+ * The identity is CINDY_DEFAULT_IDENTITY with only the name changed, so the
+ * teammate behaves the same; the Cindy texts stay as recognition fingerprints.
+ */
+export const COUNTERSIGN_DEFAULT_TEAMMATE_NAME = 'Countersign';
+
+export const COUNTERSIGN_DEFAULT_IDENTITY = CINDY_DEFAULT_IDENTITY.replace(
+  /Cindy/g,
+  COUNTERSIGN_DEFAULT_TEAMMATE_NAME,
+);
+
 export function inferBotTemplatePresetId(identitySource: string): BotTemplatePresetId | null {
-  if (identitySource === CINDY_DEFAULT_IDENTITY || identitySource === PREVIOUS_CINDY_DEFAULT_IDENTITY) return 'cindy';
+  if (
+    identitySource === COUNTERSIGN_DEFAULT_IDENTITY
+    || identitySource === CINDY_DEFAULT_IDENTITY
+    || identitySource === PREVIOUS_CINDY_DEFAULT_IDENTITY
+  ) return 'cindy';
   return (
     BOT_TEMPLATE_PRESET_IDS.find(
       (templateId) => BOT_TEMPLATE_PRESET_IDENTITIES[templateId] === identitySource,

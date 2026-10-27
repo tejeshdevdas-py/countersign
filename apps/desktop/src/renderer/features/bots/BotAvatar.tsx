@@ -24,7 +24,7 @@
 import { rewriteToRemoteMediaOrigin } from '@/../shared/remoteMediaUrl';
 import { useEffect, useState } from 'react';
 
-import cindyPresetAvatar from '@/assets/bot-presets/cindy.png';
+import { COUNTERSIGN_BRAND_ASSETS } from '@/lib/countersignBrandAssets';
 // Upgrade failure/older remote-host fallback only; migrated profiles use cindy-media.
 import dashPresetAvatar from '../../../../resources/legacy-teammate-avatars/dash.png';
 import liziPresetAvatar from '../../../../resources/legacy-teammate-avatars/lizi.png';
@@ -60,7 +60,8 @@ const HUE_TOKENS: Record<BotAvatarHue, string> = {
 };
 
 const BUNDLED_AVATAR_BY_SENTINEL: Readonly<Record<string, string>> = {
-  'cindy://avatar/preset/cindy': cindyPresetAvatar,
+  // Countersign: the default teammate's preset key is internal; its artwork is Countersign's.
+  'cindy://avatar/preset/cindy': COUNTERSIGN_BRAND_ASSETS.teammateAvatar,
   'cindy://avatar/preset/dash': dashPresetAvatar,
   'cindy://avatar/preset/lizi': liziPresetAvatar,
 };

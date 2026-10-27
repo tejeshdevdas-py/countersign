@@ -9,8 +9,11 @@
 
 import { useIsDarkMode } from '@/components/markdown/useIsDarkMode';
 
-import logoLight from '@/assets/logo-light.png';
-import logoDark from '@/assets/logo-dark.png';
+import { COUNTERSIGN_BRAND_ASSETS } from '@/lib/countersignBrandAssets';
+
+// Countersign: the wordmark comes from the Countersign asset files.
+const logoLight = COUNTERSIGN_BRAND_ASSETS.wordmarkLight;
+const logoDark = COUNTERSIGN_BRAND_ASSETS.wordmarkDark;
 
 export { logoLight, logoDark };
 

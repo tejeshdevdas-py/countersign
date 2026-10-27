@@ -8,16 +8,21 @@
  * internal log text may keep the old name and are not scanned.
  * LICENSE, NOTICE, docs/legal, FORK-CHANGES.md, docs/countersign and generated
  * files are exempt.
+ *
+ * In renderer source it also scans (4) literal `name`, `alt` and `aria-label`
+ * values (theme names, image alt text, teammate names) and (5) imports of the
+ * known Cindy artwork files, whose pixels a text scan cannot read.
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-// The old name, also as a plural ("Cindys"). Tested on decoded text.
-const OLD_NAME = /\bCindys?\b/;
+// The old name, also as a plural ("Cindys") and in capitals ("CINDY"). Tested on decoded text.
+const OLD_NAME = /\b(?:Cindys?|CINDYS?)\b/;
 const LOCALE_PATH = /^apps\/desktop\/src\/renderer\/i18n\/locales\/.+\.json$/;
 const HELP_PATH = /^apps\/desktop\/help-knowledge\/[^/]+\.md$/;
 const SOURCE_PATH = /^apps\/desktop\/src\/(?!.*(?:__tests__\/|\.test\.tsx?$)).+\.tsx?$/;
+const RENDERER_PATH = /^apps\/desktop\/src\/renderer\//;
 const EXEMPT = [
   /\.generated\.tsx?$/,
   /^LICENSE$/,
@@ -31,6 +36,11 @@ const EXEMPT = [
 const JSON_VALUE = /^\s*(?:"(?:[^"\x5c]|\x5c.)*"\s*:\s*)?("(?:[^"\x5c]|\x5c.)*")\s*,?\s*$/;
 // `title: '...'`, `title="..."`, `title={'...'}` and similar literal titles.
 const TITLE_LITERAL = /\btitle\s*[:=]\s*\{?\s*(['"`])(.*?)\1/g;
+// Renderer only: `name: '...'`, `alt="..."`, `aria-label="..."` and similar literals.
+const LABEL_LITERAL = /(?:\bname|\balt|\baria-label)\s*[:=]\s*\{?\s*(['"`])(.*?)\1/g;
+// Upstream's Cindy artwork: wordmarks, the lockup head image and the default teammate portrait.
+const CINDY_ARTWORK_IMPORT =
+  /\bfrom\s+['"][^'"]*(?:cindy-logo-[a-z]+\.png|\/logo-(?:light|dark)\.png|head-image-[a-z]+\.png|bot-presets\/cindy\.png|cindy-avatar-[a-z]+\.png)['"]/;
 
 function normalize(p) {
   return p.replace(/\x5c/g, '/');
@@ -80,6 +90,15 @@ export function findBrandLeaks(files) {
       } else {
         for (const m of line.matchAll(TITLE_LITERAL)) {
           candidates.push(m[2]);
+        }
+        if (RENDERER_PATH.test(filePath)) {
+          for (const m of line.matchAll(LABEL_LITERAL)) {
+            candidates.push(m[2]);
+          }
+          const artwork = CINDY_ARTWORK_IMPORT.exec(line);
+          if (artwork) {
+            leaks.push({ path: file.path, line: index + 1, match: artwork[0] });
+          }
         }
       }
       for (const candidate of candidates) {

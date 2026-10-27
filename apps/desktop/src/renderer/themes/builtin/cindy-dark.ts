@@ -1,5 +1,4 @@
 import type { Theme } from '../types';
-import cindyLogoDark from '../../assets/cindy-logo-dark.png';
 import { CINDY_ACRYLIC_WINDOW_BACKING } from '../../../shared/windowBackdrop';
 
 /*
@@ -197,12 +196,11 @@ const GENERATED_OVERRIDES = {
 
 export const cindyDark: Theme = {
   id: 'cindy-dark',
-  name: 'CINDY Dark',
+  name: 'Countersign Dark',
   type: 'dark',
   colors: {
     ...GENERATED_OVERRIDES,
     "surface-translucent-sidebar": CINDY_ACRYLIC_WINDOW_BACKING.dark,
   },
-  // U5 品牌版横向 logo：白字+红箭头，深底可见。
-  brand: { logo: { src: cindyLogoDark } },
+  // Countersign: no theme logo; the default Countersign wordmark is used.
 };

@@ -258,7 +258,7 @@
     },
     "cindy-light": {
       "id": "cindy-light",
-      "name": "CINDY Light",
+      "name": "Countersign Light",
       "type": "light",
       "colors": {
         "surface": "#F2F2ED",
@@ -443,7 +443,7 @@
     },
     "cindy-dark": {
       "id": "cindy-dark",
-      "name": "CINDY Dark",
+      "name": "Countersign Dark",
       "type": "dark",
       "colors": {
         "surface": "#181818",

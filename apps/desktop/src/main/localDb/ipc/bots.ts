@@ -8,7 +8,11 @@ import type { TodoPatch } from '@cindy/maker-shared/teammate-todo';
  */
 import { listBotSkillsForBot } from '../../maker-ipc/botSkillService.js';
 import { provisionDefaultBot } from '../../maker-ipc/botDefaultProvisioning.js';
-import { BOT_TEMPLATE_PRESET_AVATARS, CINDY_DEFAULT_IDENTITY } from '../../../shared/botTemplatePreset.js';
+import {
+  BOT_TEMPLATE_PRESET_AVATARS,
+  COUNTERSIGN_DEFAULT_IDENTITY,
+  COUNTERSIGN_DEFAULT_TEAMMATE_NAME,
+} from '../../../shared/botTemplatePreset.js';
 import fs from 'node:fs/promises';
 import { chooseAvatarSource } from '../../profileEdit.js';
 import { toSdrAvatarImage } from '../../hdrAvatarToSdr.js';
@@ -1551,8 +1555,8 @@ async function provisionDefaultBotForList(
         const history = await client.drizzle.select({ id: sessions.id }).from(sessions).where(eq(sessions.source, 'bot')).limit(1);
         return history.length > 0;
       },
-      create: () => createBotProfile({ id: 'cindy-default', name: 'Cindy', templateId: 'cindy',
-        avatar: BOT_TEMPLATE_PRESET_AVATARS.cindy, identitySource: CINDY_DEFAULT_IDENTITY,
+      create: () => createBotProfile({ id: 'cindy-default', name: COUNTERSIGN_DEFAULT_TEAMMATE_NAME, templateId: 'cindy',
+        avatar: BOT_TEMPLATE_PRESET_AVATARS.cindy, identitySource: COUNTERSIGN_DEFAULT_IDENTITY,
         prepareInvitation: true, welcomeContext, locale }),
     });
   } catch (error) {

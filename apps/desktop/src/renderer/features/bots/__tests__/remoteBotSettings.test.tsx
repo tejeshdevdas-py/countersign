@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { COUNTERSIGN_BRAND_ASSETS } from '@/lib/countersignBrandAssets';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import {
   REMOTE_RESOURCE_CHANGED_CHANNEL,
@@ -595,7 +596,7 @@ it.each([
 });
 
 it.each([
-  { value: 'cindy://avatar/preset/cindy', kind: 'media', image: 'cindy.png' },
+  { value: 'cindy://avatar/preset/cindy', kind: 'media', image: COUNTERSIGN_BRAND_ASSETS.teammateAvatar },
   { value: 'cindy://avatar/preset/dash', kind: 'asset', image: 'dash.png' },
   { value: '🤖', kind: 'media', image: null },
   { value: '👩🏽‍💻', kind: 'emoji', image: null },
@@ -646,7 +647,7 @@ it.each(['gallery', 'file'])(
     fireEvent.click(screen.getByRole('button', { name: 'bots.profile.changeAvatar' }));
     let canClose: unknown;
     await act(async () => {
-      if (source === 'gallery') fireEvent.click(screen.getByRole('button', { name: 'Cindy' }));
+      if (source === 'gallery') fireEvent.click(screen.getByRole('button', { name: 'Countersign' }));
       else fireEvent.click(screen.getByRole('button', { name: 'bots.guided.upload' }));
       canClose = await close.current?.();
     });

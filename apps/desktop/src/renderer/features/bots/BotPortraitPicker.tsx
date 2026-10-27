@@ -3,7 +3,8 @@ import * as Popover from '@radix-ui/react-popover';
 import { useEffect, useRef, useState, type ReactElement, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Camera, Check, ChevronDown, Plus } from 'lucide-react';
-import cindyPortrait from '@/assets/bot-presets/cindy.png';
+import { COUNTERSIGN_BRAND_ASSETS } from '@/lib/countersignBrandAssets';
+import { COUNTERSIGN_DEFAULT_TEAMMATE_NAME } from '../../../shared/botTemplatePreset';
 import { Tip } from '@/components/ui/tooltip';
 import gallery from '../../../../resources/teammate-portrait-gallery.png';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
@@ -17,13 +18,13 @@ import {
 
 export const BOT_PORTRAIT_COUNT = 17;
 
-/** Cindy first, followed by the original 4×4 sheet in its existing order. */
+/** The default teammate's avatar first, followed by the original 4×4 sheet in its existing order. */
 export async function galleryPortrait(index: number): Promise<string> {
   if (!Number.isInteger(index) || index < 0 || index >= BOT_PORTRAIT_COUNT) {
     throw new Error('Unknown portrait');
   }
   const image = new Image();
-  image.src = index === 0 ? cindyPortrait : gallery;
+  image.src = index === 0 ? COUNTERSIGN_BRAND_ASSETS.teammateAvatar : gallery;
   await image.decode();
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = 256;
@@ -233,7 +234,7 @@ export function BotPortraitPicker({
           >
             <div className="grid grid-cols-4 gap-2 min-[400px]:grid-cols-6">
               {Array.from({ length: BOT_PORTRAIT_COUNT }, (_, index) => {
-                const label = index === 0 ? 'Cindy' : t('bots.guided.portrait', { number: index });
+                const label = index === 0 ? COUNTERSIGN_DEFAULT_TEAMMATE_NAME : t('bots.guided.portrait', { number: index });
                 const cell = index - 1;
                 return (
                   <Tip key={index} text={label}>
@@ -243,7 +244,7 @@ export function BotPortraitPicker({
                       onClick={() => void select(index)}
                       className="aspect-square rounded-full outline-none ring-offset-2 ring-offset-[var(--confirm-bg)] hover:ring-1 hover:ring-[var(--border-default)] focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
                       style={{
-                        backgroundImage: `url(${index === 0 ? cindyPortrait : gallery})`,
+                        backgroundImage: `url(${index === 0 ? COUNTERSIGN_BRAND_ASSETS.teammateAvatar : gallery})`,
                         backgroundSize: index === 0 ? 'cover' : '400% 400%',
                         backgroundPosition:
                           index === 0

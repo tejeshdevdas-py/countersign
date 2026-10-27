@@ -1699,7 +1699,7 @@ describe('Bot canonical Session lifecycle', () => {
       return result.items.map(item => ({ id: item.ref.id, name: item.display.title }));
     };
     const first = await mobileList();
-    expect(first).toEqual([expect.objectContaining({ id: 'cindy-default', name: 'Cindy' })]);
+    expect(first).toEqual([expect.objectContaining({ id: 'cindy-default', name: 'Countersign' })]);
     expect(first[0]).not.toHaveProperty('identitySource');
     await invoke('local-db:bots:list', undefined);
     expect(h.sqlite!.prepare('SELECT COUNT(*) AS n FROM bot_profiles').get()).toEqual({ n: 1 });
