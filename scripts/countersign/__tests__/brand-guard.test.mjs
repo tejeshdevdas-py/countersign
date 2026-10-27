@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { findBrandLeaks } from '../brand-guard.mjs';
+import { findBrandAssetNames, findBrandLeaks } from '../brand-guard.mjs';
 
 const LOCALE = 'apps/desktop/src/renderer/i18n/locales/en/common.json';
 
@@ -118,4 +118,24 @@ test('flags imports of the Cindy artwork in renderer source', () => {
     leaks.map((leak) => leak.line),
     [1, 2, 3, 4, 6, 7],
   );
+});
+
+test('flags shipped wallpaper and asset files named after Cindy', () => {
+  const leaks = findBrandAssetNames([
+    'apps/desktop/src/renderer/assets/wallpapers/thumbnails/cindy-neon.webp',
+    'apps/desktop/src/renderer/assets/wallpapers/cindy-window.mp4',
+    'apps/desktop/resources/companion-preset-avatars/cindy.png',
+    'apps/desktop/src/renderer/assets/wallpapers/thumbnails/night-launch.webp',
+    'apps/desktop/src/renderer/assets/bot-presets/cindy.png',
+    'apps/desktop/resources/cindy-version-protocol.json',
+  ]);
+  assert.deepEqual(
+    leaks.map((leak) => leak.match),
+    ['cindy-neon.webp', 'cindy-window.mp4', 'cindy.png'],
+  );
+});
+
+test('flags renderer imports of Cindy wallpaper images', () => {
+  const text = "import cindyNeon from '@/assets/wallpapers/thumbnails/cindy-neon.webp';\n";
+  assert.equal(findBrandLeaks([{ path: 'apps/desktop/src/renderer/lib/wallpaper.ts', text }]).length, 1);
 });

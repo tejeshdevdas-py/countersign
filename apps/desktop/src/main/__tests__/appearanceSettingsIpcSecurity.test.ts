@@ -1,5 +1,12 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+// Countersign: these cases cover upstream's wallpaper set, including the Cindy-character
+// wallpapers that LOCAL_ONLY removes (see countersignWallpapers.test.ts).
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
+
 const mocks = vi.hoisted(() => ({
   ipcOn: vi.fn(),
   ipcHandle: vi.fn(),

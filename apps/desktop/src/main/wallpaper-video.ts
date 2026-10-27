@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import manifest from '../shared/wallpaper-video-manifest.json';
-import type { WallpaperDownloadProgress } from '../shared/appearanceSettings.js';
+import { WALLPAPER_IDS, type WallpaperDownloadProgress } from '../shared/appearanceSettings.js';
 import { ingestClientWallpaper } from './cindy-media/ingest.js';
 import { resolveHashRef, blobUrl } from './cindy-media/blobStore.js';
 import { withClientWallpaperLock } from './cindy-media/clientWallpaperLock.js';
@@ -30,7 +30,12 @@ const download = createDownloader();
 const log = createLogger('wallpaper-assets');
 
 function isOfficialWallpaper(id: unknown): id is OfficialWallpaper {
-  return typeof id === 'string' && Object.hasOwn(manifest, id);
+  // Countersign: the Cindy-character wallpapers are not offered under LOCAL_ONLY.
+  return (
+    typeof id === 'string' &&
+    Object.hasOwn(manifest, id) &&
+    (WALLPAPER_IDS as readonly string[]).includes(id)
+  );
 }
 
 export function matchesWallpaperVideo(bytes: Buffer, asset: Asset): boolean {

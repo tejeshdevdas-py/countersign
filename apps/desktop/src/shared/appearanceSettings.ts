@@ -1,3 +1,5 @@
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
+
 import { DEFAULT_FONT_SIZES } from './generated/appearance-tokens';
 
 /**
@@ -84,7 +86,7 @@ export const APPEARANCE_LIMITS = {
 } as const;
 
 /** Current picker order; saved selections also accept the hidden compatibility IDs below. */
-export const SELECTABLE_WALLPAPER_IDS = [
+const UPSTREAM_SELECTABLE_WALLPAPER_IDS = [
   'none',
   'cindy-whisper',
   'cindy-night-glance',
@@ -103,9 +105,38 @@ export const SELECTABLE_WALLPAPER_IDS = [
 ] as const;
 
 /** Removed from the picker; saved selections keep working until the user switches away. */
-export const RETIRED_WALLPAPER_IDS = ['cindy-window', 'cindy-studio', 'cindy-dream'] as const;
-export const WALLPAPER_IDS = [...SELECTABLE_WALLPAPER_IDS, ...RETIRED_WALLPAPER_IDS] as const;
-export type WallpaperId = (typeof WALLPAPER_IDS)[number];
+const UPSTREAM_RETIRED_WALLPAPER_IDS = ['cindy-window', 'cindy-studio', 'cindy-dream'] as const;
+const UPSTREAM_WALLPAPER_IDS = [
+  ...UPSTREAM_SELECTABLE_WALLPAPER_IDS,
+  ...UPSTREAM_RETIRED_WALLPAPER_IDS,
+] as const;
+export type WallpaperId = (typeof UPSTREAM_WALLPAPER_IDS)[number];
+
+/**
+ * Countersign: upstream's eight wallpapers that show the Cindy character. Under
+ * LOCAL_ONLY they are not offered, not accepted, and a saved selection of one
+ * falls back to the default wallpaper; their images are not shipped.
+ */
+export const CINDY_CHARACTER_WALLPAPER_IDS: readonly WallpaperId[] = [
+  'cindy-whisper',
+  'cindy-night-glance',
+  'cindy-scarlet-stroll',
+  'cindy-neon',
+  'cindy-prism',
+  'cindy-window',
+  'cindy-studio',
+  'cindy-dream',
+];
+
+function isShippedWallpaperId(id: WallpaperId): boolean {
+  return !LOCAL_ONLY || !CINDY_CHARACTER_WALLPAPER_IDS.includes(id);
+}
+
+export const SELECTABLE_WALLPAPER_IDS: readonly WallpaperId[] =
+  UPSTREAM_SELECTABLE_WALLPAPER_IDS.filter(isShippedWallpaperId);
+export const RETIRED_WALLPAPER_IDS: readonly WallpaperId[] =
+  UPSTREAM_RETIRED_WALLPAPER_IDS.filter(isShippedWallpaperId);
+export const WALLPAPER_IDS: readonly WallpaperId[] = UPSTREAM_WALLPAPER_IDS.filter(isShippedWallpaperId);
 
 export function normalizeCustomWallpaperUrl(value: unknown): string {
   return typeof value === 'string' &&

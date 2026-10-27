@@ -3,6 +3,13 @@ import React from 'react';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+// Countersign: these cases cover upstream's wallpaper set, including the Cindy-character
+// wallpapers that LOCAL_ONLY removes (see countersignWallpapers.test.ts).
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
 import { WallpaperSection } from '../WallpaperSection';
 import { WallpaperSettingsProvider } from '@/hooks/useWallpaperSettings';
 import {

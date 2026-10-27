@@ -2,6 +2,22 @@
 import React from 'react';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+// Countersign: these cases cover upstream's wallpaper set, including the Cindy-character
+// wallpapers that LOCAL_ONLY removes (see countersignWallpapers.test.ts).
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
+// The Cindy-character previews are not shipped; stand in a preview so the
+// upstream cases about those scene wallpapers still have one.
+vi.mock('@/lib/wallpaper', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/wallpaper')>();
+  const background = (id: Parameters<typeof actual.getBuiltinWallpaperBackground>[0]) =>
+    actual.getBuiltinWallpaperBackground(id) ??
+    (id.startsWith('cindy-') ? `url("/test-previews/${id}.webp")` : undefined);
+  return { ...actual, getBuiltinWallpaperBackground: background, getBuiltinWallpaperPreview: background };
+});
 import { WallpaperSettingsProvider, useWallpaperSettings } from '../useWallpaperSettings';
 import { DEFAULT_APPEARANCE_SETTINGS } from '@/../shared/appearanceSettings';
 import type { WallpaperDownloadProgress } from '@/../shared/appearanceSettings';

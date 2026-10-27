@@ -11,7 +11,9 @@
  *
  * In renderer source it also scans (4) literal `name`, `alt` and `aria-label`
  * values (theme names, image alt text, teammate names) and (5) imports of the
- * known Cindy artwork files, whose pixels a text scan cannot read.
+ * known Cindy artwork files, whose pixels a text scan cannot read. It also
+ * fails on (6) any shipped image or video file whose name contains "cindy"
+ * (renderer assets and resources), apart from a short exempt list with reasons.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -40,7 +42,7 @@ const TITLE_LITERAL = /\btitle\s*[:=]\s*\{?\s*(['"`])(.*?)\1/g;
 const LABEL_LITERAL = /(?:\bname|\balt|\baria-label)\s*[:=]\s*\{?\s*(['"`])(.*?)\1/g;
 // Upstream's Cindy artwork: wordmarks, the lockup head image and the default teammate portrait.
 const CINDY_ARTWORK_IMPORT =
-  /\bfrom\s+['"][^'"]*(?:\/cindy-[^'"/]*\.(?:png|jpe?g)|\/logo-(?:light|dark)\.png|head-image-[a-z]+\.png|bot-presets\/cindy\.png)(?:\?[^'"]*)?['"]/;
+  /\bfrom\s+['"][^'"]*(?:\/cindy-[^'"/]*\.(?:png|jpe?g|webp|gif|svg|mp4|webm)|\/logo-(?:light|dark)\.png|head-image-[a-z]+\.png|bot-presets\/cindy\.png)(?:\?[^'"]*)?['"]/;
 
 function normalize(p) {
   return p.replace(/\x5c/g, '/');
@@ -57,6 +59,24 @@ function decodeJsonString(token) {
 /** Help prose without inline code spans and link targets. */
 function helpProse(line) {
   return line.replace(/`[^`]*`/g, '').replace(/\]\([^)]*\)/g, ']');
+}
+
+// Image and video files shipped with the desktop app (renderer assets, resources).
+const SHIPPED_ASSET_PATH =
+  /^apps\/desktop\/(?:src\/renderer\/assets|resources)\/.+\.(?:png|jpe?g|webp|gif|svg|mp4|webm|ico|icns)$/i;
+// Cindy-named artwork that stays, with the reason. Everything else named "cindy" fails.
+const ASSET_NAME_EXEMPT = new Map([
+  ['apps/desktop/src/renderer/assets/bot-presets/cindy.png', 'test fixture and mobile app path; the desktop no longer imports it'],
+  ['apps/desktop/src/renderer/assets/agent-island-cindy.png', 'macOS-only agent-island skin'],
+]);
+
+/** Shipped image/video files whose own file name carries the old name. */
+export function findBrandAssetNames(paths) {
+  return paths
+    .map(normalize)
+    .filter((p) => SHIPPED_ASSET_PATH.test(p) && !p.includes('/agent-bin/'))
+    .filter((p) => /cindy/i.test(p.slice(p.lastIndexOf('/') + 1)) && !ASSET_NAME_EXEMPT.has(p))
+    .map((p) => ({ path: p, line: 0, match: p.slice(p.lastIndexOf('/') + 1) }));
 }
 
 export function findBrandLeaks(files) {
@@ -112,6 +132,20 @@ export function findBrandLeaks(files) {
   return leaks;
 }
 
+function collectPaths(root, dir, out) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (entry.name === 'node_modules' || entry.name === 'agent-bin') {
+      continue;
+    }
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      collectPaths(root, full, out);
+    } else {
+      out.push(normalize(path.relative(root, full)));
+    }
+  }
+}
+
 function collect(root, dir, out) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     if (entry.name === 'node_modules' || entry.name === 'dist' || entry.name === '.git') {
@@ -134,7 +168,10 @@ function main() {
   const files = [];
   collect(root, path.join(root, 'apps', 'desktop', 'src'), files);
   collect(root, path.join(root, 'apps', 'desktop', 'help-knowledge'), files);
-  const leaks = findBrandLeaks(files);
+  const assetPaths = [];
+  collectPaths(root, path.join(root, 'apps', 'desktop', 'src', 'renderer', 'assets'), assetPaths);
+  collectPaths(root, path.join(root, 'apps', 'desktop', 'resources'), assetPaths);
+  const leaks = [...findBrandLeaks(files), ...findBrandAssetNames(assetPaths)];
   for (const leak of leaks) {
     console.error(`${leak.path}:${leak.line}: user-visible "${leak.match}"`);
   }
