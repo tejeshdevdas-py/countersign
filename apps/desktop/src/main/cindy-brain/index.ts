@@ -1,3 +1,4 @@
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { checkGhostSecret } from './runtime/ghostSecretCheck.js';
 import { PluginDeviceSync } from './deviceSyncSlot.js';
 import { contactsSyncKeyStore } from '../contacts-sync/keyStore.js';
@@ -4463,7 +4464,7 @@ async function getGhostConfigurableMediaModels(
     return {
       ok: false,
       errorCode: 'PERMISSION_DENIED',
-      message: `插件未声明 Cindy ${type} 能力`,
+      message: `插件未声明 ${BRAND_NAME} ${type} 能力`,
     };
   }
   try {
@@ -4555,7 +4556,7 @@ function getGhostConfiguredMediaModel(
     typeof capability !== 'string' ||
     !(GHOST_MEDIA_CAPABILITIES as readonly string[]).includes(capability)
   ) {
-    return { ok: false, errorCode: 'INVALID_REQUEST', message: '未知的 Cindy 媒体能力' };
+    return { ok: false, errorCode: 'INVALID_REQUEST', message: `未知的 ${BRAND_NAME} 媒体能力` };
   }
   const mediaCapability = capability as GhostMediaCapability;
   const [type, action] = mediaCapability.split('.') as ['image' | 'video', 'generate' | 'edit'];
@@ -4568,7 +4569,7 @@ function getGhostConfiguredMediaModel(
     return {
       ok: false,
       errorCode: 'PERMISSION_DENIED',
-      message: `插件未声明 Cindy ${mediaCapability} 能力`,
+      message: `插件未声明 ${BRAND_NAME} ${mediaCapability} 能力`,
     };
   }
 
@@ -5610,7 +5611,7 @@ function getGhostOauthAccountManager(): GhostOauthAccountManager {
         apiPost: (path, body) => {
           requireAppCapability(
             'canUseCindyOAuthBroker',
-            'Cindy OAuth broker requires a Cindy account.',
+            'The plugin OAuth broker needs a hosted account, which this local-only app does not use.',
           );
           return serverApiFetch(path, {
             method: 'POST',

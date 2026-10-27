@@ -1,3 +1,4 @@
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import fs from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -426,7 +427,7 @@ function multipartRequestBody(
       if (!parsed || !encoded) {
         throw new MediaInvocationError(
           'MEDIA_INPUT_INVALID',
-          `multipart 媒体字段 ${field} 必须使用 Cindy 受管媒体`,
+          `multipart 媒体字段 ${field} 必须使用 ${BRAND_NAME} 受管媒体`,
         );
       }
       const mimeType = parsed.mimeType;
@@ -439,7 +440,7 @@ function multipartRequestBody(
       ) {
         throw new MediaInvocationError(
           'MEDIA_INPUT_INVALID',
-          `媒体字段 ${field} 不是 Cindy 支持的 ${fileGuide.kind} 文件`,
+          `媒体字段 ${field} 不是 ${BRAND_NAME} 支持的 ${fileGuide.kind} 文件`,
         );
       }
       const extension =
@@ -759,7 +760,7 @@ async function localImagePath(
   } catch {
     throw new MediaInvocationError(
       'MEDIA_INPUT_INVALID',
-      '第三方 Provider 参考图必须是 Cindy 本地媒体引用',
+      `第三方 Provider 参考图必须是 ${BRAND_NAME} 本地媒体引用`,
     );
   }
   const stat = await fs.stat(resolved.absPath);
@@ -834,7 +835,7 @@ function assertResultMime(kind: MediaResultKind, mimeType: string): void {
   if (!mimeType.startsWith(`${kind}/`) || !blobStore.supportedMime(mimeType)) {
     throw new MediaInvocationError(
       'MEDIA_RESULT_INVALID',
-      `上游返回的字节不是 Cindy 支持的 ${kind} 媒体`,
+      `上游返回的字节不是 ${BRAND_NAME} 支持的 ${kind} 媒体`,
     );
   }
 }

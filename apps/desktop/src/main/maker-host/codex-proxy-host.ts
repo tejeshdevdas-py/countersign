@@ -1,3 +1,4 @@
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { captureUsagePricing, createUsagePricingObserver } from './model-usage-pricing.js';
 import { rewriteFastModel } from './model-fast-mode.js';
 import { createAttachmentRecovery } from './oversized-attachment-recovery.js';
@@ -706,7 +707,7 @@ function unresolvedCollabSpawnRouteDecision(): RoutingDecision {
         error: {
           type: 'server_error',
           code: CODEX_COLLAB_ROUTE_UNAVAILABLE_CODE,
-          message: 'Cindy could not resolve the parent Provider route for this spawned Codex agent.',
+          message: `${BRAND_NAME} could not resolve the parent Provider route for this spawned Codex agent.`,
         },
       }));
     },

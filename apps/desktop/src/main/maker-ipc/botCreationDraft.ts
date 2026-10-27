@@ -1,5 +1,6 @@
 import { isModelVisible } from '@cindy/model-providers';
 import { BRAND_NAME } from '@cindy/maker-shared/branding';
+import { COUNTERSIGN_DEFAULT_TEAMMATE_NAME } from '../../shared/botTemplatePreset.js';
 import { getModelVisibilityOverride, waitForModelVisibilityMirror } from '../maker-host/model-visibility-mirror.js';
 import { getDesktopProviderService } from '../maker-host/createDesktopProviderService.js';
 import fs from 'node:fs/promises';
@@ -136,7 +137,7 @@ ${JSON.stringify({ skills, tools, previous: previous ? { ...previous, name: inpu
     const draft = schema.parse(
       JSON.parse(result.text.trim().replace(/^```(?:json)?\s*|\s*```$/g, '')),
     );
-    draft.name = availableBotName(draft.name, [...names, 'Cindy']);
+    draft.name = availableBotName(draft.name, [...names, 'Cindy', COUNTERSIGN_DEFAULT_TEAMMATE_NAME]);
     draft.skillRefs = [...new Set(draft.skillRefs)].filter((name) =>
       skills.some((s) => s.name === name),
     );

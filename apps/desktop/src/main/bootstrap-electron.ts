@@ -8153,7 +8153,7 @@ const registerIpcHandlers = () => {
       assertFocusedSender: (senderEvent) => {
         const win = BrowserWindow.fromWebContents(senderEvent.sender);
         if (!isFocusedAppContentWindow(win)) {
-          throwIpcError('PERMISSION_DENIED', '此操作只能在 Cindy 主窗口聚焦时发起');
+          throwIpcError('PERMISSION_DENIED', `此操作只能在 ${BRAND_NAME} 主窗口聚焦时发起`);
         }
       },
       write: (text) =>

@@ -1,3 +1,4 @@
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { inspectSkillListGrants } from './customizationScanHost';
 import { createRemoteSkillsHost } from './remoteManagementHost';
 import { remoteResourceRegistry } from '../device-link/remoteResourceRegistry';
@@ -578,7 +579,7 @@ export function registerSkillhubIpc(options: RegisterSkillhubIpcOptions): void {
       // version shown to this renderer. The active manifest may have advanced
       // since the scan, so re-checking only the current descriptors is unsafe.
       if (grant.builtIn || isBuiltInSkillPath(params.filePath)) {
-        return { success: false, error: 'Cindy built-in Skills are read-only' };
+        return { success: false, error: `${BRAND_NAME} built-in Skills are read-only` };
       }
       return writeSkillFile(params);
     },
@@ -607,7 +608,7 @@ export function registerSkillhubIpc(options: RegisterSkillhubIpcOptions): void {
       const grant = await findScannedSkillGrant(event, params.absolutePath);
       if (!grant) return scanGrantDenied();
       if (grant.builtIn || isBuiltInSkillPath(params.absolutePath)) {
-        return { success: false, error: 'Cindy built-in Skills are read-only' };
+        return { success: false, error: `${BRAND_NAME} built-in Skills are read-only` };
       }
       if (!canMutate()) return { success: false, error: 'Skill mutation context changed' };
       const result = await renameLocalSkill(params, canMutate);
@@ -1022,7 +1023,7 @@ export function registerSkillhubIpc(options: RegisterSkillhubIpcOptions): void {
         };
       }
       if (grant.builtIn || isBuiltInSkillPath(params.absolutePath)) {
-        const message = 'Cindy built-in Skills cannot be published';
+        const message = `${BRAND_NAME} built-in Skills cannot be published`;
         return {
           success: false as const,
           errorCode: 'INTERNAL' as const,

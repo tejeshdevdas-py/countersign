@@ -6,6 +6,7 @@
  * Ghost 页面和导航到其它地址的窗口一律失败关闭。
  */
 
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -126,6 +127,6 @@ export function isTrustedAppRendererWindowForLocation(
 /** 高权限 IPC 的统一断言；失败时不泄露真实允许地址。 */
 export function assertTrustedAppRendererEvent(event: MainIpcEvent): void {
   if (!isTrustedAppRendererEvent(event)) {
-    throwIpcError('PERMISSION_DENIED', '此操作只能从 Cindy 主页面发起');
+    throwIpcError('PERMISSION_DENIED', `此操作只能从 ${BRAND_NAME} 主页面发起`);
   }
 }

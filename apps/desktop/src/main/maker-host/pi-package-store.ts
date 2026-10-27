@@ -1,3 +1,4 @@
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { piBinaryUpdateFailureStage } from '../agent-binaries/pi-self-update.js';
 /**
  * Cindy-owned Pi package store.
@@ -1146,7 +1147,7 @@ export async function runPiPackageCommand(
   const command = args[0] === '--version' ? 'version'
     : args[0] === 'install' || args[0] === 'update' || args[0] === 'remove' || args[0] === 'list' ? args[0] : undefined;
   const binaryPath = getReadyBinaryPath('pi');
-  if (!binaryPath) throw createPiPackageCommandError('Pi is not installed in Cindy', { command, phase: 'prepare', outcome: 'failed' });
+  if (!binaryPath) throw createPiPackageCommandError(`Pi is not installed in ${BRAND_NAME}`, { command, phase: 'prepare', outcome: 'failed' });
   try {
     await fs.mkdir(packageHome(), { recursive: true, mode: 0o700 });
     return await runPackageProcess(binaryPath, args, packageHome(), timeoutMs, { ...options, command });
@@ -1203,7 +1204,7 @@ export async function executePiNativeManagementCommand(
   if (command.kind === 'models') {
     // The managed package home intentionally contains no session provider credentials.
     // Refreshing it would falsely claim that Cindy's host-owned model catalog changed.
-    throw new Error('Pi model catalogs are owned by Cindy providers; this command is not supported in the package home.');
+    throw new Error(`Pi model catalogs are owned by ${BRAND_NAME} providers; this command is not supported in the package home.`);
   }
   return enqueueMutation(async () => {
     const core = command.kind === 'self' || command.kind === 'all';

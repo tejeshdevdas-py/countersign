@@ -1,3 +1,4 @@
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import type { StartSkillLearningParams } from '@cindy/mcps';
 import { and, desc, eq, gt, isNull, or, sql } from 'drizzle-orm';
 
@@ -108,7 +109,7 @@ export function createLearnInvocationGrantConsumer(
       return {
         ok: false,
         errorCode: isDbClientNotReadyError(error) ? 'HOST_NOT_READY' : 'INTERNAL',
-        message: 'Cindy could not verify the current /learn request.',
+        message: `${BRAND_NAME} could not verify the current /learn request.`,
       };
     }
     const invocation = latest ? parseDirectLearnInvocation(latest.text) : null;
@@ -138,7 +139,7 @@ export function createLearnInvocationGrantConsumer(
       return {
         ok: false,
         errorCode: isDbClientNotReadyError(error) ? 'HOST_NOT_READY' : 'INTERNAL',
-        message: 'Cindy could not record the current /learn request.',
+        message: `${BRAND_NAME} could not record the current /learn request.`,
       };
     }
     if (!consumed) {

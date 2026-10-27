@@ -6,6 +6,7 @@
  * (deferred-lookup:holder 未就绪时返回 HOST_NOT_READY,模式同 OrcaCollabService)。
  */
 
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import os from 'node:os';
 
 import { app } from 'electron';
@@ -66,7 +67,7 @@ export async function submitGithubIssueForSession(
     return {
       ok: false,
       errorCode: 'HOST_NOT_READY',
-      message: 'Cindy 主进程 issue 提交服务尚未就绪,请告知用户稍等几秒后重试。',
+      message: `${BRAND_NAME} 主进程 issue 提交服务尚未就绪,请告知用户稍等几秒后重试。`,
     };
   }
   const githubUserSubmitterDeps: GithubUserIssueSubmitterDeps = buildGithubUserSubmitterDeps();

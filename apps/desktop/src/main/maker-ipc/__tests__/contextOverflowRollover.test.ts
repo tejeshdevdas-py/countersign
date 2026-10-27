@@ -610,7 +610,7 @@ describe('createContextOverflowRollover', () => {
     deps.getSessionRow.mockResolvedValue({ ...await deps.getSessionRow(), contextTokens: 1200 });
     await expect(createContextOverflowRollover(deps).prepareNativeSessionRecovery('s1', {
       model: 'gpt-6-astra', providerId: 'openai', effort: null, fastMode: false,
-    }, vi.fn())).rejects.toThrow('Cindy history is unavailable');
+    }, vi.fn())).rejects.toThrow('Countersign history is unavailable');
     expect(deps.closeSession).not.toHaveBeenCalled();
     expect(deps.commitRebuild).not.toHaveBeenCalled();
     expect(deps.setPendingHandoff).not.toHaveBeenCalled();

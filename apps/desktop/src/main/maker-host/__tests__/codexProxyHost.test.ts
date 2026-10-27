@@ -2190,7 +2190,7 @@ describe('chatBridgeCapabilitiesForRoute', () => {
       error: {
         type: 'server_error',
         code: 'cindy_codex_parent_route_unavailable',
-        message: 'Cindy could not resolve the parent Provider route for this spawned Codex agent.',
+        message: 'Countersign could not resolve the parent Provider route for this spawned Codex agent.',
       },
     });
     expect(mockState.capturedRegistry?.get('thread-collab-orphan')).toBeUndefined();

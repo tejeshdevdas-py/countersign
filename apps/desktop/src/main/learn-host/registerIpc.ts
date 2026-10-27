@@ -6,6 +6,7 @@
  * (失败返 { runs: [] },renderer 解构空数组继续渲染)。
  */
 
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { BrowserWindow, ipcMain } from 'electron';
 
 import { createLogger } from '../logger';
@@ -76,7 +77,7 @@ export function registerLearnIpc(): void {
   _learnIpcRegistered = true;
   ipcMain.handle(LEARN_CHANNELS.START, async (_event, req: LearnStartRequest) => {
     if (!isCindyLearnSkillEnabled()) {
-      throwIpcError('PERMISSION_DENIED', 'Cindy Learn is disabled in Local Skills.');
+      throwIpcError('PERMISSION_DENIED', `${BRAND_NAME} Learn is disabled in Local Skills.`);
     }
     try {
       return await mustController().startLearn(req);

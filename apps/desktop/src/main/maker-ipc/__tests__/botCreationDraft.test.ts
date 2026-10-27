@@ -60,6 +60,13 @@ beforeEach(() => {
   h.generate.mockResolvedValue({ ok: true, text: JSON.stringify(generated) });
 });
 describe('owner-bound companion previews', () => {
+  // Countersign: the default teammate is named Countersign, so a generated
+  // draft never takes that name even after the default teammate is deleted.
+  it('reserves the default teammate name for a generated draft', async () => {
+    h.generate.mockResolvedValue({ ok: true, text: JSON.stringify({ ...generated, name: 'Countersign' }) });
+    const preview = await generateBotCreationDraft({ prompt: 'Practice English', modelRoute }, []);
+    expect(preview.name).toBe('Countersign 2');
+  });
   it('never dispatches a catalog model that is absent from the owner enabled list', async () => {
     h.enabled = false;
     await expect(generateBotCreationDraft({ prompt: 'Practice English', modelRoute }, []))

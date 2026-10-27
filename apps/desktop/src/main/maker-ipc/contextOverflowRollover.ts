@@ -5,6 +5,7 @@
  * 关 live handle、context_rebuild 交接与一次安全续接／无副作用重放。
  */
 
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import {
   CODEX_HISTORY_OVERSIZED_REASON,
   CONTEXT_OVERFLOW_REASON,
@@ -1196,7 +1197,7 @@ export function createContextOverflowRollover(deps: ContextOverflowRolloverDeps)
           const generation = deps.readPendingHandoffGeneration?.(sessionId);
           let source = (await deps.listMessages(sessionId)).filter((message) => message.role !== 'error');
           if (source.length === 0 && row.contextTokens !== 0) {
-            throw new Error('Cindy history is unavailable for native session recovery');
+            throw new Error(`${BRAND_NAME} history is unavailable for native session recovery`);
           }
           assertCanCommit();
           const live = deps.getLiveSession(sessionId);

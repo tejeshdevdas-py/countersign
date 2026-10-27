@@ -1,3 +1,4 @@
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import os from 'node:os';
 import path from 'node:path';
 import { promises as fsp } from 'node:fs';
@@ -932,7 +933,7 @@ async function collectCapabilityRoutingFailures(
         continue;
       }
       failures.push(
-        `cannot enforce Cindy capability routing for installed Codex plugin ${pluginName}@${marketplace} (marketplace status: ${status ?? 'unmanaged'})`,
+        `cannot enforce ${BRAND_NAME} capability routing for installed Codex plugin ${pluginName}@${marketplace} (marketplace status: ${status ?? 'unmanaged'})`,
       );
     }
   }

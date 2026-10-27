@@ -1,3 +1,4 @@
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { createHash } from 'node:crypto';
 
 import {
@@ -321,7 +322,7 @@ export function buildCodexCustomProviderArgs(
     const p = route.modelProviderId;
     extraArgs.push(
       '-c',
-      `model_providers.${p}.name="Cindy Custom Provider"`,
+      `model_providers.${p}.name="${BRAND_NAME} Custom Provider"`,
       '-c',
       `model_providers.${p}.base_url="${baseUrl}"`,
       '-c',
