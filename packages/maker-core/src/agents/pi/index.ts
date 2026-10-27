@@ -1,4 +1,5 @@
 import { getPiExtensionUiCapability } from './extension-ui-capabilities.js';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { createHarnessHookBridge } from '../shared/harness-hooks.js';
 import { parsePiManagementArgs, parsePiManagementText } from './managed-command.js';
 import { canonicalSkillPath, snapshotDisabledSkillLaunch, currentDisabledSkillLaunchPaths, extendDisabledSkillLaunchPaths, type DisabledSkillLaunchSnapshot } from '../shared/skill-activation.js';
@@ -2837,7 +2838,7 @@ export class PiAgent extends BaseAgent {
           `${nativeResolveFailed
             ? ' (native provider resolution failed)'
             : ' (provider absent, or it no longer offers this model)'}; ` +
-          'refusing to fall back to the Cindy gateway (would send prompts to the wrong endpoint).',
+          'no other provider was tried.',
       );
     }
     const initialProvider = resolveProviderForModel(opts.model, opts.providerId);
@@ -3366,7 +3367,7 @@ export class PiAgent extends BaseAgent {
       !gatewayApiByModel.has(opts.model)
     ) {
       throw new Error(
-        `[PI_GATEWAY_PROTOCOL_UNAVAILABLE] Cindy Gateway has no safe Pi route for model '${opts.model}'` +
+        `[PI_GATEWAY_PROTOCOL_UNAVAILABLE] The hosted gateway has no safe Pi route for model '${opts.model}'` +
           (remote ? ' in a remote session' : ''),
       );
     }
@@ -6702,7 +6703,7 @@ export class PiAgent extends BaseAgent {
       const entries = (commands.data as { commands?: Array<{ name?: unknown; source?: unknown }> } | undefined)?.commands;
       if (!commands.success || !entries?.some((entry) =>
         entry.name === 'cindy-native-provider-refresh' && entry.source === 'extension')) {
-        throw new Error('Cindy native provider refresh extension is unavailable; reopen this task with the current Cindy version.');
+        throw new Error(`The native provider refresh extension is unavailable; reopen this task with the current ${BRAND_NAME} version.`);
       }
       const nonce = randomBytes(24).toString('base64url');
       let timer: ReturnType<typeof setTimeout> | undefined;
@@ -6906,7 +6907,7 @@ export class PiAgent extends BaseAgent {
       const inspected = await queryNativeRuntime('inspect');
       if (!inspected.ok || !liveRuntimeSettings) {
         return { action: 'unavailable', targetContextWindow, windowVerified: false,
-          reason: 'Cindy could not read the live Pi compaction settings' };
+          reason: `${BRAND_NAME} could not read the live Pi compaction settings` };
       }
       const targetProvider = gateway ? PI_PROVIDER_ID
         : latestProviders.find((entry) => (entry.sourceProviderId ?? entry.id) === sourceId)?.id;
@@ -9171,7 +9172,7 @@ export class PiAgent extends BaseAgent {
             source.length > MAX_PI_MANAGED_PACKAGE_SOURCE_LENGTH ||
             /[\r\n\0]/.test(source)
           ) {
-            throw new Error('Invalid Cindy Pi extension request.');
+            throw new Error(`Invalid ${BRAND_NAME} Pi extension request.`);
           }
           if (context.isPermissionContextClosed()) return;
           const toolName = payload.args === undefined ? 'cindy_pi_extension' : 'cindy_pi_command';

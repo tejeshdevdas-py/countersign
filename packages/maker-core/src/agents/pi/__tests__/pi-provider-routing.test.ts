@@ -3097,7 +3097,7 @@ describe("Pi provider-aware model routing", () => {
         providerId: "xai",
       }),
     ).rejects.toThrow(
-      /BYOM provider 'xai' cannot serve model 'grok-4.6'.*refusing to fall back/,
+      /BYOM provider 'xai' cannot serve model 'grok-4.6'.*no other provider was tried/,
     );
     expect(captured.args).toEqual([]);
   });
@@ -6007,7 +6007,7 @@ describe("Pi provider-aware model routing", () => {
         providerId: "my-local",
       }),
     ).rejects.toThrow(
-      /cannot serve model 'local-model'.*refusing to fall back/s,
+      /cannot serve model 'local-model'.*no other provider was tried/s,
     );
     expect(captured.args).toEqual([]);
   });
@@ -6034,7 +6034,7 @@ describe("Pi provider-aware model routing", () => {
         model: "local-model",
         providerId: "my-local",
       }),
-    ).rejects.toThrow(/refusing to fall back to the Cindy gateway/);
+    ).rejects.toThrow(/; no other provider was tried\.$/);
     expect(captured.args).toEqual([]);
   });
 

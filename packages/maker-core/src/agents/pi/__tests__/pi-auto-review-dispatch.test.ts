@@ -2064,7 +2064,7 @@ describe('pi auto-review dispatch & spawn config (mocked pi process)', () => {
         id: 'pkg-forged',
         value: JSON.stringify({
           ok: false,
-          error: 'Invalid Cindy Pi extension request.',
+          error: 'Invalid Countersign Pi extension request.',
         }),
       });
       expect(mutatePiManagedPackage).not.toHaveBeenCalled();

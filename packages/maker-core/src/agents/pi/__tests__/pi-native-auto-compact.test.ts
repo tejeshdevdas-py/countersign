@@ -990,7 +990,7 @@ describe("PiAgent native auto-compaction ownership", () => {
   it("rejects before switching when the native settings inspection fails", async () => {
     const handle = await start();
     knobs.bridgeAckSuccess = false;
-    await expect(handle.setModel!("n")).rejects.toThrow(/could not read the live Pi compaction settings/);
+    await expect(handle.setModel!("n")).rejects.toThrow(/Countersign could not read the live Pi compaction settings/);
     expect(knobs.rpcCalls.filter((call) => call.type === "set_model")).toHaveLength(0);
     expect(knobs.closeCalls).toBe(0);
     await handle.close();
