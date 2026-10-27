@@ -28,6 +28,7 @@ import { decodeRemoteErrorMessage, remoteErrorI18nKey } from '../../lib/makerCha
 import { ERROR_REASON_I18N_KEYS } from './errorReasonI18n';
 import { getToolLoopI18nKey } from './toolLoopI18n';
 import type { ToolLoopErrorDetails } from '@cindy/maker-core';
+import { parseLoadedContextOverflow } from '@/utils/loadedContextOverflow';
 
 export function ErrorMessageCard({
   message,
@@ -64,12 +65,19 @@ export function ErrorMessageCard({
     providerId: providerId ?? null,
   });
   const toolLoopI18nKey = reason === 'tool_use_loop_detected' ? getToolLoopI18nKey(toolLoop) : undefined;
+  // Countersign: a local server's loaded context is too small; name both numbers.
+  const loadedContextOverflow = parseLoadedContextOverflow(decoded);
   const localizedReasonError =
     toolLoopI18nKey && toolLoop
       ? t(toolLoopI18nKey, { count: toolLoop.count })
-      : i18nKey
-        ? t(i18nKey)
-        : undefined;
+      : loadedContextOverflow
+        ? t('chat.errorBanner.loadedContextTooSmall', {
+            loaded: loadedContextOverflow.loadedContextTokens,
+            request: loadedContextOverflow.requestTokens,
+          })
+        : i18nKey
+          ? t(i18nKey)
+          : undefined;
   const text = kind === 'blocked-input'
     ? redactSensitiveText(decoded)
     : isResponsesLiteParallelToolCallsError(decoded)

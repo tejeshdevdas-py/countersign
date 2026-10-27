@@ -81,8 +81,9 @@ const TIMEOUT_CODES = new Set(['ETIMEDOUT', 'ABORT_ERR', 'TimeoutError', 'AbortE
 const MODEL_NOT_FOUND_RE =
   /model[^\n]{0,80}(not.{0,4}(found|exist)|does not exist|invalid|unknown|unsupported)|model_not_found|invalid model/i;
 /** 上下文超长：Anthropic "prompt is too long"、OpenAI "maximum context length"、通用 token limit 措辞。 */
+// Countersign: also the local-server form (LM Studio / llama.cpp `exceed_context_size_error`).
 const CONTEXT_TOO_LONG_RE =
-  /prompt is too long|maximum (?:context|prompt) length|context.{0,20}(length|window).{0,40}(exceed|too)|context_length_exceeded/i;
+  /prompt is too long|maximum (?:context|prompt) length|context.{0,20}(length|window).{0,40}(exceed|too)|(input|request|message).{0,20}exceeds?.{0,40}context.{0,20}(length|window|size)|context_length_exceeded|exceed_context_size_error/i;
 /** wire 兼容性：端点不认识请求里的字段 / 参数（典型：litellm/Azure 对 Anthropic-only 字段报错）。 */
 const WIRE_RE =
   /(unknown|unexpected|unsupported|extra|unrecognized).{0,16}(field|parameter|argument|inputs?|property|request param)|extra inputs are not permitted|invalid_request_error[^\n]{0,120}(field|param)/i;

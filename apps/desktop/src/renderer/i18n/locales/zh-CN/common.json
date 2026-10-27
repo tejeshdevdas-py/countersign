@@ -11852,6 +11852,7 @@
       "piManagerUnavailable": "远端 Pi 管理器未就绪，请稍后重试；若持续失败请到「设置 → 远端机器」重新安装 Pi。",
       "piBundledNodeMissing": "远端缺少运行环境（Node.js）。请到「设置 → 远端机器」展开该主机，先在 Claude Code 或 Codex 行点击「安装」（会附带 Node.js），再创建 Pi 任务。",
       "contextOverflow": "这条消息本身已经超过模型上下文上限，没法在当前 Agent 里自动换窗继续。请缩短输入或去掉超大附件后再试。",
+      "loadedContextTooSmall": "模型加载的上下文（{{loaded}} tokens）小于本次请求（{{request}} tokens）。请在 LM Studio 或本地模型服务中调大上下文长度并重新加载模型，然后重试。",
       "attachmentAccessDeniedTitle": "{{appName}} 无法读取源附件，消息未发送。",
       "attachmentAccessDeniedRecovery": "请将文件另存到“下载”或其他可访问的文件夹，移除原附件，再用附件按钮添加副本后发送。"
     },

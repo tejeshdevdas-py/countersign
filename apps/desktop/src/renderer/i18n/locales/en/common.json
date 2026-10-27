@@ -11897,6 +11897,7 @@
       "piManagerUnavailable": "Remote Pi manager is not ready. Retry shortly; if it keeps failing, reinstall Pi under Settings → Remote Machines.",
       "piBundledNodeMissing": "The remote host is missing its runtime (Node.js). Expand the host under Settings → Remote Machines and click Install on Claude Code or Codex first (they bundle Node.js), then start a Pi task.",
       "contextOverflow": "This message itself exceeds the model's context window, so {{appName}} cannot continue it in a fresh agent session. Shorten the input or remove a large attachment, then try again.",
+      "loadedContextTooSmall": "The model's loaded context ({{loaded}} tokens) is smaller than this request ({{request}} tokens). Raise the context length in LM Studio or your local model server, reload the model, then retry.",
       "attachmentAccessDeniedTitle": "{{appName}} cannot read the source attachment; the message was not sent.",
       "attachmentAccessDeniedRecovery": "Save a copy to Downloads or another accessible folder, remove the original attachment, and add the copy using the attachment button before sending again."
     },

@@ -64,6 +64,7 @@ import {
 import { isPiImageInputUnsupportedError } from '../../../shared/inputError';
 import type { ToolLoopErrorDetails } from '@cindy/maker-core';
 import type { ErrorDiagnosisSource } from '@/lib/errorDiagnosisPrompt';
+import { parseLoadedContextOverflow } from '@/utils/loadedContextOverflow';
 
 interface ErrorBannerProps {
   error: string;
@@ -356,12 +357,19 @@ export function ErrorBanner({
   const errorReasonI18nKey = errorReason ? ERROR_REASON_I18N_KEYS[errorReason] : undefined;
   const toolLoopI18nKey =
     errorReason === 'tool_use_loop_detected' ? getToolLoopI18nKey(toolLoop) : undefined;
+  // Countersign: a local server's loaded context is too small; name both numbers.
+  const loadedContextOverflow = parseLoadedContextOverflow(error);
   const localizedReasonError =
     toolLoopI18nKey && toolLoop
       ? t(toolLoopI18nKey, { count: toolLoop.count })
-      : errorReasonI18nKey
-        ? t(errorReasonI18nKey)
-        : undefined;
+      : loadedContextOverflow
+        ? t('chat.errorBanner.loadedContextTooSmall', {
+            loaded: loadedContextOverflow.loadedContextTokens,
+            request: loadedContextOverflow.requestTokens,
+          })
+        : errorReasonI18nKey
+          ? t(errorReasonI18nKey)
+          : undefined;
   const remoteErrorCode = parseAgentErrorCode(error)?.code;
   const isAttachmentAccessDenied = remoteErrorCode === 'DEVICE_LINK_MEDIA_ACCESS_DENIED';
   const remoteErrorKey = remoteAgentLimitErrorKey(error) ?? chatRemoteErrorGuidanceKey(remoteErrorCode, sessionSource);
