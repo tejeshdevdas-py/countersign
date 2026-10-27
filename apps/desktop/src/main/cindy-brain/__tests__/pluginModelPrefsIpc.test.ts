@@ -24,11 +24,12 @@ function read(deps: Record<string, unknown>, ghostId: unknown): unknown {
 describe('ghosts:errand-prefs (plugin model & tasks)', () => {
   it('returns the stored config and the current auxiliary model label, read fresh each time', () => {
     const readPluginTaskConfig = vi.fn(() => ({ permissionMode: 'auto' }));
-    let refs = ['cat:xai:codex:grok-4.6'];
+    // The label (head of the effective chain, none for a hosted default under
+    // LOCAL_ONLY) comes from formatDefaultAuxiliaryModelLabel, tested on its own.
+    let label = 'Grok 4.6';
     const deps = {
       readPluginTaskConfig,
-      getEffectiveAuxiliaryModelChain: () => ({ refs }),
-      formatAuxiliaryModelRefLabel: (ref: string) => (ref.endsWith('grok-4.6') ? 'Grok 4.6' : 'GPT-5.5'),
+      formatDefaultAuxiliaryModelLabel: () => label,
     };
     expect(read(deps, 'writer')).toEqual({
       config: { permissionMode: 'auto' },
@@ -36,7 +37,7 @@ describe('ghosts:errand-prefs (plugin model & tasks)', () => {
     });
     expect(readPluginTaskConfig).toHaveBeenCalledWith('writer');
     // 系统辅助模型改了:不缓存,下次打开详情页即跟随。
-    refs = ['cat:openai:codex:gpt-5.5'];
+    label = 'GPT-5.5';
     expect(read(deps, 'writer')).toMatchObject({ auxiliaryModelLabel: 'GPT-5.5' });
   });
 
@@ -44,8 +45,7 @@ describe('ghosts:errand-prefs (plugin model & tasks)', () => {
     const readPluginTaskConfig = vi.fn();
     expect(read({
       readPluginTaskConfig,
-      getEffectiveAuxiliaryModelChain: () => ({ refs: [] }),
-      formatAuxiliaryModelRefLabel: vi.fn(),
+      formatDefaultAuxiliaryModelLabel: () => null,
     }, 42)).toEqual({ config: {}, auxiliaryModelLabel: null });
     expect(readPluginTaskConfig).not.toHaveBeenCalled();
   });
