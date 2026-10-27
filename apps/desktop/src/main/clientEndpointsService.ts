@@ -627,8 +627,8 @@ const BUILD_SCOPED_ENDPOINT_KEYS = new Set<ClientEndpointKey>([
  * path shows which feature is unavailable.
  */
 export const COUNTERSIGN_ENDPOINT_FEATURES: Readonly<Record<ClientEndpointKey, string>> = {
-  authApiBaseUrl: 'Cindy account',
-  authDesktopCallbackUrl: 'Cindy account',
+  authApiBaseUrl: 'Hosted account',
+  authDesktopCallbackUrl: 'Hosted account',
   chatApiBaseUrl: 'Cloud chat',
   deviceLinkApiBaseUrl: 'Phone link and sharing',
   oauthBrokerApiBaseUrl: 'Cloud app connections',
@@ -637,8 +637,8 @@ export const COUNTERSIGN_ENDPOINT_FEATURES: Readonly<Record<ClientEndpointKey, s
   telegramHookWsUrl: 'Telegram bridge',
   xHookWsUrl: 'X bridge',
   slackHookWsUrl: 'Slack bridge',
-  websiteUrl: 'Cindy website',
-  modelAccessApiBaseUrl: 'Cindy model service',
+  websiteUrl: 'Hosted website',
+  modelAccessApiBaseUrl: 'Hosted model service',
   voiceApiBaseUrl: 'Cloud voice',
   githubApiBaseUrl: 'Issue reporting',
   skillhubApiBaseUrl: 'Skill Hub',
@@ -1199,7 +1199,7 @@ export function getClientEndpointRealmConfig(): {
   crossRealmOrgLoginEnabled: boolean;
   realmManifestBaseUrls: RealmManifestBaseUrls;
 } {
-  if (LOCAL_ONLY) throw new LocalOnlyError('Cindy account');
+  if (LOCAL_ONLY) throw new LocalOnlyError('Hosted account');
   if (resolvedEndpoints === null) {
     throw new Error('client endpoints not initialized');
   }
@@ -1218,7 +1218,7 @@ export function getClientEndpointRealmConfig(): {
 export async function loadClientEndpointsForRealm(
   region: ClientEndpointRegion,
 ): Promise<ClientEndpointMap> {
-  if (LOCAL_ONLY) throw new LocalOnlyError('Cindy account');
+  if (LOCAL_ONLY) throw new LocalOnlyError('Hosted account');
   const cached = realmEndpointCache.get(region);
   if (cached) return cached;
   const baseUrl = realmManifestBaseUrls[region];

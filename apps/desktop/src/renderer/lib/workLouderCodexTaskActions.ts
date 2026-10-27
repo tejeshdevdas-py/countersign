@@ -51,7 +51,7 @@ export async function copyCurrentTaskMarkdown(
       const text = sessionMessageDisplayText(message);
       if (!text) return [];
       const heading =
-        message.role === 'user' ? 'User' : message.role === 'assistant' ? 'Cindy' : null;
+        message.role === 'user' ? 'User' : message.role === 'assistant' ? 'Assistant' : null;
       return heading ? [`## ${heading}`, '', text, ''] : [];
     });
     if (lines.length === 0) {

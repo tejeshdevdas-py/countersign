@@ -106,6 +106,16 @@ describe('Countersign endpoints fail closed', () => {
     expect(() => getResolvedClientEndpoints()).toThrow(LocalOnlyError);
   });
 
+  it('names hosted features neutrally, never Cindy', async () => {
+    await initClientEndpoints();
+    for (const key of CLIENT_ENDPOINT_KEYS) {
+      expect(() => getClientEndpoint(key)).not.toThrow(/Cindy/);
+    }
+    expect(() => getClientEndpoint('modelAccessApiBaseUrl')).toThrow(/^Hosted model service is not available/);
+    expect(() => getClientEndpoint('authApiBaseUrl')).toThrow(/^Hosted account is not available/);
+    expect(() => getClientEndpoint('websiteUrl')).toThrow(/^Hosted website is not available/);
+  });
+
   it('a test-injected manifest does not reopen the getters', () => {
     const injected = Object.fromEntries(CLIENT_ENDPOINT_KEYS.map((key) => [key, 'https://x.test.invalid'])) as never;
     resetClientEndpointsForTest(injected);

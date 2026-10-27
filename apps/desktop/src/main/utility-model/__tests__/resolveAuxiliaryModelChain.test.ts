@@ -12,6 +12,7 @@ vi.mock('../auxiliary-model-settings-store.js', () => ({
 import { AUTO_AUXILIARY_MODEL_CHAIN } from '../../../shared/auxiliaryModelChain.js';
 import {
   formatAuxiliaryModelRefLabel,
+  formatDefaultAuxiliaryModelLabel,
   getEffectiveAuxiliaryModelChain,
   getEffectiveAuxiliaryModelChainSnapshot,
 } from '../resolveAuxiliaryModelChain.js';
@@ -102,9 +103,22 @@ describe('getEffectiveAuxiliaryModelChain', () => {
     });
   });
 
-  it('uses the product-facing Cindy AI label for XD catalog refs', () => {
+  it('names the hosted model service, not Cindy, for XD catalog refs', () => {
     expect(formatAuxiliaryModelRefLabel('cat:xd:codex:deepseek/deepseek-v4-flash'))
-      .toBe('deepseek/deepseek-v4-flash · Cindy AI');
+      .toBe('deepseek/deepseek-v4-flash · Hosted model service');
+  });
+
+  // Countersign: the automatic chain is hosted (xd) models that LOCAL_ONLY
+  // cannot reach, so the "follow default" row names no model at all.
+  it('offers no hosted model as the default under LOCAL_ONLY', () => {
+    expect(formatDefaultAuxiliaryModelLabel()).toBeNull();
+  });
+
+  it('names a custom default that LOCAL_ONLY can use', () => {
+    h.models = ['litellm-kimi-k2.6'];
+    const label = formatDefaultAuxiliaryModelLabel();
+    expect(label).not.toBeNull();
+    expect(label).not.toMatch(/Cindy|Hosted/);
   });
 
   it('changes when the effective source or ordered refs change', () => {

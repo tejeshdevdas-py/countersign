@@ -17,6 +17,7 @@ import { subscriptionAccountKind, subscriptionAccountState } from './subscriptio
  */
 
 import { app, safeStorage } from 'electron';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { isCodexAccountProvider, codexAccountState, codexAccountHome, prepareCodexAccountHome, parseCodexAccountIdentity } from './codex-account-auth.js';
 import { createHash, timingSafeEqual } from 'node:crypto';
 import os from 'node:os';
@@ -1419,7 +1420,7 @@ export class DesktopCodexAuthAdapter implements AuthAdapter {
       // gated against the isolated plugin enablement. A rejection here is an
       // unexpected invariant failure, so it must remain fail-closed.
       throw new Error(
-        `Cannot start Codex safely because Cindy could not inspect downstream plugin capabilities: ${pluginsOutcome.err.message}`,
+        `Cannot start Codex safely because ${BRAND_NAME} could not inspect downstream plugin capabilities: ${pluginsOutcome.err.message}`,
       );
     }
     if (pluginsOutcome.ok && pluginsOutcome.routingFailures.length > 0) {
@@ -1428,7 +1429,7 @@ export class DesktopCodexAuthAdapter implements AuthAdapter {
         assetPrepLog.error('Codex capability routing enforcement failed', { failure });
       }
       throw new Error(
-        `Cannot start Codex safely because Cindy could not isolate a downstream plugin capability: ${pluginsOutcome.routingFailures.join('; ')}`,
+        `Cannot start Codex safely because ${BRAND_NAME} could not isolate a downstream plugin capability: ${pluginsOutcome.routingFailures.join('; ')}`,
       );
     }
   }

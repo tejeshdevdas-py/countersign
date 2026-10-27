@@ -3021,7 +3021,7 @@ describe('turnRunner send outcome policy (feishu adapter characterization)', () 
           : mocks.feishuIm.sendText.mock.calls[0]?.[1];
         expect(text).toContain('账号余额或配额不足');
         if (kind === 'chunked-text') {
-          expect(text).toContain('在 Cindy 里打开这个任务');
+          expect(text).toContain('在 Countersign 里打开这个任务');
           expect(text).not.toContain('/model');
           expect(text).not.toContain('新对话配置');
         } else {

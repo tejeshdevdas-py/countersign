@@ -66,11 +66,15 @@ describe('asset preparation boundaries', () => {
     Object.defineProperty(adapter, 'codexHome', { value: 'unused-test-home' });
     await adapter.ensureGlobalCodexAssets();
     state.bridge.mockResolvedValueOnce({ warnings: [], routingFailures: ['revoked'] });
-    await expect(adapter.ensureGlobalCodexAssets()).rejects.toThrow('Cannot start Codex safely');
+    await expect(adapter.ensureGlobalCodexAssets()).rejects.toThrow(
+      'Cannot start Codex safely because Countersign could not isolate a downstream plugin capability: revoked',
+    );
     expect(skills).toHaveBeenCalledTimes(2);
     expect(state.bridge).toHaveBeenCalledTimes(2);
     state.bridge.mockRejectedValueOnce(new Error('unreadable'));
-    await expect(adapter.ensureGlobalCodexAssets()).rejects.toThrow('unreadable');
+    await expect(adapter.ensureGlobalCodexAssets()).rejects.toThrow(
+      'Cannot start Codex safely because Countersign could not inspect downstream plugin capabilities: unreadable',
+    );
   });
 
   it('does not reuse a completion across owner generations or an in-progress boundary', async () => {

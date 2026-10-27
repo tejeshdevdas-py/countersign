@@ -18,6 +18,7 @@ import {
   utilityTransportLabel,
 } from '../../shared/utilityModelProfiles.js';
 import { isAuxiliaryModelCustomized, readAuxiliaryModelSettings } from './auxiliary-model-settings-store.js';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 
 export type AuxiliaryModelChainSource = 'custom' | 'auto' | 'env';
 
@@ -137,7 +138,7 @@ export function formatAuxiliaryModelRefLabel(ref: string): string {
     return `${profile.model} · ${utilityTransportLabel(profile.transport)}`;
   }
   if (parsed.route.providerId === 'xd') {
-    return `${parsed.route.model} · Cindy AI`;
+    return `${parsed.route.model} · Hosted model service`;
   }
   const agent = parsed.route.agentKind === 'claude-code'
     ? 'Claude'
@@ -155,4 +156,17 @@ export function parsedAuxiliaryModelRefs(refs: readonly string[]): ParsedAuxilia
     if (item) parsed.push(item);
   }
   return parsed;
+}
+
+/**
+ * Label of the "follow default" row: the head of the effective chain, or null
+ * when there is no default the app can use. Countersign: under LOCAL_ONLY a
+ * hosted (xd) model cannot be reached, so it is not offered as the default.
+ */
+export function formatDefaultAuxiliaryModelLabel(): string | null {
+  const ref = getEffectiveAuxiliaryModelChain().refs[0] ?? null;
+  if (ref === null) return null;
+  const parsed = parseAuxiliaryModelRef(ref);
+  if (LOCAL_ONLY && parsed?.kind === 'catalog' && parsed.route.providerId === 'xd') return null;
+  return formatAuxiliaryModelRefLabel(ref);
 }
