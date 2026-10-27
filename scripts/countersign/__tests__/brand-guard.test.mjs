@@ -13,6 +13,7 @@ import {
   findBrandAssetNames,
   findBrandLeaks,
   findHtmlLeaks,
+  findModelDataLeaks,
   findPromptLeaks,
   findUserTextHits,
   isPromptTemplatePath,
@@ -216,6 +217,46 @@ test('scans html entry pages under apps/desktop/src and resources only, not test
   assert.deepEqual(
     leaks.map((leak) => leak.path),
     ['apps/desktop/src/capture-renderer/index.html', 'apps/desktop/resources/help/index.html'],
+  );
+});
+
+// (11) JSON data the model reads: browser recipes and site guides go to the model whole.
+
+const SITEGUIDE = 'packages/lizi-mcps/src/browser/cindy-recipes/openlibrary.org/siteguide.json';
+
+test('flags the old name in any string of the bundled recipe and site guide JSON', () => {
+  const text = [
+    '{',
+    '  "site": "openlibrary.org",',
+    '  "notes": "公开书目。\\n完整目录更新时保留此 Cindy 独立配方。",',
+    '  "source": "Cindy",',
+    '  "aliases": ["open-library", "Cindy books"]',
+    '}',
+  ].join('\n');
+  const leaks = findModelDataLeaks([{ path: SITEGUIDE, text }]);
+  assert.deepEqual(
+    leaks.map((leak) => [leak.line, leak.match]),
+    [
+      [3, 'Cindy'],
+      [4, 'Cindy'],
+      [5, 'Cindy'],
+    ],
+  );
+});
+
+test('scans recipe and site guide JSON under recipes and cindy-recipes only', () => {
+  const text = '{ "source": "Cindy" }\n';
+  const paths = [
+    'packages/lizi-mcps/src/browser/recipes/bbc.com/siteguide.json',
+    'packages/lizi-mcps/src/browser/recipes/bbc.com/recipe.json',
+    'packages/lizi-mcps/src/browser/cindy-recipes/apps.apple.com/app-store-search.recipe.json',
+    'packages/lizi-mcps/src/browser/recipe-examples/books.toscrape.com/siteguide.json',
+    'packages/lizi-mcps/package.json',
+  ];
+  const leaks = findModelDataLeaks(paths.map((p) => ({ path: p, text })));
+  assert.deepEqual(
+    leaks.map((leak) => leak.path),
+    paths.slice(0, 3),
   );
 });
 
@@ -541,6 +582,18 @@ test('main() fails a fixture tree whose html entry page is titled with the old n
   });
   assert.equal(code, 1);
   assert.match(out, /apps\/desktop\/src\/renderer\/index\.html:2/);
+});
+
+test('main() fails a fixture tree whose site guide names the old name', () => {
+  const { code, out } = runMain([FIXTURE_ENTRY], (root) => {
+    writeFile(
+      root,
+      'packages/lizi-mcps/src/browser/cindy-recipes/x.test/siteguide.json',
+      '{\n  "source": "Cindy"\n}\n',
+    );
+  });
+  assert.equal(code, 1);
+  assert.match(out, /cindy-recipes\/x\.test\/siteguide\.json:2/);
 });
 
 test('main() fails a fixture tree whose baseline lists a text that is gone', () => {

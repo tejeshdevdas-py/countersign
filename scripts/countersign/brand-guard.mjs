@@ -30,6 +30,9 @@
  *
  * (10) Shipped .html entry pages under apps/desktop/src and apps/desktop/resources
  * are scanned for visible text: the <title> becomes the window title.
+ *
+ * (11) The bundled browser recipe and site guide JSON (lizi-mcps) is scanned
+ * string by string: the browser tool returns it to the model whole.
  */
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
@@ -203,6 +206,60 @@ export function findHtmlLeaks(files) {
     leaks.push(...fileLeaks.sort((a, b) => a.line - b.line));
   }
   return leaks;
+}
+
+// ---------------------------------------------------------------------------
+// (11) JSON data the model reads: the bundled browser recipes and site guides
+// (packages/lizi-mcps/src/browser/{recipes,cindy-recipes}). The browser tool
+// returns a site guide to the model whole, so every JSON string counts, keys
+// included. recipe-examples is not loaded by the app and is not scanned.
+// ---------------------------------------------------------------------------
+
+const MODEL_DATA_PATH =
+  /^packages\/lizi-mcps\/src\/browser\/(?:recipes|cindy-recipes)\/[^/]+\/[^/]+\.json$/;
+const JSON_STRING = /"(?:[^"\x5c]|\x5c.)*"/g;
+
+export function isModelDataPath(p) {
+  return MODEL_DATA_PATH.test(normalize(p));
+}
+
+export function findModelDataLeaks(files) {
+  const leaks = [];
+  for (const file of files) {
+    if (!isModelDataPath(file.path)) {
+      continue;
+    }
+    file.text.split(/\r?\n/).forEach((line, index) => {
+      const hit = (line.match(JSON_STRING) ?? [])
+        .map((token) => OLD_NAME.exec(decodeJsonString(token)))
+        .find(Boolean);
+      if (hit) {
+        leaks.push({ path: file.path, line: index + 1, match: hit[0] });
+      }
+    });
+  }
+  return leaks;
+}
+
+function collectModelData(root, out) {
+  const browser = path.join(root, 'packages', 'lizi-mcps', 'src', 'browser');
+  for (const folder of ['recipes', 'cindy-recipes']) {
+    const dir = path.join(browser, folder);
+    if (!fs.existsSync(dir)) {
+      continue;
+    }
+    for (const site of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (!site.isDirectory()) {
+        continue;
+      }
+      for (const name of fs.readdirSync(path.join(dir, site.name))) {
+        const rel = normalize(path.relative(root, path.join(dir, site.name, name)));
+        if (isModelDataPath(rel)) {
+          out.push({ path: rel, text: fs.readFileSync(path.join(root, rel), 'utf8') });
+        }
+      }
+    }
+  }
 }
 
 function collectPaths(root, dir, out) {
@@ -658,12 +715,15 @@ export function main({
   collectPaths(root, path.join(root, 'apps', 'desktop', 'src', 'renderer', 'assets'), assetPaths);
   collectPaths(root, path.join(root, 'apps', 'desktop', 'resources'), assetPaths);
   const promptFiles = collectPromptFiles(root, promptSourceFiles);
+  const modelData = [];
+  collectModelData(root, modelData);
   const leaks = [
     ...findBrandLeaks(files),
     ...findHtmlLeaks(files),
     ...findBrandAssetNames(assetPaths),
   ];
   const promptLeaks = findPromptLeaks(promptFiles, promptSourceFiles);
+  const dataLeaks = findModelDataLeaks(modelData);
   const sourceFiles = collectUserTextFiles(root);
   const hits = findUserTextHits(sourceFiles, promptSourceFiles);
   const baseline = loadBaseline(baselinePath);
@@ -674,6 +734,9 @@ export function main({
   }
   for (const leak of promptLeaks) {
     error(`${leak.path}:${leak.line}: model-visible "${leak.match}" in prompt text`);
+  }
+  for (const leak of dataLeaks) {
+    error(`${leak.path}:${leak.line}: model-visible "${leak.match}" in recipe or site guide data`);
   }
   for (const hit of fresh) {
     error(`${hit.path}:${hit.line}: "${hit.match}" in "${hit.text}" is not in the baseline`);
@@ -686,13 +749,19 @@ export function main({
   for (const problem of problems) {
     error(`baseline: ${problem}`);
   }
-  const total = leaks.length + promptLeaks.length + fresh.length + stale.length + problems.length;
+  const total =
+    leaks.length +
+    promptLeaks.length +
+    dataLeaks.length +
+    fresh.length +
+    stale.length +
+    problems.length;
   if (total > 0) {
     error(`brand guard: ${total} problem(s)`);
     return 1;
   }
   log(
-    `brand guard: ok (${files.length} files, ${promptFiles.length} prompt files and ${sourceFiles.length} source files scanned; ${hits.length} old-name text(s), all in the ${baseline.length}-entry baseline)`,
+    `brand guard: ok (${files.length} files, ${promptFiles.length} prompt files, ${modelData.length} model data files and ${sourceFiles.length} source files scanned; ${hits.length} old-name text(s), all in the ${baseline.length}-entry baseline)`,
   );
   return 0;
 }
