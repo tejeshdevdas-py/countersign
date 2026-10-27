@@ -14,6 +14,9 @@
 
 import type { AgentCredentialMode, AuthAdapter } from '../../interfaces/auth-adapter.js';
 import type { AgentRuntimeConfig } from '../../interfaces/runtime-config.js';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
+
+import { applyClaudeLocalOnlyEnv } from '../shared/local-only-engine-config.js';
 import { applyPlainTextTerminalEnv } from '../shared/terminal-output.js';
 
 export const MAKER_MODEL_CONTEXT_WINDOWS_ENV = 'XDT_MAKER_MODEL_CONTEXT_WINDOWS';
@@ -578,6 +581,9 @@ export async function buildClaudeEnv(
   if (env.DISABLE_TELEMETRY === undefined) env.DISABLE_TELEMETRY = '1';
   if (env.DISABLE_ERROR_REPORTING === undefined) env.DISABLE_ERROR_REPORTING = '1';
   if (env.OTEL_SDK_DISABLED === undefined) env.OTEL_SDK_DISABLED = 'true';
+  // Countersign: under LOCAL_ONLY the switches are forced, and cover more than
+  // telemetry (feature flags, auto-update, marketplace sync).
+  if (LOCAL_ONLY) applyClaudeLocalOnlyEnv(env);
 
   // Windows 下 Python piped stdout 默认走 locale encoding(cp936/GBK), 不看 chcp 65001。
   // 强制 UTF-8 避免 Bash 工具执行 python 命令时中文乱码。跨平台设置无副作用。

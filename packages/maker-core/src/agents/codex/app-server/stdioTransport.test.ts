@@ -10,6 +10,7 @@ vi.mock('node:child_process', () => ({ spawn: mocks.spawn }));
 vi.mock('node:readline', () => ({ createInterface: mocks.createInterface }));
 
 import { createStdioTransport } from './stdioTransport.js';
+import { CODEX_LOCAL_ONLY_CONFIG_ARGS } from '../../shared/local-only-engine-config.js';
 import { AppServerHost, CodexNativeInitializationStoppedError } from './host.js';
 import type { Logger } from '../../../interfaces/logger.js';
 
@@ -140,6 +141,24 @@ describe('createStdioTransport process observer', () => {
     await transport.close();
   });
 
+  it('passes the Countersign telemetry switches before the caller args', () => {
+    mocks.spawn.mockReturnValue(makeChild());
+
+    createStdioTransport({ binaryPath: '/codex', cwd: '/workspace', extraArgs: ['-c', 'sqlite_home="/x"'] });
+
+    const args = mocks.spawn.mock.calls[0][1] as string[];
+    expect(args).toEqual([
+      'app-server',
+      '-c', 'analytics.enabled=false',
+      '-c', 'feedback.enabled=false',
+      '-c', 'otel.metrics_exporter="none"',
+      '-c', 'otel.exporter="none"',
+      '-c', 'otel.trace_exporter="none"',
+      '-c', 'check_for_update_on_startup=false',
+      '-c', 'sqlite_home="/x"',
+    ]);
+  });
+
   it('starts the app-server without a visible Windows console', () => {
     mocks.spawn.mockReturnValue(makeChild());
 
@@ -147,7 +166,7 @@ describe('createStdioTransport process observer', () => {
 
     expect(mocks.spawn).toHaveBeenCalledWith(
       '/codex',
-      ['app-server'],
+      ['app-server', ...CODEX_LOCAL_ONLY_CONFIG_ARGS],
       expect.objectContaining({
         cwd: '/workspace',
         shell: false,

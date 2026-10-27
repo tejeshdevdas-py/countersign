@@ -10,6 +10,10 @@
 
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { createInterface, type Interface } from 'node:readline';
+
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
+
+import { CODEX_LOCAL_ONLY_CONFIG_ARGS } from '../../shared/local-only-engine-config.js';
 import type {
   CloseHandler,
   LineHandler,
@@ -73,7 +77,9 @@ export function createStdioTransport(opts: StdioTransportOptions): Transport {
   let resolveExit!: () => void;
   const exitPromise = new Promise<void>((resolve) => { resolveExit = resolve; });
 
-  const args = ['app-server', ...(opts.extraArgs ?? [])];
+  // Countersign: telemetry, feedback and update checks off for every local app-server.
+  const localOnlyArgs = LOCAL_ONLY ? CODEX_LOCAL_ONLY_CONFIG_ARGS : [];
+  const args = ['app-server', ...localOnlyArgs, ...(opts.extraArgs ?? [])];
   const child: ChildProcessWithoutNullStreams = spawn(opts.binaryPath, args, {
     cwd: opts.cwd,
     env: opts.env,
