@@ -18,6 +18,7 @@ import {
   isCodexModelListedForAccount,
   pickCodexOneShotModel,
   resolveCodexOneShotModel,
+  resolveCodexOneShotRoute,
 } from '../codex-oneshot-model.js';
 
 function model(id: string, sortOrder?: number): CatalogModel {
@@ -83,5 +84,25 @@ describe('resolveCodexOneShotModel', () => {
     state.discovered = CHATGPT_ACCOUNT_MODELS;
     state.overrides = { disabledModels: { 'openai:gpt-6.1-sol': true } };
     expect(resolveCodexOneShotModel()).toBe('gpt-6.1-terra');
+  });
+});
+
+describe('resolveCodexOneShotRoute', () => {
+  beforeEach(() => {
+    state.discovered = [];
+    state.overrides = {};
+  });
+
+  it('pairs the picked model with its lowest listed effort', () => {
+    state.discovered = [
+      { ...model('gpt-6.1-sol', 0), efforts: ['medium', 'low', 'high'] } as CatalogModel,
+    ];
+    expect(resolveCodexOneShotRoute()).toEqual({ model: 'gpt-6.1-sol', effort: 'low' });
+  });
+
+  it('leaves the effort to Codex when the model lists none, and is undefined with no list', () => {
+    expect(resolveCodexOneShotRoute()).toBeUndefined();
+    state.discovered = [model('gpt-6.1-sol', 0)];
+    expect(resolveCodexOneShotRoute()).toEqual({ model: 'gpt-6.1-sol' });
   });
 });

@@ -3520,12 +3520,18 @@ assertRouteCurrent();
         throw new OneShotError('network', 'Codex oneShot dispatch guard rejected');
       }
 
+      // Countersign: with no model named, ask the host for one the signed-in account
+      // lists (a ChatGPT login rejects gpt-5.4-mini); the literal stays the fallback.
+      const hostDefault = opts?.model ? undefined : this.deps.resolveDefaultOneShotModel?.();
+      const oneShotModel = opts?.model ?? hostDefault?.model ?? 'gpt-5.4-mini';
+      const oneShotEffort = hostDefault?.effort
+        ? clampEffortForCodex(oneShotModel, hostDefault.effort)
+        : undefined;
+
       // 创建临时 thread (跟主 session 共享 server 但 thread state 隔离)
       const startResp = await host.request<ThreadStartResponse>(Method.ThreadStart, {
         cwd: os.tmpdir(),
-        // Countersign: with no model named, ask the host for one the signed-in account
-        // lists (a ChatGPT login rejects gpt-5.4-mini); the literal stays the fallback.
-        model: opts?.model ?? this.deps.resolveDefaultOneShotModel?.() ?? 'gpt-5.4-mini',
+        model: oneShotModel,
         approvalPolicy: 'never',
         sandbox: 'read-only', // kebab-case (v2.rs SandboxMode)
         ...(developerInstructions ? { developerInstructions } : {}),
@@ -3596,6 +3602,7 @@ assertRouteCurrent();
       await host.request(Method.TurnStart, {
         threadId,
         input: [{ type: 'text', text: prompt }],
+        ...(oneShotEffort ? { effort: oneShotEffort } : {}),
       } as TurnStartParams);
 
       // 自家超时 sentinel (kind 'timeout'), 走外部 signal 也走同一通道

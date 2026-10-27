@@ -16,7 +16,7 @@
  * Models the user switched off in Settings are skipped.
  */
 
-import { isModelDisabled, type CatalogModel } from '@cindy/model-providers';
+import { isModelDisabled, type CatalogModel, type Effort } from '@cindy/model-providers';
 
 import { getDiscoveredCodexModels } from './active-catalog.js';
 import { readModelDisableOverrides } from './model-disable-store.js';
@@ -64,8 +64,39 @@ export function isCodexModelListedForAccount(
 
 /** The model a Codex one-shot without an explicit model should use right now. */
 export function resolveCodexOneShotModel(): string | undefined {
+  return resolveCodexOneShotRoute()?.model;
+}
+
+const EFFORT_RANK: Record<string, number> = {
+  minimal: 0,
+  low: 1,
+  medium: 2,
+  high: 3,
+  xhigh: 4,
+  max: 5,
+  ultra: 6,
+};
+
+/** Lowest effort the model lists; undefined when it lists none (Codex then uses its default). */
+export function lowestListedEffort(model: CatalogModel | undefined): Effort | undefined {
+  const efforts = (model?.efforts ?? []).filter((effort) => effort in EFFORT_RANK);
+  return [...efforts].sort((a, b) => EFFORT_RANK[a] - EFFORT_RANK[b])[0];
+}
+
+/**
+ * Model and effort for a Codex one-shot that names no model (the CodexAgent
+ * `resolveDefaultOneShotModel` dep). The lowest listed effort keeps a title fast
+ * when the account only offers full-size models.
+ */
+export function resolveCodexOneShotRoute(): { model: string; effort?: Effort } | undefined {
   const overrides = readModelDisableOverrides();
-  return pickCodexOneShotModel(getDiscoveredCodexModels(), {
+  const listed = getDiscoveredCodexModels();
+  const model = pickCodexOneShotModel(listed, {
     isDisabled: (modelId) => isModelDisabled(overrides, CODEX_ACCOUNT_PROVIDER_ID, modelId),
   });
+  if (!model) {
+    return undefined;
+  }
+  const effort = lowestListedEffort(listed.find((entry) => entry.id === model));
+  return effort ? { model, effort } : { model };
 }

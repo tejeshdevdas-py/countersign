@@ -1303,9 +1303,11 @@ export interface AgentDeps {
    * Codex only (Countersign): the model a one-shot call uses when the caller names
    * none. The host answers from the signed-in account's own model list, because a
    * ChatGPT login rejects the built-in default `gpt-5.4-mini` (model_not_found).
-   * Undefined, or a resolver that returns undefined, keeps the built-in default.
+   * `effort` is the model's lowest listed reasoning effort, so a title stays fast on
+   * a full-size model. Undefined, or a resolver that returns undefined, keeps the
+   * built-in default model and effort.
    */
-  resolveDefaultOneShotModel?: () => string | undefined;
+  resolveDefaultOneShotModel?: () => { model: string; effort?: Effort } | undefined;
 
   /**
    * Maker Memory 顶层单例 (host 注入). 当 runtimeConfig.makerMemoryEnabled === true 时,
