@@ -19,6 +19,7 @@ import { BrowserWindow, ipcMain } from 'electron';
 import { eq } from 'drizzle-orm';
 import type { DingTalkIM, DiscordIM, FeishuIM, IMStatus, TelegramIM, WecomIM } from '@cindy/im';
 
+import { isServiceDisabled } from '../../countersign/services';
 import { createLogger } from '../../logger';
 import { getDbClient } from '../../localDb/client/current';
 import { archiveBotChannelLanes } from '../../localDb/ipc/bots';
@@ -390,10 +391,25 @@ export interface BotImConnectionAddOptions {
 }
 
 /** 添加前的检查(伙伴在、可用, 平台身份没被别处用着); 移交个人 bot 前先跑一遍, 免得白停一次。 */
+/**
+ * Countersign: chat-app bots come later. Under LOCAL_ONLY no connection is
+ * added, whether from a teammate's settings, a Settings bot adoption or a
+ * teammate import that carries IM credentials.
+ */
+function assertImConnectorsEnabled(): void {
+  if (isServiceDisabled('imConnectors')) {
+    throwIpcError(
+      'PRECONDITION_FAILED',
+      'IM_CONNECTORS_DISABLED: chat-app bot connections are not available in this local-only build',
+    );
+  }
+}
+
 export async function assertBotImConnectionAddable(
   input: BotImConnectionAddInput,
   options: Pick<BotImConnectionAddOptions, 'adoptingSettingsBot'> = {},
 ): Promise<void> {
+  assertImConnectorsEnabled();
   const status = await readBotProfileStatus(input.botId);
   if (status === null) throwIpcError('NOT_FOUND', 'BOT_NOT_FOUND');
   if (status !== 'active') throwIpcError('PRECONDITION_FAILED', `BOT_INACTIVE: ${status}`);
@@ -467,6 +483,11 @@ export function addBotImConnection(
   input: BotImConnectionAddInput,
   options: BotImConnectionAddOptions = {},
 ): Promise<BotImConnectionAddResult> {
+  try {
+    assertImConnectorsEnabled();
+  } catch (error) {
+    return Promise.reject(error);
+  }
   const run = addQueue.then(() => addBotImConnectionNow(input, options));
   addQueue = run.catch(() => undefined);
   return run;

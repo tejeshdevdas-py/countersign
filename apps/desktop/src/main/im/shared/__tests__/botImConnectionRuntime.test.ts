@@ -80,6 +80,8 @@ vi.mock('../../../localDb/ipc/bots', () => ({
   }),
 }));
 vi.mock('../../../security/trustedAppRenderer', () => ({ assertTrustedAppRendererEvent: vi.fn() }));
+// Countersign: IM connectors are off under LOCAL_ONLY; these upstream cases cover the connector path.
+vi.mock('../../../countersign/services', () => ({ isServiceDisabled: () => false }));
 
 import {
   addBotImConnection,
