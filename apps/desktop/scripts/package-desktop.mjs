@@ -35,7 +35,7 @@
 //                                   该环境的机器打版本无关包时用它
 //
 // 产物: release/artifacts/<region>/<version|unversioned>/<platform-arch>/
-//   cindy-<version|unversioned>-Setup.exe / -<arch>.dmg /
+//   Countersign-<version|unversioned>-Setup.exe / -<arch>.dmg /
 //              -<amd64|arm64>.deb                        安装包
 //   cindy-<version>-hotfix.zip                           热更包(仅有版本时)
 //   build-info.json                                      发布侧唯一输入
@@ -536,7 +536,7 @@ async function main() {
   }
 
   console.log('='.repeat(60));
-  console.log(`==> Package Cindy desktop`);
+  console.log(`==> Package Countersign desktop`);
   console.log(`    platform: ${archs.map((a) => `${platform}-${a}`).join(' + ')}`);
   console.log(`    region:   ${region}`);
   console.log(`    version:  ${versionless ? `(版本无关,占位 ${version},不参与热更新)` : version}`);
