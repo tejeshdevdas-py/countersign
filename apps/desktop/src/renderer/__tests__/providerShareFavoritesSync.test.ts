@@ -1,5 +1,12 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+
+// Countersign: these cases cover upstream's cloud behaviour, which LOCAL_ONLY
+// switches off (see countersignLocalOnlyPollers.test.tsx).
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
 import type { ProviderShareReceived } from '@cindy/device-link';
 import type { ProviderShareReceivedSnapshot } from '../../shared/providerShare';
 import type { ProviderShareCommand } from '../../shared/providerShare';

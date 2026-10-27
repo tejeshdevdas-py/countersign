@@ -14,6 +14,13 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+// Countersign: these cases cover upstream's cloud behaviour, which LOCAL_ONLY
+// switches off (see countersignLocalOnlyPollers.test.tsx).
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
+
 import { useUpdateNotice } from '@/hooks/useUpdateNotice';
 
 vi.mock('react-i18next', () => ({
