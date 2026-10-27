@@ -2,6 +2,7 @@ import type { VoiceConversationApi } from '../shared/voiceConversation';
 import { createAccessibilitySupportBridge } from './accessibilitySupport';
 import { createWallpaperAssetsBridge } from './wallpaperAssets';
 import type { CompanionImportApi, CompanionImportSelection } from '@cindy/maker-shared/companion-import';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import { TASK_MIGRATION_LOCAL_CHANNEL } from '@cindy/device-link';
 import type { WorktreeRecycleAction, WorktreeRecycleStatus } from '../shared/worktreeRecycle';
 import {
@@ -4862,7 +4863,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
         controlEnabled: boolean;
         isSelf: boolean;
       }>;
-    }> => ipcRenderer.invoke('device-link:list-devices'),
+    }> =>
+      // Countersign: device link is removed; this computer has no linked devices,
+      // so no window asks main for a list it can only refuse.
+      LOCAL_ONLY ? Promise.resolve({ devices: [] }) : ipcRenderer.invoke('device-link:list-devices'),
     renameDevice: (
       deviceId: string,
       name: string | null,

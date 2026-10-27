@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import { useTranslation } from 'react-i18next';
 import { isSharedTaskPeer, type TaskMigrationView } from '@cindy/device-link';
 import type { Session } from '@/lib/ccAgent.types';
@@ -14,6 +15,8 @@ export function useTaskMigrationStatus(session: Session) {
   const [status, setStatus] = useState<TaskMigrationView | null>(null);
   useEffect(() => {
     setStatus(null);
+    // Countersign: moving tasks between computers needs device link, which is removed.
+    if (LOCAL_ONLY) return;
     if (session.remoteHostId || isSharedTaskPeer(session.deviceLinkDeviceId ?? '')) return;
     const owner = getDataOwnerGeneration();
     let disposed = false,

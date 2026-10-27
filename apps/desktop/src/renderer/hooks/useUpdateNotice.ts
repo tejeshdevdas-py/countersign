@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -273,6 +274,8 @@ export function useUpdateNotice(): UseUpdateNoticeReturn {
   );
 
   useEffect(() => {
+    // Countersign: release notes live on the cloud; no automatic fetch.
+    if (LOCAL_ONLY) return undefined;
     const appVersion = window.electronAPI.appVersion;
     let lastRead: string | null = null;
     try {

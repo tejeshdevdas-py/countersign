@@ -1,5 +1,6 @@
 import { prepareChatReplyFiles } from './chatServerReplyFiles.js';
 import type { ChatUploadAttachment } from './chatServerMedia.js';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import { createConversationListState } from '@cindy/maker-shared/chatConversationList';
 /** Production chat transport. The server owns messages and execution leases;
  * local group rows only supply Agent lane metadata and the upgrade source. */
@@ -296,6 +297,9 @@ const discussionSource = (m: Message) => !m.deleted && m.origin !== 'system' && 
   && !m.content.some(b => b.namespace === 'cindy.plan') && !readBotGroupThreadShareCard(m);
 
 export function withChatServer(local: BotGroupChatService, deps: BotGroupChatServiceDeps): BotGroupChatService {
+  // Countersign: there is no chat server, so group chat stays on the local
+  // service; the cloud wrapper would poll and retry a missing endpoint.
+  if (LOCAL_ONLY) return local;
   const endpoint = () => {
     // Explicit isolated testing remains possible; an installed app never reads it.
     const file = path.join(app.getPath('userData'), 'chat-server-dev.json');

@@ -8,6 +8,13 @@
  * delivers every change after its cursor, and the next batch waits for the ack.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+// Countersign: these cases cover upstream's cloud chat server, which LOCAL_ONLY
+// bypasses (see countersignLocalOnlyPollers.test.ts).
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
 const fixture = vi.hoisted(() => ({ handle: vi.fn(), latencyMs: 100, profiles: [] as unknown[], localGroupIds: [] as string[],
   sockets: [] as Array<import('ws').WebSocket>, routes: [] as string[], download: vi.fn(), page: [] as unknown[],
   /** When the server reads its state and when the answer reaches the client, in ms after the request. */

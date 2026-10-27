@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 
 /**
  * useUpdateStatus — listens to the main-process `update-status` IPC channel
@@ -17,6 +18,8 @@ export function useUpdateStatus() {
   const [progress, setProgress] = useState<number | undefined>();
 
   useEffect(() => {
+    // Countersign: there is no updater, so no status to read (status stays idle).
+    if (LOCAL_ONLY) return undefined;
     const api = window.electronAPI;
     if (!api?.getUpdateStatus || !api.onUpdateStatus) return undefined;
     // Query initial status — catches 'ready' set before this hook mounted

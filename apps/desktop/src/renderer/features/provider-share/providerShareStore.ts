@@ -13,6 +13,7 @@
  * 只在还有待审批申请时重读(那时 main 本来就在快速拉取)，以便撤回、过期的申请及时消失。
  */
 import { useSyncExternalStore } from 'react';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 
 import type { ProviderShareReceived } from '@cindy/device-link';
 
@@ -40,6 +41,9 @@ const log = createLogger('providerShareStore');
 type ProviderShareApi = Window['electronAPI']['providerShare'];
 
 function providerShareApi(): ProviderShareApi | null {
+  // Countersign: provider sharing needs the cloud, so the store never starts
+  // (no received-list fetch and no favourite-membership retry loop).
+  if (LOCAL_ONLY) return null;
   return (window as Partial<Window>).electronAPI?.providerShare ?? null;
 }
 

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 
 export interface BetaChannelSettingsState {
   enableBeta: boolean;
@@ -11,10 +12,11 @@ interface BetaChannelSettingsPayload {
   isCustomized?: boolean;
 }
 
+// Countersign: there is no update channel; the settings are final at start.
 const INITIAL: BetaChannelSettingsState = {
   enableBeta: false,
   isCustomized: false,
-  loading: true,
+  loading: !LOCAL_ONLY,
 };
 
 function normalize(payload: BetaChannelSettingsPayload): BetaChannelSettingsState {
@@ -49,6 +51,7 @@ export function useBetaChannelSettings(): {
   const [state, setState] = useState<BetaChannelSettingsState>(INITIAL);
 
   useEffect(() => {
+    if (LOCAL_ONLY) return undefined;
     let cancelled = false;
     let latestSeq = 0;
     const applyPayload = (payload: BetaChannelSettingsPayload) => {
