@@ -155,15 +155,23 @@ test('flags shipped wallpaper and asset files named after Cindy', () => {
 
 test('flags renderer imports of Cindy wallpaper images', () => {
   const text = "import cindyNeon from '@/assets/wallpapers/thumbnails/cindy-neon.webp';\n";
-  assert.equal(findBrandLeaks([{ path: 'apps/desktop/src/renderer/lib/wallpaper.ts', text }]).length, 1);
+  assert.equal(
+    findBrandLeaks([{ path: 'apps/desktop/src/renderer/lib/wallpaper.ts', text }]).length,
+    1,
+  );
 });
 
 // Prompt text: a model repeats what Countersign sends it, so the old name there is user-visible.
 
 test('flags the old name on any line of a prompt template', () => {
   const text = 'You are Cindy, an open-source AI assistant.\n\nKeep tasks in Countersign.\n';
-  const leaks = findPromptLeaks([{ path: 'apps/desktop/src/main/maker-host/host-system-prompt.md', text }]);
-  assert.deepEqual(leaks.map((leak) => [leak.line, leak.match]), [[1, 'Cindy']]);
+  const leaks = findPromptLeaks([
+    { path: 'apps/desktop/src/main/maker-host/host-system-prompt.md', text },
+  ]);
+  assert.deepEqual(
+    leaks.map((leak) => [leak.line, leak.match]),
+    [[1, 'Cindy']],
+  );
 });
 
 test('covers built-in Skills, teammate packages and headless profiles', () => {
@@ -178,14 +186,23 @@ test('covers built-in Skills, teammate packages and headless profiles', () => {
   ]) {
     assert.equal(isPromptTemplatePath(p), true, p);
   }
-  assert.equal(isPromptTemplatePath('apps/desktop/resources/system-skills/cindy-skill-creator/scripts/init_skill.py'), false);
+  assert.equal(
+    isPromptTemplatePath(
+      'apps/desktop/resources/system-skills/cindy-skill-creator/scripts/init_skill.py',
+    ),
+    false,
+  );
   assert.equal(isPromptTemplatePath('packages/lizi-mcps/src/computer/README.md'), false);
 });
 
 test('keeps the quoted browser profile name but flags prose in the browser workflow prompt', () => {
   const p = 'packages/lizi-mcps/src/browser/prompts/rules/browser-workflow.md';
-  const text = '外置浏览器默认也是独立的 `Cindy` profile(profile 显示为 "Cindy")。\n页面活在 Cindy 的侧边栏里。\n';
-  assert.deepEqual(findPromptLeaks([{ path: p, text }]).map((leak) => leak.line), [2]);
+  const text =
+    '外置浏览器默认也是独立的 `Cindy` profile(profile 显示为 "Cindy")。\n页面活在 Cindy 的侧边栏里。\n';
+  assert.deepEqual(
+    findPromptLeaks([{ path: p, text }]).map((leak) => leak.line),
+    [2],
+  );
 });
 
 test('scans every string literal of a listed prompt source, not its comments or ids', () => {
@@ -199,12 +216,18 @@ test('scans every string literal of a listed prompt source, not its comments or 
     "export const TOOL = { description: 'Ask in Cindy cards' };",
   ].join('\n');
   const leaks = findPromptLeaks([{ path: p, text }]);
-  assert.deepEqual(leaks.map((leak) => leak.line), [4, 6]);
+  assert.deepEqual(
+    leaks.map((leak) => leak.line),
+    [4, 6],
+  );
 });
 
 test('does not scan TS files outside the prompt source list', () => {
   const text = "throw new Error('Cindy Review requires Codex 0.145');\n";
-  assert.deepEqual(findPromptLeaks([{ path: 'packages/maker-core/src/agents/codex/index.ts', text }]), []);
+  assert.deepEqual(
+    findPromptLeaks([{ path: 'packages/maker-core/src/agents/codex/index.ts', text }]),
+    [],
+  );
 });
 
 test('every listed prompt source exists', () => {
@@ -227,13 +250,19 @@ function hitLines(path, text) {
 
 test('scans every non-test source file under apps/desktop/src and packages/*/src', () => {
   assert.equal(isUserTextSourcePath('apps/desktop/src/main/notificationService.ts'), true);
-  assert.equal(isUserTextSourcePath('apps/desktop/src/renderer/components/settings/SettingsView.tsx'), true);
+  assert.equal(
+    isUserTextSourcePath('apps/desktop/src/renderer/components/settings/SettingsView.tsx'),
+    true,
+  );
   assert.equal(isUserTextSourcePath('packages/maker-core/src/agents/pi/index.ts'), true);
   assert.equal(isUserTextSourcePath('packages/lizi-im/src/feishu/messages.ts'), true);
   assert.equal(isUserTextSourcePath('apps/desktop/src/main/__tests__/a.test.ts'), false);
   assert.equal(isUserTextSourcePath('packages/maker-core/src/agents/codex/index.test.ts'), false);
   assert.equal(isUserTextSourcePath('apps/desktop/src/renderer/vite-env.d.ts'), false);
-  assert.equal(isUserTextSourcePath('apps/desktop/src/main/maker-ipc/helpKnowledge.generated.ts'), false);
+  assert.equal(
+    isUserTextSourcePath('apps/desktop/src/main/maker-ipc/helpKnowledge.generated.ts'),
+    false,
+  );
   assert.equal(isUserTextSourcePath('scripts/countersign/brand-guard.mjs'), false);
   assert.equal(isUserTextSourcePath('apps/cindy-headless/src/gateway-config.ts'), false);
 });
@@ -307,12 +336,21 @@ test('skips real logger calls only', () => {
 });
 
 test('a hit is reported with its file, trimmed literal text and line', () => {
-  const hits = findUserTextHits([{ path: MAIN_FILE, text: "\nthrow new Error('  Cindy failed  ');\n" }]);
+  const hits = findUserTextHits([
+    { path: MAIN_FILE, text: "\nthrow new Error('  Cindy failed  ');\n" },
+  ]);
   assert.deepEqual(hits, [{ path: MAIN_FILE, line: 2, text: 'Cindy failed', match: 'Cindy' }]);
 });
 
 function entry(overrides = {}) {
-  return { file: MAIN_FILE, text: 'Cindy failed', count: 1, category: 'switched-off', why: 'test', ...overrides };
+  return {
+    file: MAIN_FILE,
+    text: 'Cindy failed',
+    count: 1,
+    category: 'switched-off',
+    why: 'test',
+    ...overrides,
+  };
 }
 
 test('a hit listed in the baseline passes', () => {
@@ -323,7 +361,9 @@ test('a hit listed in the baseline passes', () => {
 test('a new hit fails, and so does one more occurrence of a listed text', () => {
   const one = findUserTextHits([{ path: MAIN_FILE, text: "throw new Error('Cindy broke');\n" }]);
   assert.equal(compareWithBaseline(one, [entry()]).fresh.length, 1);
-  const two = findUserTextHits([{ path: MAIN_FILE, text: "f('Cindy failed');\ng('Cindy failed');\n" }]);
+  const two = findUserTextHits([
+    { path: MAIN_FILE, text: "f('Cindy failed');\ng('Cindy failed');\n" },
+  ]);
   const result = compareWithBaseline(two, [entry()]);
   assert.equal(result.fresh.length, 1);
   assert.equal(result.fresh[0].line, 2);
@@ -349,7 +389,9 @@ test('a baseline entry needs a known category, a reason and a positive count, on
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 
 test('the committed baseline is valid and holds nothing seen in normal Windows use', () => {
-  const baseline = loadBaseline(path.join(REPO_ROOT, 'scripts', 'countersign', 'brand-guard-baseline.json'));
+  const baseline = loadBaseline(
+    path.join(REPO_ROOT, 'scripts', 'countersign', 'brand-guard-baseline.json'),
+  );
   assert.deepEqual(validateBaseline(baseline), []);
   const normalUse = [
     'apps/desktop/src/main/notificationService.ts',

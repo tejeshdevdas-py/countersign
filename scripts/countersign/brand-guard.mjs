@@ -80,7 +80,10 @@ const SHIPPED_ASSET_PATH =
   /^apps\/desktop\/(?:src\/renderer\/assets|resources)\/.+\.(?:png|jpe?g|webp|gif|svg|mp4|webm|ico|icns)$/i;
 // Cindy-named artwork that stays, with the reason. Everything else named "cindy" fails.
 const ASSET_NAME_EXEMPT = new Map([
-  ['apps/desktop/src/renderer/assets/bot-presets/cindy.png', 'test fixture and mobile app path; the desktop no longer imports it'],
+  [
+    'apps/desktop/src/renderer/assets/bot-presets/cindy.png',
+    'test fixture and mobile app path; the desktop no longer imports it',
+  ],
   ['apps/desktop/src/renderer/assets/agent-island-cindy.png', 'macOS-only agent-island skin'],
 ]);
 
@@ -365,7 +368,12 @@ export function findPromptLeaks(files, sourceFiles = PROMPT_SOURCE_FILES) {
 // ---------------------------------------------------------------------------
 
 const USER_TEXT_SOURCE_PATH = /^(?:apps\/desktop\/src|packages\/[^/]+\/src)\/.+\.tsx?$/;
-const USER_TEXT_NOT_SOURCE = [/(?:^|\/)__tests__\//, /\.(?:test|spec)\.tsx?$/, /\.d\.ts$/, /\.generated\.tsx?$/];
+const USER_TEXT_NOT_SOURCE = [
+  /(?:^|\/)__tests__\//,
+  /\.(?:test|spec)\.tsx?$/,
+  /\.d\.ts$/,
+  /\.generated\.tsx?$/,
+];
 
 export function isUserTextSourcePath(p) {
   const rel = normalize(p);
@@ -388,7 +396,8 @@ export const BASELINE_CATEGORIES = [
   'third-party', // a third party's own name that happens to be Cindy (a vendor speech voice)
 ];
 
-const LOG_CALLEE = /^(?:this\.)?(?:console|log|logger|\w*Logger)\.(?:log|info|warn|error|debug|trace)$/;
+const LOG_CALLEE =
+  /^(?:this\.)?(?:console|log|logger|\w*Logger)\.(?:log|info|warn|error|debug|trace)$/;
 const OLD_NAME_ALL = /\b(?:Cindys?|CINDYS?)\b/g;
 
 /** True when the old name at [start, end) sits inside an identifier token, a path or a URL. */
@@ -440,7 +449,8 @@ function userTextLiterals(filePath, text) {
       return;
     }
     const logCall =
-      ts.isCallExpression(node) && LOG_CALLEE.test(node.expression.getText(source).replace(/\s+/g, ''));
+      ts.isCallExpression(node) &&
+      LOG_CALLEE.test(node.expression.getText(source).replace(/\s+/g, ''));
     ts.forEachChild(node, (child) => visit(child, inLog || logCall));
   };
   visit(source, false);
@@ -498,9 +508,12 @@ export function validateBaseline(entries) {
     const where = `${e.file ?? '?'}: "${e.text ?? '?'}"`;
     if (typeof e.file !== 'string' || e.file.length === 0) problems.push(`${where}: no file`);
     if (typeof e.text !== 'string' || e.text.length === 0) problems.push(`${where}: no text`);
-    if (!Number.isInteger(e.count) || e.count < 1) problems.push(`${where}: count must be a positive integer`);
-    if (!BASELINE_CATEGORIES.includes(e.category)) problems.push(`${where}: unknown category "${e.category}"`);
-    if (typeof e.why !== 'string' || e.why.trim().length === 0) problems.push(`${where}: no reason (why)`);
+    if (!Number.isInteger(e.count) || e.count < 1)
+      problems.push(`${where}: count must be a positive integer`);
+    if (!BASELINE_CATEGORIES.includes(e.category))
+      problems.push(`${where}: unknown category "${e.category}"`);
+    if (typeof e.why !== 'string' || e.why.trim().length === 0)
+      problems.push(`${where}: no reason (why)`);
     const key = baselineKey(e.file ?? '', e.text ?? '');
     if (seen.has(key)) problems.push(`${where}: listed twice`);
     seen.add(key);
@@ -599,7 +612,9 @@ export function main({
     error(`${hit.path}:${hit.line}: "${hit.match}" in "${hit.text}" is not in the baseline`);
   }
   for (const e of stale) {
-    error(`${e.file}: baseline text "${e.text}" no longer occurs ${e.count} time(s) (found ${e.found}); shrink the baseline`);
+    error(
+      `${e.file}: baseline text "${e.text}" no longer occurs ${e.count} time(s) (found ${e.found}); shrink the baseline`,
+    );
   }
   for (const problem of problems) {
     error(`baseline: ${problem}`);
