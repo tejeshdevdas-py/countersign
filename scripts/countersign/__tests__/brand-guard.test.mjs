@@ -1,7 +1,17 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { findBrandAssetNames, findBrandLeaks } from '../brand-guard.mjs';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import {
+  PROMPT_SOURCE_FILES,
+  findBrandAssetNames,
+  findBrandLeaks,
+  findPromptLeaks,
+  isPromptTemplatePath,
+} from '../brand-guard.mjs';
 
 const LOCALE = 'apps/desktop/src/renderer/i18n/locales/en/common.json';
 
@@ -138,4 +148,60 @@ test('flags shipped wallpaper and asset files named after Cindy', () => {
 test('flags renderer imports of Cindy wallpaper images', () => {
   const text = "import cindyNeon from '@/assets/wallpapers/thumbnails/cindy-neon.webp';\n";
   assert.equal(findBrandLeaks([{ path: 'apps/desktop/src/renderer/lib/wallpaper.ts', text }]).length, 1);
+});
+
+// Prompt text: a model repeats what Countersign sends it, so the old name there is user-visible.
+
+test('flags the old name on any line of a prompt template', () => {
+  const text = 'You are Cindy, an open-source AI assistant.\n\nKeep tasks in Countersign.\n';
+  const leaks = findPromptLeaks([{ path: 'apps/desktop/src/main/maker-host/host-system-prompt.md', text }]);
+  assert.deepEqual(leaks.map((leak) => [leak.line, leak.match]), [[1, 'Cindy']]);
+});
+
+test('covers built-in Skills, teammate packages and headless profiles', () => {
+  for (const p of [
+    'apps/desktop/resources/system-skills/learn/SKILL.md',
+    'apps/desktop/resources/system-skills/learn/agents/openai.yaml',
+    'apps/desktop/resources/bot-packages/cooper/0.5.1/manifest.json',
+    'apps/desktop/resources/bot-packages/cooper/0.5.1/skills/cooper-ops/SKILL.md',
+    'apps/cindy-headless/profiles/cindy-production-codex/prompt.md',
+    'packages/lizi-mcps/src/browser/prompts/rules/browser-workflow.md',
+    'packages/maker-core/src/contacts/system-prompt-disabled.md',
+  ]) {
+    assert.equal(isPromptTemplatePath(p), true, p);
+  }
+  assert.equal(isPromptTemplatePath('apps/desktop/resources/system-skills/cindy-skill-creator/scripts/init_skill.py'), false);
+  assert.equal(isPromptTemplatePath('packages/lizi-mcps/src/computer/README.md'), false);
+});
+
+test('keeps the quoted browser profile name but flags prose in the browser workflow prompt', () => {
+  const p = 'packages/lizi-mcps/src/browser/prompts/rules/browser-workflow.md';
+  const text = '外置浏览器默认也是独立的 `Cindy` profile(profile 显示为 "Cindy")。\n页面活在 Cindy 的侧边栏里。\n';
+  assert.deepEqual(findPromptLeaks([{ path: p, text }]).map((leak) => leak.line), [2]);
+});
+
+test('scans every string literal of a listed prompt source, not its comments or ids', () => {
+  const p = 'packages/maker-shared/src/richAnswerGuide.ts';
+  const text = [
+    '// Cindy renders this guide.',
+    "const server = 'cindy_helper';",
+    "const begin = 'Cindy.begin';",
+    'export const GUIDE = `## Countersign answer delivery',
+    "within Cindy's colors`;",
+    "export const TOOL = { description: 'Ask in Cindy cards' };",
+  ].join('\n');
+  const leaks = findPromptLeaks([{ path: p, text }]);
+  assert.deepEqual(leaks.map((leak) => leak.line), [4, 6]);
+});
+
+test('does not scan TS files outside the prompt source list', () => {
+  const text = "throw new Error('Cindy Review requires Codex 0.145');\n";
+  assert.deepEqual(findPromptLeaks([{ path: 'packages/maker-core/src/agents/codex/index.ts', text }]), []);
+});
+
+test('every listed prompt source exists', () => {
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
+  for (const rel of PROMPT_SOURCE_FILES) {
+    assert.equal(fs.existsSync(path.join(root, rel)), true, rel);
+  }
 });
