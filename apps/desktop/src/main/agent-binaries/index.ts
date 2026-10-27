@@ -49,6 +49,13 @@ import {
 import { ProgressNormalizer } from '../updateProgressNormalizer.js';
 import { createLogger } from '../logger.js';
 import { isServiceDisabled } from '../countersign/services.js';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
+import {
+  resolveAgentBinary,
+  whichOnPath,
+  type AgentBinaryResolution,
+  type AgentEngine,
+} from '../countersign/cliResolver.js';
 import { consumeStartupBinaryUpdateMarker, type StartupBinaryUpdateScope } from './startup-update.js';
 
 let startupUpdateScope: StartupBinaryUpdateScope | undefined;
@@ -267,6 +274,53 @@ export function getReadyBinaryPath(kind: AgentBinaryKind): string | undefined {
   return lastReadyPath.get(kind);
 }
 
+// ── Countersign: bundled or PATH binaries, never the CDN ─────────────────────
+
+const ENGINE: Record<AgentBinaryKind, AgentEngine> = {
+  'claude-code': 'claude',
+  codex: 'codex',
+  pi: 'pi',
+};
+
+/** Path returned by the last successful resolver run in prepare(). */
+const localResolvedPath = new Map<AgentBinaryKind, string>();
+
+/**
+ * Packaged: resources/agent-bin/<installSubdir> (staged by forge.config.ts).
+ * Dev: apps/<devBinDir>/<platform> (populated by `pnpm install`).
+ */
+function resolveLocalAgentBinary(
+  kind: AgentBinaryKind,
+  which: (cmd: string) => string | null,
+): AgentBinaryResolution {
+  const cfg = CONFIG[kind];
+  if (!app.isPackaged) {
+    const devPath = findDevBinary({
+      vendorBinDir: cfg.devBinDir,
+      binaryName: cfg.devBinaryName ?? cfg.binaryName,
+    });
+    if (devPath) return { path: devPath, source: 'bundled' };
+  }
+  const bundledDir = app.isPackaged
+    ? path.join(process.resourcesPath, 'agent-bin', cfg.installSubdir)
+    : path.join(app.getAppPath(), '..', '..', 'apps', cfg.devBinDir, getPlatformKey());
+  return resolveAgentBinary(ENGINE[kind], { bundledDir, which, exists: fs.existsSync });
+}
+
+function prepareLocalAgentBinary(kind: AgentBinaryKind): PrepareResult {
+  const resolved = resolveLocalAgentBinary(kind, whichOnPath);
+  if ('error' in resolved) {
+    lastReadyPath.delete(kind);
+    localResolvedPath.delete(kind);
+    log.warn(`${kind}: ${resolved.error}`);
+    return { ready: false, error: resolved.error, downloaded: false };
+  }
+  log.info(`${kind}: using ${resolved.source} binary ${resolved.path}`);
+  lastReadyPath.set(kind, resolved.path);
+  localResolvedPath.set(kind, resolved.path);
+  return { ready: true, path: resolved.path, downloaded: false };
+}
+
 /**
  * spawn/execFile 前的执行侧复核:candidate 必须与本模块此刻能解析出的受管二进制
  * 路径完全一致。二进制路径本就只该出自本模块,这里再挡一层意外来源作为防御纵深
@@ -274,6 +328,8 @@ export function getReadyBinaryPath(kind: AgentBinaryKind): string | undefined {
  */
 export function isVettedAgentBinaryPath(kind: AgentBinaryKind, candidate: string): boolean {
   if (!candidate) return false;
+  // Countersign: only the exact path the resolver returned in prepare().
+  if (LOCAL_ONLY) return localResolvedPath.get(kind) === candidate;
   const status = getCachedBinaryStatus(kind);
   return status.binaryReady === true && status.binaryPath === candidate;
 }
@@ -305,6 +361,13 @@ export function getCachedBinaryStatus(kind: AgentBinaryKind): CachedBinaryStatus
     } catch {
       lastReadyPath.delete(kind);
     }
+  }
+
+  // Countersign: bundled/dev binary only. PATH lookup spawns a process, so it
+  // stays in async prepare(); old CDN installs under userData are not used.
+  if (LOCAL_ONLY) {
+    const local = resolveLocalAgentBinary(kind, () => null);
+    return 'path' in local ? { binaryReady: true, binaryPath: local.path } : { binaryReady: false };
   }
 
   // dev:优先查仓库本地 runtime(apps/<devBinDir>/<platform>/<devBinaryName>)。
@@ -354,6 +417,10 @@ export async function prepare(
 ): Promise<PrepareResult> {
   const cfg = CONFIG[kind];
   const { step, totalSteps, broadcastProgress = true, broadcastFailure = true } = opts;
+
+  // Countersign: bundled binary, then the user's PATH. No manifest, no download,
+  // packaged or dev.
+  if (LOCAL_ONLY) return prepareLocalAgentBinary(kind);
 
   if (kind === 'pi') {
     try {
@@ -675,6 +742,8 @@ export async function peekNeedsDownload(
 ): Promise<boolean> {
   // dev 模式永不下载 (findDevBinary 命中 / 缺失都不走 OSS)
   if (!app.isPackaged) return false;
+  // Countersign never downloads agent binaries.
+  if (LOCAL_ONLY) return false;
   opts = { ...opts, checkForUpdates: resolveUpdateCheck(kind, opts.checkForUpdates) };
   // Linux(cc/codex):manifest 有段 → 走通用 CDN peek(与 mac/win 同口径);
   // 无段(旧 canary / 首发渠道)→ 只看私有 fallback 是否已就位(fs 快查)。

@@ -38,6 +38,7 @@ import {
   getBaseUrl,
   getPlatformKey,
 } from '../manifestService.js';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 
 // ── 私有路径 helpers（顶层 function，无 export）─────────────────────────────
 
@@ -295,8 +296,11 @@ export function createBinaryProvisioner(config: BinaryProvisionerConfig): Binary
       try {
         const binaryName = deriveBinaryName();
         // 1. 拉 manifest（不带 dev fallback —— dev mode 归属在 Boss 2 包壳层）
-        let manifest = getCachedManifest();
-        if (!manifest) manifest = await fetchManifest(undefined, opts?.signal);
+        // Countersign: no manifest, so nothing is downloaded; only an already
+        // verified local install can be returned (agent-binaries/index.ts does
+        // not call this under LOCAL_ONLY).
+        let manifest = LOCAL_ONLY ? null : getCachedManifest();
+        if (!manifest && !LOCAL_ONLY) manifest = await fetchManifest(undefined, opts?.signal);
         
         // 2. manifest 获取失败时，检查本地已验证版本（离线 fallback）
         if (!manifest) {
@@ -502,6 +506,8 @@ export function createBinaryProvisioner(config: BinaryProvisionerConfig): Binary
       // 不存在可下载的东西,返回 false(不计入 splash 下载步数;prepare 会以
       // asset_missing 快速失败交调用方降级)。
       try {
+        // Countersign never downloads agent binaries.
+        if (LOCAL_ONLY) return false;
         let manifest = getCachedManifest();
         // 可选资产的 peek 只用于 splash 步数提示，不能为了“猜要不要下载”额外
         // 发一次可能卡住启动的网络请求；真正 prepare 会带宿主 deadline 拉清单。

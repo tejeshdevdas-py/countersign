@@ -1,4 +1,10 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
+// Countersign: these upstream cases exercise the upstream behaviour, so LOCAL_ONLY is mocked off.
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
 import path from 'node:path';
 
 // getBase() 按 kind 缓存 provisioner 实例:全部测试共享同一个 cdndProvisioner,

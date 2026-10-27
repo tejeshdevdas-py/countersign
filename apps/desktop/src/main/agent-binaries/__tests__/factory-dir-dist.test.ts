@@ -10,6 +10,12 @@
  *    不计入 splash 下载步数),非 optional 保持保守 true。
  */
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+
+// Countersign: these upstream cases exercise the upstream behaviour, so LOCAL_ONLY is mocked off.
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';

@@ -786,6 +786,56 @@ function stageRipgrep(targetPlatform: string, targetArch: string): void {
   console.log(`[forge:prePackage] ripgrep ${key} -> ${dest} (${sizeMb} MB)`);
 }
 
+/**
+ * Countersign ships the agent engines instead of downloading them from the
+ * CDN at first start. Each source directory is what
+ * scripts/ensure-agent-binaries.mjs creates during `pnpm install`
+ * (apps/<binDir>/<platform>/...). Staged to resources/agent-bin/<installSubdir>,
+ * the layout agent-binaries/index.ts reads (process.resourcesPath/agent-bin).
+ * rg is not staged here: stageRipgrep already ships it as resources/tools/ripgrep.
+ */
+const COUNTERSIGN_AGENT_BINARIES: ReadonlyArray<{
+  binDir: string;
+  installSubdir: string;
+  executable: (targetPlatform: string) => string;
+}> = [
+  {
+    binDir: 'claude-code-bin',
+    installSubdir: 'claude-code',
+    executable: (p) => (p === 'win32' ? 'claude.exe' : 'claude'),
+  },
+  {
+    binDir: 'codex-package-bin',
+    installSubdir: 'codex-package',
+    executable: (p) => path.join('bin', p === 'win32' ? 'codex.exe' : 'codex'),
+  },
+  {
+    // Directory distribution: pi.exe plus theme/, docs/, native/ and other assets.
+    binDir: 'pi-bin',
+    installSubdir: 'pi',
+    executable: (p) => (p === 'win32' ? 'pi.exe' : 'pi'),
+  },
+];
+
+function stageAgentBinaries(targetPlatform: string, targetArch: string): void {
+  const key = targetPlatformKey(targetPlatform, targetArch);
+  const destRoot = path.join(__dirname, 'resources', 'agent-bin');
+  fs.rmSync(destRoot, { recursive: true, force: true });
+  fs.mkdirSync(destRoot, { recursive: true });
+  for (const entry of COUNTERSIGN_AGENT_BINARIES) {
+    const srcDir = path.join(__dirname, '..', entry.binDir, key);
+    const executable = path.join(srcDir, entry.executable(targetPlatform));
+    if (!fs.existsSync(executable)) {
+      throw new Error(
+        `[forge] ${entry.binDir} ${key} missing at ${executable}; run "pnpm install" before packaging`,
+      );
+    }
+    const destDir = path.join(destRoot, entry.installSubdir);
+    fs.cpSync(srcDir, destDir, { recursive: true, dereference: true });
+    console.log(`[forge:prePackage] ${entry.binDir} ${key} -> ${destDir}`);
+  }
+}
+
 function extraResourcesForTarget(targetPlatform: string): string[] {
   const base = [
     'resources/icon.png',
@@ -830,6 +880,8 @@ function extraResourcesForTarget(targetPlatform: string): string[] {
   if (targetPlatform === 'darwin') {
     base.push('resources/cli');
   }
+  // Countersign: bundled claude / codex / pi, staged by stageAgentBinaries().
+  if (LOCAL_ONLY) base.push('resources/agent-bin');
   if (targetPlatform === 'linux') base.push('resources/linux');
 
   return base;
@@ -1976,6 +2028,9 @@ const config: ForgeConfig = {
         }
       }
       stageRipgrep(targetPlatform, targetArch);
+      if (LOCAL_ONLY) {
+        stageAgentBinaries(targetPlatform, targetArch);
+      }
       stageAndroidPlatformTools(targetPlatform, targetArch);
       buildWindowsVoiceInputFunctionKeyListener(targetPlatform);
       buildMacVoiceInputTextInsertionHelper(platform, arch);

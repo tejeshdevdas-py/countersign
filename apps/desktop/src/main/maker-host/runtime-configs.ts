@@ -11,6 +11,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { getCachedBinaryStatus } from '../agent-binaries/index.js';
 import { codexPackagePathPrepends } from '../agent-binaries/codex-cli-launcher.js';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
+import { resolveAgentBinary, whichOnPath } from '../countersign/cliResolver.js';
 
 import {
   isModelDisabled,
@@ -90,6 +92,16 @@ function bundledRipgrepDir(): string {
     }
     cachedBundledRipgrepDir = dir;
     return dir;
+  }
+
+  // Countersign: no bundled rg, so fall back to the user's rg on PATH.
+  if (LOCAL_ONLY) {
+    const resolved = resolveAgentBinary('rg', { bundledDir: candidates[0], which: whichOnPath, exists: fs.existsSync });
+    if ('path' in resolved) {
+      cachedBundledRipgrepDir = path.dirname(resolved.path);
+      return cachedBundledRipgrepDir;
+    }
+    throw new Error(`Bundled ripgrep not found for ${key}. ${resolved.error}`);
   }
 
   throw new Error(
