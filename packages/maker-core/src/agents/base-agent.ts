@@ -1300,6 +1300,14 @@ export interface AgentDeps {
   ) => import('./codex/retry-escalation.js').OutboundPathFact | null;
 
   /**
+   * Codex only (Countersign): the model a one-shot call uses when the caller names
+   * none. The host answers from the signed-in account's own model list, because a
+   * ChatGPT login rejects the built-in default `gpt-5.4-mini` (model_not_found).
+   * Undefined, or a resolver that returns undefined, keeps the built-in default.
+   */
+  resolveDefaultOneShotModel?: () => string | undefined;
+
+  /**
    * Maker Memory 顶层单例 (host 注入). 当 runtimeConfig.makerMemoryEnabled === true 时,
    * agent.startSession 会从这里拉当前 workdir 的 MEMORY.md 索引拼进 system prompt;
    * cindy_memory MCP server 也通过 host 端的 createDesktopMcpProviders({ memory: { getManager } })

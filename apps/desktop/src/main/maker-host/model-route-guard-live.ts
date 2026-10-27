@@ -32,6 +32,7 @@ import {
   getActiveCatalog,
   isXdGatewayPaymentRequiredRoute,
 } from './active-catalog.js';
+import { resolveCodexOneShotModel } from './codex-oneshot-model.js';
 import { readModelDisableOverrides } from './model-disable-store.js';
 import { getNewTaskDraftSelection } from './newMakerDefaultsCache.js';
 import {
@@ -370,6 +371,14 @@ const DEFAULT_ONESHOT_MODEL: Record<AgentKind, string> = {
   pi: 'claude-haiku-4-5',
 };
 
+/** Countersign: the Codex default follows the account's own list (see codex-oneshot-model.ts). */
+function defaultOneShotModel(agent: AgentKind): string {
+  if (agent === 'codex') {
+    return resolveCodexOneShotModel() ?? DEFAULT_ONESHOT_MODEL.codex;
+  }
+  return DEFAULT_ONESHOT_MODEL[agent];
+}
+
 /**
  * agent one-shot 兜底(help / 会话摘要 / 快照标签)是否被停用轴挡住。
  * 带具体模型时走完整裁决;不带模型(agent 默认一击)按**该 agent 的内部默认模型**
@@ -385,7 +394,7 @@ export async function isAgentOneShotRouteDisabled(
     // 被停用的隐式默认来源上 —— 只有 pass 才允许(PR #744 review 第五轮)。
     return (await verdictForModelRoute(agent, model, null)).kind !== 'pass';
   }
-  if ((await verdictForModelRoute(agent, DEFAULT_ONESHOT_MODEL[agent], null)).kind !== 'pass') {
+  if ((await verdictForModelRoute(agent, defaultOneShotModel(agent), null)).kind !== 'pass') {
     return true;
   }
   let views: ProviderView[];

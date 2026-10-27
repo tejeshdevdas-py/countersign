@@ -334,8 +334,9 @@ function buildOneShotOptions(agentKind: AgentKind): OneShotOptions {
   // Pi 的可用模型来自动态 provider 目录(BYOM 也可能只有本地模型)，不硬编码
   // GPT id；让 Maker 按该 Pi agent 的当前能力选择默认模型。
   if (agentKind === 'pi') return { timeoutMs: 20_000 };
+  // Countersign: no fixed Codex model. A ChatGPT login rejects gpt-5.4-mini; the
+  // Codex agent asks the host for a model the signed-in account lists.
   return {
-    model: 'gpt-5.4-mini',
     timeoutMs: 20_000,
   };
 }

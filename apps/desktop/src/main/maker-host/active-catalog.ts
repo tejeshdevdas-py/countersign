@@ -2185,6 +2185,14 @@ export function setCustomProviderConfigs(configs: CustomProviderConfig[]): void 
 }
 
 /**
+ * Countersign: the signed-in Codex account's own model list (codex models_cache or
+ * model/list), without catalog or Registry additions. Empty until discovery has run.
+ */
+export function getDiscoveredCodexModels(): readonly CatalogModel[] {
+  return discoveredCodex;
+}
+
+/**
  * 注入 codex cache 派生的规范化模型快照。由 ensureActiveCatalogLoaded 在目录加载后调用。
  * 传空数组 = 有效空快照(回到静态兜底);读取失败时调用方不应调用本 setter,以保留现值。
  */

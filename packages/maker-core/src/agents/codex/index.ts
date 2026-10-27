@@ -3523,7 +3523,9 @@ assertRouteCurrent();
       // 创建临时 thread (跟主 session 共享 server 但 thread state 隔离)
       const startResp = await host.request<ThreadStartResponse>(Method.ThreadStart, {
         cwd: os.tmpdir(),
-        model: opts?.model ?? 'gpt-5.4-mini',
+        // Countersign: with no model named, ask the host for one the signed-in account
+        // lists (a ChatGPT login rejects gpt-5.4-mini); the literal stays the fallback.
+        model: opts?.model ?? this.deps.resolveDefaultOneShotModel?.() ?? 'gpt-5.4-mini',
         approvalPolicy: 'never',
         sandbox: 'read-only', // kebab-case (v2.rs SandboxMode)
         ...(developerInstructions ? { developerInstructions } : {}),

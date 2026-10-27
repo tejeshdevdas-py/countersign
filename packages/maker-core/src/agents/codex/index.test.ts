@@ -1747,6 +1747,55 @@ describe('CodexAgent oneShot dispatch guard', () => {
     expect(subscribeThread).toHaveBeenCalledWith('thread-before-turn-guard', expect.any(Object));
     expect(release).toHaveBeenCalledOnce();
   });
+
+  // Countersign: a ChatGPT login rejects gpt-5.4-mini, so a one-shot that names no
+  // model asks the host for one from the signed-in account's own list.
+  async function threadStartModel(
+    deps: ReturnType<typeof createDeps>,
+    opts: { model?: string } = {},
+  ): Promise<unknown> {
+    const agent = new CodexAgent(deps);
+    const request = vi.fn(async (method: string) => {
+      if (method === Method.ThreadStart) return { thread: { id: 'thread-model' } };
+      throw new Error(`unexpected request: ${method}`);
+    });
+    const host = {
+      ensureStarted: vi.fn(async () => undefined),
+      request,
+      subscribeThread: vi.fn(() => ({ release: vi.fn(async () => undefined) })),
+    };
+    (agent as any).hosts.set('test-utility-host', host);
+    Object.defineProperty(agent, 'getUtilityHost', {
+      value: vi.fn(async () => ({ key: 'test-utility-host', host })),
+      configurable: true,
+    });
+    // Let thread/start through, then stop before turn/start.
+    const beforeDispatch = vi
+      .fn<() => Promise<boolean>>()
+      .mockResolvedValueOnce(true)
+      .mockResolvedValueOnce(false);
+    await expect(agent.oneShot('name this task', { ...opts, beforeDispatch })).rejects.toBeTruthy();
+    const call = request.mock.calls.find(([method]) => method === Method.ThreadStart) as unknown as
+      | [string, { model?: unknown }]
+      | undefined;
+    return call?.[1].model;
+  }
+
+  it('uses the host-resolved model when the caller names none', async () => {
+    const deps = { ...createDeps(), resolveDefaultOneShotModel: () => 'gpt-6.1-sol' };
+    await expect(threadStartModel(deps)).resolves.toBe('gpt-6.1-sol');
+  });
+
+  it('keeps an explicit model over the host-resolved one', async () => {
+    const deps = { ...createDeps(), resolveDefaultOneShotModel: () => 'gpt-6.1-sol' };
+    await expect(threadStartModel(deps, { model: 'gpt-5.4-nano' })).resolves.toBe('gpt-5.4-nano');
+  });
+
+  it('falls back to the built-in default when the host has no answer', async () => {
+    await expect(threadStartModel(createDeps())).resolves.toBe('gpt-5.4-mini');
+    const deps = { ...createDeps(), resolveDefaultOneShotModel: () => undefined };
+    await expect(threadStartModel(deps)).resolves.toBe('gpt-5.4-mini');
+  });
 });
 
 function deferred<T>() {

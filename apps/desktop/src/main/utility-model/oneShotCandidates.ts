@@ -26,6 +26,7 @@ import {
   isXdGatewayPaymentRequiredRoute,
 } from '../maker-host/active-catalog.js';
 import { readModelDisableOverrides } from '../maker-host/model-disable-store.js';
+import { isCodexModelListedForAccount } from '../maker-host/codex-oneshot-model.js';
 import { isModelDisabled, isProviderDisabled } from '@cindy/model-providers';
 import { getProviderRouteCredentialRevision, isProviderRouteMutationInProgress } from '../maker-host/provider-route.js';
 import { withOpenCodeGoSessionHeader } from '../maker-host/opencode-go-session.js';
@@ -1549,6 +1550,16 @@ async function resolveCodexCandidate(
       errorName: error instanceof Error ? error.name : typeof error,
     });
     return { attempt: skippedAttempt(profile, 'auth_probe_failed') };
+  }
+  // Countersign: a profile names a fixed model. When the signed-in Codex account's
+  // own list is known and lacks it (a ChatGPT login rejects gpt-5.4-mini), skip the
+  // profile instead of sending a request that ends in model_not_found.
+  if (isCodexModelListedForAccount(profile.model) === false) {
+    log.debug('utility text candidate skipped: model not listed for the Codex account', {
+      providerId: profile.id,
+      model: profile.model,
+    });
+    return { attempt: skippedAttempt(profile, 'model_unavailable') };
   }
   return {
     candidate: {

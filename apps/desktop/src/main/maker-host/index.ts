@@ -62,6 +62,7 @@ import {
   setActiveCatalogChangedListener,
   setDiscoveredCodexModels,
 } from './active-catalog.js';
+import { resolveCodexOneShotModel } from './codex-oneshot-model.js';
 import {
   createCodexModelBackfillCoordinator,
   type CodexModelBackfillCoordinator,
@@ -1868,6 +1869,8 @@ export function getMaker(): Maker {
         const origin = getCodexThreadUpstreamOrigin(threadId);
         return origin ? getOutboundPathSnapshotFor([origin]) : null;
       },
+      // Countersign: one-shots with no model use one the signed-in account lists.
+      resolveDefaultOneShotModel: resolveCodexOneShotModel,
       reviewAutoPermissionAction,
       prepareCodexLocalCredentialModeSwitch: async (ctx) => {
         const maker = _maker;
