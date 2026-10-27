@@ -344,14 +344,10 @@ export const PROMPT_SOURCE_FILES = [
   'packages/voice-input-core/src/DictationRefiner.ts',
 ];
 
-// Old-name text that stays in prompt files, each with its reason.
-const PROMPT_EXEMPT = [
-  {
-    path: 'packages/lizi-mcps/src/browser/prompts/rules/browser-workflow.md',
-    token: /"Cindy"|`Cindy`/g,
-    reason: 'names the on-disk managed browser profile (MANAGED_PROFILE), which brandIdentity pins',
-  },
-];
+// Old-name text that stays in prompt files, each with its reason ({ path, token, reason }).
+// None today: the managed browser profile's chip shows the product name, so the
+// browser workflow prompt names it as Countersign.
+const PROMPT_EXEMPT = [];
 // CDP method ids of the in-app browser bridge ('Cindy.begin', 'Cindy.end'): protocol, not prose.
 const PROMPT_LITERAL_EXEMPT = /^Cindy\.\w+$/;
 

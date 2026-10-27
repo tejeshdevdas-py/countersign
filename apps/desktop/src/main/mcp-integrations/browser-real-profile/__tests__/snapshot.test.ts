@@ -4,6 +4,8 @@ import path from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DatabaseSync } from 'node:sqlite';
 
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
+
 import {
   cleanupCopiedLoginsThen,
   cleanupRealProfileSnapshots,
@@ -118,7 +120,7 @@ describe('lastUsedProfileName', () => {
 });
 
 describe('rewriteLocalStateForManagedDefault', () => {
-  it('points every selection field at Default and stamps the chip name Cindy', () => {
+  it('points every selection field at Default and stamps the chip name with the product name', () => {
     const rewritten = JSON.parse(
       rewriteLocalStateForManagedDefault(
         JSON.stringify({
@@ -152,10 +154,11 @@ describe('rewriteLocalStateForManagedDefault', () => {
     expect(rewritten.profile.profiles_order).toEqual(['Default']);
     expect(rewritten.profile.show_picker_on_startup).toBe(false);
     expect(Object.keys(rewritten.profile.info_cache)).toEqual(['Default']);
+    // Countersign: the chip and profile names show BRAND_NAME.
     expect(rewritten.profile.info_cache.Default).toMatchObject({
-      name: 'Cindy',
-      shortcut_name: 'Cindy',
-      user_name: 'Cindy',
+      name: BRAND_NAME,
+      shortcut_name: BRAND_NAME,
+      user_name: BRAND_NAME,
     });
   });
 
@@ -206,7 +209,7 @@ describe('snapshotRealProfile', () => {
     expect(destLocalState.os_crypt.keep).toBe(true);
     expect(destLocalState.profile.last_used).toBe('Default');
     expect(destLocalState.profile.last_active_profiles).toEqual(['Default']);
-    expect(destLocalState.profile.info_cache.Default.name).toBe('Cindy');
+    expect(destLocalState.profile.info_cache.Default.name).toBe(BRAND_NAME);
     expect(destLocalState.profile.info_cache['Profile 6']).toBeUndefined();
   });
 

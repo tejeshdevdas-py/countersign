@@ -78,14 +78,14 @@
 
 - **`data.backend === "rsb-webview"` = Countersign 侧边栏内置浏览器**:页面活在 Countersign 的会话侧边栏里,不是一个常规浏览器窗口。侧边栏本身可能内嵌在主窗口、也可能被用户开成独立子窗口,`status` **不区分**这两种承载方式——所以请用户看页面时说"Countersign 的侧边栏(若你把侧边栏开成了独立窗口,就是那个窗口)",不要断言窗口存在或不存在。系统默认的自动化后端是独立外置浏览器,不是侧边栏。
   - 仅此模式支持:`act:saveResource`(托管下载)、以及 `query` 语义元素查询(role / name / text / label / placeholder / testId / css)。在外置模式下用这两个会被 schema 或运行时门控直接拒掉,别当通用能力使。
-- **`data.backend === "external"` = 独立外置浏览器**:一个专属持久自动化浏览器窗口(profile 显示为 "Cindy")。`act:saveResource` 与语义 `query` 在此模式不可用,元素定位改用 snapshot 的 `ref` 或 `selector`。旧宿主可能省略该字段,不要把缺少模式信息当成已使用内置浏览器。
+- **`data.backend === "external"` = 独立外置浏览器**:一个专属持久自动化浏览器窗口(profile 显示为 "Countersign")。`act:saveResource` 与语义 `query` 在此模式不可用,元素定位改用 snapshot 的 `ref` 或 `selector`。旧宿主可能省略该字段,不要把缺少模式信息当成已使用内置浏览器。
   - 此模式的 `status.data.proxy` 报告当前启动路由:`direct`、`proxied`(带脱敏 `server`)或无法确认继承进程路由时的 `unknown`。需要指定代理时必须重新调用 `start` 并检查结果,不要从已有 tab 猜测出口。代理模式下只有 `proxyAllowedHostnames` 列出的公网域名可导航,内网地址不在其中。
 
 `setBackend` 与设置页修改同一个**全局、持久**选择,会影响其他正在使用浏览器的任务,旧模式的操作可能中断。仅按用户明确的模式要求切换,无需重复确认;不要因页面报错自行换模式。切换后重新 `tabs` / `snapshot`,不沿用旧模式的 targetId、ref 或登录态。宿主不支持切换或返回失败时如实说明,不能声称切换成功。
 
 两种模式均允许访问本机网络可达的内网 HTTP(S) 地址。遇到失败按实际连接、DNS、证书或登录错误诊断,不要仅因私有 IP 推断“禁止内网访问”,也不要让用户把内网服务暴露到公网。
 
-**两种模式彼此隔离**。侧边栏始终是独立身份。外置浏览器默认也是独立的 `Cindy` profile;仅当用户在设置里打开「使用我的浏览器登录态」且 `status.data.realProfile.applied === true` 时,外置窗口才带着系统 Chrome / Edge / Brave 的登录拷贝(可撤销,Agent 以用户身份访问)。**不要传 `profile`**,不要试图 attach 用户日常使用的 Chrome。
+**两种模式彼此隔离**。侧边栏始终是独立身份。外置浏览器默认也是独立的 Countersign profile;仅当用户在设置里打开「使用我的浏览器登录态」且 `status.data.realProfile.applied === true` 时,外置窗口才带着系统 Chrome / Edge / Brave 的登录拷贝(可撤销,Agent 以用户身份访问)。**不要传 `profile`**,不要试图 attach 用户日常使用的 Chrome。
 
 #### 登录与登录墙
 - 操作需要登录态的站点前,导航后先 `action: "snapshot"`(必要时配 `screenshot` 视觉确认)判断是否已登录。**不要**用 `profiles` 判断登录态——它不携带按站点的登录信号。

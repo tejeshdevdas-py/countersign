@@ -1602,21 +1602,21 @@
       "text": "Cindy",
       "count": 1,
       "category": "not-shown",
-      "why": "on-disk managed browser profile name, pinned by brandIdentity"
+      "why": "on-disk managed browser profile folder key, pinned by brandIdentity; the Chrome chip and profile name show BRAND_NAME (MANAGED_PROFILE_DISPLAY_NAME)"
     },
     {
       "file": "apps/desktop/src/main/mcp-integrations/browser-managed-config.ts",
       "text": "Cindy-real",
       "count": 1,
       "category": "not-shown",
-      "why": "on-disk managed browser profile name, pinned by brandIdentity"
+      "why": "on-disk managed browser profile folder key, pinned by brandIdentity; the Chrome chip and profile name show BRAND_NAME (MANAGED_PROFILE_DISPLAY_NAME)"
     },
     {
       "file": "apps/desktop/src/main/mcp-integrations/browser-real-profile/snapshot.ts",
       "text": "Cindy",
       "count": 1,
       "category": "not-shown",
-      "why": "on-disk managed browser profile name, pinned by brandIdentity"
+      "why": "on-disk managed browser profile folder key, pinned by brandIdentity; the Chrome chip and profile name show BRAND_NAME (MANAGED_PROFILE_DISPLAY_NAME)"
     },
     {
       "file": "apps/desktop/src/main/mcp-integrations/browser.ts",

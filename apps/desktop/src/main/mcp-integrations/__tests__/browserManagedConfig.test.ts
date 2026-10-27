@@ -1,6 +1,8 @@
 import nodePath from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
+
 import { buildManagedConfig, managedBrowserGuardIdentity } from '../browser-managed-config.js';
 
 /** Netscape PAC `isInNet` over already-resolved IPv4, for the Node PAC harness. */
@@ -62,14 +64,15 @@ describe('managed browser runtime config', () => {
     });
   });
 
-  it('labels both isolated and snapshot profiles Cindy on the Chrome chip', () => {
+  it('labels both isolated and snapshot profiles with the product name on the Chrome chip', () => {
+    // Countersign: the chip shows BRAND_NAME; the on-disk profile keys stay as they were.
     const isolated = buildManagedConfig().browser;
     expect(isolated?.defaultProfile).toBe('Cindy');
-    expect(isolated?.profiles?.Cindy?.displayName).toBe('Cindy');
+    expect(isolated?.profiles?.Cindy?.displayName).toBe(BRAND_NAME);
 
     const snapshot = buildManagedConfig({ useRealProfile: true }).browser;
     expect(snapshot?.defaultProfile).toBe('Cindy-real');
-    expect(snapshot?.profiles?.['Cindy-real']?.displayName).toBe('Cindy');
+    expect(snapshot?.profiles?.['Cindy-real']?.displayName).toBe(BRAND_NAME);
     expect(Object.keys(snapshot?.profiles ?? {})).toEqual(['Cindy-real']);
   });
 

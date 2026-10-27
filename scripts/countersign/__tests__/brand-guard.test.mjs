@@ -253,13 +253,13 @@ test('covers built-in Skills, teammate packages and headless profiles', () => {
   assert.equal(isPromptTemplatePath('packages/lizi-mcps/src/computer/README.md'), false);
 });
 
-test('keeps the quoted browser profile name but flags prose in the browser workflow prompt', () => {
+test('flags the quoted browser profile name too: the Chrome chip shows the product name', () => {
   const p = 'packages/lizi-mcps/src/browser/prompts/rules/browser-workflow.md';
   const text =
     '外置浏览器默认也是独立的 `Cindy` profile(profile 显示为 "Cindy")。\n页面活在 Cindy 的侧边栏里。\n';
   assert.deepEqual(
     findPromptLeaks([{ path: p, text }]).map((leak) => leak.line),
-    [2],
+    [1, 2],
   );
 });
 
