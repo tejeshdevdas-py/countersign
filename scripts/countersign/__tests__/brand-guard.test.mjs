@@ -12,6 +12,7 @@ import {
   compareWithBaseline,
   findBrandAssetNames,
   findBrandLeaks,
+  findHtmlLeaks,
   findPromptLeaks,
   findUserTextHits,
   isPromptTemplatePath,
@@ -158,6 +159,63 @@ test('flags renderer imports of Cindy wallpaper images', () => {
   assert.equal(
     findBrandLeaks([{ path: 'apps/desktop/src/renderer/lib/wallpaper.ts', text }]).length,
     1,
+  );
+});
+
+// (10) Shipped .html entry pages: the page <title> overrides the window title (taskbar, Alt+Tab).
+
+const RENDERER_HTML = 'apps/desktop/src/renderer/index.html';
+
+test('flags the old name in the <title> of a shipped html entry page', () => {
+  const text = '<!DOCTYPE html>\n<html>\n  <head>\n    <title>Cindy</title>\n  </head>\n</html>\n';
+  const leaks = findHtmlLeaks([{ path: RENDERER_HTML, text }]);
+  assert.deepEqual(
+    leaks.map((leak) => [leak.line, leak.match]),
+    [[4, 'Cindy']],
+  );
+});
+
+test('flags visible html text and alt, title, aria-label and placeholder values', () => {
+  const text = [
+    '<body>',
+    '  <p>Welcome to Cindy</p>',
+    '  <img src="./a.png" alt="Cindy logo" />',
+    '  <button aria-label="Open Cindy"></button>',
+    '  <input placeholder="Ask Cindy" title="Cindy" />',
+    '</body>',
+  ].join('\n');
+  const leaks = findHtmlLeaks([{ path: 'apps/desktop/resources/page.html', text }]);
+  assert.deepEqual(
+    leaks.map((leak) => leak.line),
+    [2, 3, 4, 5, 5],
+  );
+});
+
+test('ignores html scripts, styles, comments, ids and paths', () => {
+  const text = [
+    '<!-- Cindy shell -->',
+    '<style>.Cindy { color: red; }</style>',
+    '<script>window.Cindy = 1;</script>',
+    '<div id="cindy-root" data-name="Cindy"></div>',
+    '<script type="module" src="./cindy.tsx"></script>',
+    '<title>Countersign</title>',
+  ].join('\n');
+  assert.deepEqual(findHtmlLeaks([{ path: RENDERER_HTML, text }]), []);
+});
+
+test('scans html entry pages under apps/desktop/src and resources only, not test fixtures', () => {
+  const text = '<title>Cindy</title>\n';
+  const paths = [
+    'apps/desktop/src/capture-renderer/index.html',
+    'apps/desktop/resources/help/index.html',
+    'apps/desktop/src/main/cindy-brain/__tests__/fixtures/page/settings.html',
+    'apps/desktop/cindy-updater/ui/index.html',
+    'apps/desktop/scripts/fixtures/page.html',
+  ];
+  const leaks = findHtmlLeaks(paths.map((p) => ({ path: p, text })));
+  assert.deepEqual(
+    leaks.map((leak) => leak.path),
+    ['apps/desktop/src/capture-renderer/index.html', 'apps/desktop/resources/help/index.html'],
   );
 });
 
@@ -471,6 +529,18 @@ test('main() fails a fixture tree with a hit outside the baseline', () => {
   });
   assert.equal(code, 1);
   assert.match(out, /apps\/desktop\/src\/renderer\/New\.tsx:1/);
+});
+
+test('main() fails a fixture tree whose html entry page is titled with the old name', () => {
+  const { code, out } = runMain([FIXTURE_ENTRY], (root) => {
+    writeFile(
+      root,
+      'apps/desktop/src/renderer/index.html',
+      '<html>\n<title>Cindy</title>\n</html>\n',
+    );
+  });
+  assert.equal(code, 1);
+  assert.match(out, /apps\/desktop\/src\/renderer\/index\.html:2/);
 });
 
 test('main() fails a fixture tree whose baseline lists a text that is gone', () => {

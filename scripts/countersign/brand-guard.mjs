@@ -27,6 +27,9 @@
  * path or URL. Old-name text deliberately left is listed, with its reason, in
  * brand-guard-baseline.json; anything else fails, and so does a baseline entry
  * that no longer occurs as often as listed.
+ *
+ * (10) Shipped .html entry pages under apps/desktop/src and apps/desktop/resources
+ * are scanned for visible text: the <title> becomes the window title.
  */
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
@@ -149,6 +152,59 @@ export function findBrandLeaks(files) {
   return leaks;
 }
 
+// ---------------------------------------------------------------------------
+// (10) Shipped .html entry pages under apps/desktop/src and apps/desktop/resources
+// (not test fixtures). The page <title> overrides the BrowserWindow title, so it
+// is what the Windows taskbar and Alt+Tab show. Checked: text outside tags,
+// scripts, styles and comments, plus alt, title, aria-label and placeholder
+// values. Ids, data attributes and paths are not text a person reads.
+// ---------------------------------------------------------------------------
+
+const HTML_ENTRY_PATH = /^apps\/desktop\/(?:src|resources)\/(?!(?:.*\/)?__tests__\/).+\.html$/;
+const HTML_HIDDEN_BLOCK =
+  /<script\b[\s\S]*?<\/script\s*>|<style\b[\s\S]*?<\/style\s*>|<!--[\s\S]*?-->/gi;
+const HTML_TAG = /<[^>]*>/g;
+const HTML_VISIBLE_ATTR = /\b(?:alt|title|aria-label|placeholder)\s*=\s*(["'])(.*?)\1/gi;
+
+export function isHtmlEntryPath(p) {
+  return HTML_ENTRY_PATH.test(normalize(p));
+}
+
+/** Replaces every character except newlines with a space, so line numbers stay. */
+function blankOut(text) {
+  return text.replace(/[^\n]/g, ' ');
+}
+
+function lineAt(text, index) {
+  return text.slice(0, index).split('\n').length;
+}
+
+export function findHtmlLeaks(files) {
+  const leaks = [];
+  for (const file of files) {
+    if (!isHtmlEntryPath(file.path)) {
+      continue;
+    }
+    const fileLeaks = [];
+    const shown = file.text.replace(HTML_HIDDEN_BLOCK, blankOut);
+    for (const m of shown.matchAll(HTML_VISIBLE_ATTR)) {
+      const hit = OLD_NAME.exec(m[2]);
+      if (hit) {
+        fileLeaks.push({ path: file.path, line: lineAt(shown, m.index), match: hit[0] });
+      }
+    }
+    const textOnly = shown.replace(HTML_TAG, blankOut);
+    textOnly.split('\n').forEach((line, index) => {
+      const hit = OLD_NAME.exec(line);
+      if (hit) {
+        fileLeaks.push({ path: file.path, line: index + 1, match: hit[0] });
+      }
+    });
+    leaks.push(...fileLeaks.sort((a, b) => a.line - b.line));
+  }
+  return leaks;
+}
+
 function collectPaths(root, dir, out) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     if (entry.name === 'node_modules' || entry.name === 'agent-bin') {
@@ -165,7 +221,12 @@ function collectPaths(root, dir, out) {
 
 function collect(root, dir, out) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (entry.name === 'node_modules' || entry.name === 'dist' || entry.name === '.git') {
+    if (
+      entry.name === 'node_modules' ||
+      entry.name === 'dist' ||
+      entry.name === '.git' ||
+      entry.name === 'agent-bin'
+    ) {
       continue;
     }
     const full = path.join(dir, entry.name);
@@ -174,7 +235,12 @@ function collect(root, dir, out) {
       continue;
     }
     const rel = normalize(path.relative(root, full));
-    if (LOCALE_PATH.test(rel) || SOURCE_PATH.test(rel) || HELP_PATH.test(rel)) {
+    if (
+      LOCALE_PATH.test(rel) ||
+      SOURCE_PATH.test(rel) ||
+      HELP_PATH.test(rel) ||
+      isHtmlEntryPath(rel)
+    ) {
       out.push({ path: rel, text: fs.readFileSync(full, 'utf8') });
     }
   }
@@ -591,11 +657,16 @@ export function main({
   const files = [];
   collect(root, path.join(root, 'apps', 'desktop', 'src'), files);
   collect(root, path.join(root, 'apps', 'desktop', 'help-knowledge'), files);
+  collect(root, path.join(root, 'apps', 'desktop', 'resources'), files);
   const assetPaths = [];
   collectPaths(root, path.join(root, 'apps', 'desktop', 'src', 'renderer', 'assets'), assetPaths);
   collectPaths(root, path.join(root, 'apps', 'desktop', 'resources'), assetPaths);
   const promptFiles = collectPromptFiles(root, promptSourceFiles);
-  const leaks = [...findBrandLeaks(files), ...findBrandAssetNames(assetPaths)];
+  const leaks = [
+    ...findBrandLeaks(files),
+    ...findHtmlLeaks(files),
+    ...findBrandAssetNames(assetPaths),
+  ];
   const promptLeaks = findPromptLeaks(promptFiles, promptSourceFiles);
   const sourceFiles = collectUserTextFiles(root);
   const hits = findUserTextHits(sourceFiles, promptSourceFiles);
