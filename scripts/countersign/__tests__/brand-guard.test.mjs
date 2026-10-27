@@ -2,18 +2,23 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
+  BASELINE_CATEGORIES,
   PROMPT_SOURCE_FILES,
-  USER_TEXT_EXEMPT,
-  USER_TEXT_FILES,
+  compareWithBaseline,
   findBrandAssetNames,
   findBrandLeaks,
   findPromptLeaks,
-  findUserTextLeaks,
+  findUserTextHits,
   isPromptTemplatePath,
+  isUserTextSourcePath,
+  loadBaseline,
+  main,
+  validateBaseline,
 } from '../brand-guard.mjs';
 
 const LOCALE = 'apps/desktop/src/renderer/i18n/locales/en/common.json';
@@ -209,51 +214,227 @@ test('every listed prompt source exists', () => {
   }
 });
 
-// User-facing source files: every string literal, minus log calls, ids and listed exemptions.
+// (9) Every non-test .ts/.tsx under apps/desktop/src and packages/*/src: every string
+// literal, template part and JSX text, minus logger calls and identifier tokens; what
+// stays is checked against the committed baseline.
 
-test('flags error and label text in a listed user-facing file, not its logs, ids or comments', () => {
-  const p = 'packages/maker-core/src/agents/codex/index.ts';
+const MAIN_FILE = 'apps/desktop/src/main/someService.ts';
+const RENDERER_FILE = 'apps/desktop/src/renderer/components/Some.tsx';
+
+function hitLines(path, text) {
+  return findUserTextHits([{ path, text }]).map((hit) => hit.line);
+}
+
+test('scans every non-test source file under apps/desktop/src and packages/*/src', () => {
+  assert.equal(isUserTextSourcePath('apps/desktop/src/main/notificationService.ts'), true);
+  assert.equal(isUserTextSourcePath('apps/desktop/src/renderer/components/settings/SettingsView.tsx'), true);
+  assert.equal(isUserTextSourcePath('packages/maker-core/src/agents/pi/index.ts'), true);
+  assert.equal(isUserTextSourcePath('packages/lizi-im/src/feishu/messages.ts'), true);
+  assert.equal(isUserTextSourcePath('apps/desktop/src/main/__tests__/a.test.ts'), false);
+  assert.equal(isUserTextSourcePath('packages/maker-core/src/agents/codex/index.test.ts'), false);
+  assert.equal(isUserTextSourcePath('apps/desktop/src/renderer/vite-env.d.ts'), false);
+  assert.equal(isUserTextSourcePath('apps/desktop/src/main/maker-ipc/helpKnowledge.generated.ts'), false);
+  assert.equal(isUserTextSourcePath('scripts/countersign/brand-guard.mjs'), false);
+  assert.equal(isUserTextSourcePath('apps/cindy-headless/src/gateway-config.ts'), false);
+});
+
+test('leaves prompt source files to the prompt check', () => {
+  const text = "export const TOOL = { description: 'Ask in Cindy cards' };\n";
+  assert.deepEqual(findUserTextHits([{ path: PROMPT_SOURCE_FILES[0], text }]), []);
+});
+
+test('flags error text, plain backtick strings and every template part, not comments', () => {
   const text = [
-    '// Cindy Review runs here.',
-    "throw new Error('Cindy Review requires Codex 0.145');",
-    "log.warn('Cindy Auto provider follow failed', { id });",
-    "console.error(`[Cindy] ${reason}`);",
-    "const scope = 'Cindy.begin';",
-    "const file = 'Cindy/owners';",
-    'const label = `Return to Cindy ${version}`;',
-    "const name = 'Cindy';",
+    '// Cindy runs here.',
+    "throw new Error('Cindy could not start');",
+    'const a = `Cindy is ready`;',
+    'const b = `Cindy: ${reason}`;',
+    'const c = `${a} asks Cindy ${b} now`;',
+    'const d = `${a} then Cindy`;',
   ].join('\n');
-  assert.deepEqual(findUserTextLeaks([{ path: p, text }]).map((leak) => leak.line), [2, 7, 8]);
+  assert.deepEqual(hitLines(MAIN_FILE, text), [2, 3, 4, 5, 6]);
 });
 
-test('flags JSX text in a listed renderer file', () => {
-  const p = 'apps/desktop/src/renderer/components/settings/MyDevicesPanel.tsx';
-  const text = 'export const A = () => <span>Cindy device</span>;\n';
-  assert.deepEqual(findUserTextLeaks([{ path: p, text }]).map((leak) => leak.line), [1]);
+test('flags JSX text and JSX attribute strings', () => {
+  const text = [
+    'export const A = () => (',
+    '  <div title="Cindy settings" aria-label={"Open Cindy"}>',
+    '    <span>Cindy.</span>',
+    '    <input placeholder={`Ask Cindy ${x}`} />',
+    '  </div>',
+    ');',
+  ].join('\n');
+  assert.deepEqual(hitLines(RENDERER_FILE, text), [2, 2, 3, 4]);
 });
 
-test('an exemption covers only its exact text in its own file', () => {
-  const exempt = USER_TEXT_EXEMPT.find((e) => e.path.endsWith('register.ts'));
-  assert.ok(exempt && exempt.reason);
-  const same = `throwIpcError('PRECONDITION_FAILED', '${exempt.text}');\n`;
-  const other = "throwIpcError('PRECONDITION_FAILED', 'Cindy Make is busy');\n";
-  assert.deepEqual(findUserTextLeaks([{ path: exempt.path, text: same }]), []);
-  assert.equal(findUserTextLeaks([{ path: exempt.path, text: other }]).length, 1);
-  assert.equal(findUserTextLeaks([{ path: 'packages/maker-core/src/maker.ts', text: same }]).length, 1);
+test('flags short name-like literals that the old identifier rule let through', () => {
+  const text = [
+    "const a = 'Cindy.';",
+    "const b = 'Cindy:';",
+    "const c = 'Cindy/Codex';",
+    "const d = 'Cindy-powered';",
+    "const e = 'Cindy';",
+  ].join('\n');
+  assert.deepEqual(hitLines(MAIN_FILE, text), [1, 2, 3, 4, 5]);
 });
 
-test('does not scan files outside the user-facing list', () => {
-  const text = "throw new Error('Cindy Review requires Codex 0.145');\n";
-  assert.deepEqual(findUserTextLeaks([{ path: 'apps/desktop/src/main/updateService.ts', text }]), []);
+test('exempts the old name only inside an identifier token, a path or a URL', () => {
+  const text = [
+    "const a = 'Cindy.begin';",
+    "const b = '/Applications/Cindy.app';",
+    "const c = 'C:\\\\Users\\\\me\\\\AppData\\\\Roaming\\\\Cindy';",
+    "const d = 'https://example.com/Cindy';",
+    "const e = '~/Cindy/data';",
+    "const f = 'XDMaker.Cindy';",
+    "const g = 'cindy_helper cindy-media @cindy/maker-shared CINDY_HOME';",
+    "const h = 'Open Cindy.begin in Cindy now';",
+  ].join('\n');
+  assert.deepEqual(hitLines(MAIN_FILE, text), [8]);
 });
 
-test('every listed user-facing file exists and every exemption names a listed file', () => {
-  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
-  for (const rel of USER_TEXT_FILES) {
-    assert.equal(fs.existsSync(path.join(root, rel)), true, rel);
+test('skips real logger calls only', () => {
+  const text = [
+    "log.info('Cindy started');",
+    "logger.warn('Cindy slow');",
+    "console.error('Cindy failed');",
+    "this.log.debug('Cindy trace');",
+    "authLogger.error('Cindy auth');",
+    "dialog.error('Cindy failed to start');",
+    "catalog.error('Cindy catalog');",
+    "dbClientLog.warn('Cindy db');",
+  ].join('\n');
+  assert.deepEqual(hitLines(MAIN_FILE, text), [6, 7, 8]);
+});
+
+test('a hit is reported with its file, trimmed literal text and line', () => {
+  const hits = findUserTextHits([{ path: MAIN_FILE, text: "\nthrow new Error('  Cindy failed  ');\n" }]);
+  assert.deepEqual(hits, [{ path: MAIN_FILE, line: 2, text: 'Cindy failed', match: 'Cindy' }]);
+});
+
+function entry(overrides = {}) {
+  return { file: MAIN_FILE, text: 'Cindy failed', count: 1, category: 'switched-off', why: 'test', ...overrides };
+}
+
+test('a hit listed in the baseline passes', () => {
+  const hits = findUserTextHits([{ path: MAIN_FILE, text: "throw new Error('Cindy failed');\n" }]);
+  assert.deepEqual(compareWithBaseline(hits, [entry()]), { fresh: [], stale: [] });
+});
+
+test('a new hit fails, and so does one more occurrence of a listed text', () => {
+  const one = findUserTextHits([{ path: MAIN_FILE, text: "throw new Error('Cindy broke');\n" }]);
+  assert.equal(compareWithBaseline(one, [entry()]).fresh.length, 1);
+  const two = findUserTextHits([{ path: MAIN_FILE, text: "f('Cindy failed');\ng('Cindy failed');\n" }]);
+  const result = compareWithBaseline(two, [entry()]);
+  assert.equal(result.fresh.length, 1);
+  assert.equal(result.fresh[0].line, 2);
+});
+
+test('a baseline entry that no longer occurs, or occurs less often, fails', () => {
+  assert.equal(compareWithBaseline([], [entry()]).stale.length, 1);
+  const one = findUserTextHits([{ path: MAIN_FILE, text: "f('Cindy failed');\n" }]);
+  const stale = compareWithBaseline(one, [entry({ count: 2 })]).stale;
+  assert.equal(stale.length, 1);
+  assert.equal(stale[0].found, 1);
+});
+
+test('a baseline entry needs a known category, a reason and a positive count, once per text', () => {
+  assert.deepEqual(validateBaseline([entry()]), []);
+  assert.equal(validateBaseline([entry({ category: 'because' })]).length, 1);
+  assert.equal(validateBaseline([entry({ why: '' })]).length, 1);
+  assert.equal(validateBaseline([entry({ count: 0 })]).length, 1);
+  assert.equal(validateBaseline([entry(), entry()]).length, 1);
+  assert.ok(BASELINE_CATEGORIES.includes('im-later'));
+});
+
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
+
+test('the committed baseline is valid and holds nothing seen in normal Windows use', () => {
+  const baseline = loadBaseline(path.join(REPO_ROOT, 'scripts', 'countersign', 'brand-guard-baseline.json'));
+  assert.deepEqual(validateBaseline(baseline), []);
+  const normalUse = [
+    'apps/desktop/src/main/notificationService.ts',
+    'apps/desktop/src/main/cindy-brain/fileAssociation.ts',
+    'apps/desktop/src/main/rsbBrowserWebAuthnLabels.ts',
+    'apps/desktop/src/main/utility-model/resolveAuxiliaryModelChain.ts',
+    'apps/desktop/src/renderer/lib/workLouderCodexTaskActions.ts',
+    'apps/desktop/src/renderer/components/settings/SettingsView.tsx',
+  ];
+  for (const e of baseline) {
+    assert.equal(normalUse.includes(e.file), false, `${e.file}: ${e.text}`);
+    assert.notEqual(e.text, 'Cindy Ghost', e.file);
+    assert.equal(fs.existsSync(path.join(REPO_ROOT, e.file)), true, e.file);
   }
-  for (const e of USER_TEXT_EXEMPT) {
-    assert.equal(USER_TEXT_FILES.includes(e.path), true, e.path);
-    assert.ok(e.reason, e.path);
+});
+
+function writeFile(root, rel, text) {
+  const full = path.join(root, rel);
+  fs.mkdirSync(path.dirname(full), { recursive: true });
+  fs.writeFileSync(full, text);
+}
+
+function fixtureTree(baselineEntries) {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'brand-guard-'));
+  for (const dir of [
+    'apps/desktop/src/renderer/assets',
+    'apps/desktop/help-knowledge',
+    'apps/desktop/resources/system-skills',
+    'apps/desktop/resources/bot-packages',
+    'apps/desktop/src/main/maker-host',
+    'apps/cindy-headless/profiles',
+    'packages/maker-core/src',
+    'packages/lizi-mcps/src',
+  ]) {
+    fs.mkdirSync(path.join(root, dir), { recursive: true });
   }
+  writeFile(root, 'apps/desktop/src/main/ok.ts', "export const a = 'Countersign is ready';\n");
+  writeFile(root, 'packages/maker-core/src/old.ts', "throw new Error('Cindy failed');\n");
+  writeFile(root, 'packages/maker-core/src/__tests__/old.test.ts', "expect('Cindy failed');\n");
+  const baselinePath = path.join(root, 'baseline.json');
+  fs.writeFileSync(baselinePath, JSON.stringify({ entries: baselineEntries }));
+  return { root, baselinePath };
+}
+
+function runMain(baselineEntries, edit) {
+  const { root, baselinePath } = fixtureTree(baselineEntries);
+  edit?.(root);
+  const out = [];
+  const code = main({
+    root,
+    baselinePath,
+    promptSourceFiles: [],
+    log: (line) => out.push(line),
+    error: (line) => out.push(line),
+  });
+  fs.rmSync(root, { recursive: true, force: true });
+  return { code, out: out.join('\n') };
+}
+
+const FIXTURE_ENTRY = {
+  file: 'packages/maker-core/src/old.ts',
+  text: 'Cindy failed',
+  count: 1,
+  category: 'switched-off',
+  why: 'fixture',
+};
+
+test('main() passes a fixture tree whose only hit is in the baseline', () => {
+  const { code, out } = runMain([FIXTURE_ENTRY]);
+  assert.equal(code, 0, out);
+  assert.match(out, /brand guard: ok/);
+});
+
+test('main() fails a fixture tree with a hit outside the baseline', () => {
+  const { code, out } = runMain([FIXTURE_ENTRY], (root) => {
+    writeFile(root, 'apps/desktop/src/renderer/New.tsx', 'export const N = () => <b>Cindy.</b>;\n');
+  });
+  assert.equal(code, 1);
+  assert.match(out, /apps\/desktop\/src\/renderer\/New\.tsx:1/);
+});
+
+test('main() fails a fixture tree whose baseline lists a text that is gone', () => {
+  const { code, out } = runMain([FIXTURE_ENTRY], (root) => {
+    writeFile(root, 'packages/maker-core/src/old.ts', "throw new Error('Countersign failed');\n");
+  });
+  assert.equal(code, 1);
+  assert.match(out, /no longer occurs/);
 });

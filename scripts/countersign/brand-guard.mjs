@@ -21,10 +21,12 @@
  * (8) every string literal in a listed set of TS prompt and tool-description
  * modules is scanned. Exemptions there carry their reason (PROMPT_EXEMPT).
  *
- * (9) Every string literal and JSX text of a listed set of user-facing renderer,
- * main and engine files (labels, error messages, browser pages) is scanned,
- * apart from logging-call arguments, identifier-like literals and the
- * exemptions in USER_TEXT_EXEMPT, each with its reason.
+ * (9) Every string literal, template part and JSX text of every non-test
+ * .ts/.tsx file under apps/desktop/src and packages/*\/src is scanned, apart
+ * from real logger-call arguments and the old name inside an identifier token,
+ * path or URL. Old-name text deliberately left is listed, with its reason, in
+ * brand-guard-baseline.json; anything else fails, and so does a baseline entry
+ * that no longer occurs as often as listed.
  */
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
@@ -348,63 +350,75 @@ export function findPromptLeaks(files, sourceFiles = PROMPT_SOURCE_FILES) {
 }
 
 // ---------------------------------------------------------------------------
-// (9) User-facing source files: renderer, main and engine files whose string
-// literals (and JSX text) include text a user reads (labels, error messages,
-// pages shown in the browser). Every literal is scanned except:
-//  - arguments of logging calls (console.*, log.*, logger.*): log text and scopes;
-//  - identifier-like literals (no whitespace and at least one of . : / _ -),
-//    such as protocol ids, file names and keys that code matches on;
-//  - a listed exemption, each with its reason (USER_TEXT_EXEMPT).
+// (9) Every non-test .ts/.tsx under apps/desktop/src and packages/*/src: every
+// string literal, template part and JSX text, except
+//  - arguments of real logger calls (receiver log, logger, console, this.log or
+//    a name ending in Logger): log text;
+//  - an occurrence of the old name inside an identifier token (Cindy.begin,
+//    XDMaker.Cindy), a path or a URL; lower-case ids (cindy_, cindy-, .cindy,
+//    @cindy/) and CINDY_ never match OLD_NAME in the first place;
+//  - prompt source files, which check (8) scans in full.
+// Old-name text that is deliberately left sits in the committed baseline
+// (brand-guard-baseline.json): file, literal text, count, reason category and
+// why. The guard fails on any occurrence not in the baseline and on a baseline
+// entry that occurs less often than listed, so the list only shrinks.
 // ---------------------------------------------------------------------------
 
-export const USER_TEXT_FILES = [
-  'apps/desktop/src/main/hook-control/session-runner.ts',
-  'apps/desktop/src/main/local-agent/runtime.ts',
-  'apps/desktop/src/main/local-agent/server.ts',
-  'apps/desktop/src/main/local-agent/service.ts',
-  'apps/desktop/src/main/localDb/ipc/bots.ts',
-  'apps/desktop/src/main/localDb/sharedDbCompatibilityMessage.ts',
-  'apps/desktop/src/main/maker-ipc/botCreationDraft.ts',
-  'apps/desktop/src/main/maker-ipc/botDelegationDispatchOutcome.ts',
-  'apps/desktop/src/main/maker-ipc/botDelegationService.ts',
-  'apps/desktop/src/main/maker-ipc/register.ts',
-  'apps/desktop/src/main/oauthResultPage.ts',
-  'apps/desktop/src/renderer/components/onboarding/ConnectProviderCard.tsx',
-  'apps/desktop/src/renderer/components/settings/MyDevicesPanel.tsx',
-  'apps/desktop/src/renderer/components/settings/ProvidersSection.tsx',
-  'apps/desktop/src/renderer/components/settings/dialogueDirectoryDisplay.ts',
-  'packages/maker-core/src/agents/claude-code/index.ts',
-  'packages/maker-core/src/agents/codex/index.ts',
-  'packages/maker-core/src/agents/codex/retry-escalation.ts',
-  'packages/maker-core/src/agents/pi/pi-subagent-runs.ts',
-  'packages/maker-core/src/maker.ts',
+const USER_TEXT_SOURCE_PATH = /^(?:apps\/desktop\/src|packages\/[^/]+\/src)\/.+\.tsx?$/;
+const USER_TEXT_NOT_SOURCE = [/(?:^|\/)__tests__\//, /\.(?:test|spec)\.tsx?$/, /\.d\.ts$/, /\.generated\.tsx?$/];
+
+export function isUserTextSourcePath(p) {
+  const rel = normalize(p);
+  return USER_TEXT_SOURCE_PATH.test(rel) && !USER_TEXT_NOT_SOURCE.some((re) => re.test(rel));
+}
+
+/** Reason categories a baseline entry may carry. */
+export const BASELINE_CATEGORIES = [
+  'removed', // the feature is removed or closed under LOCAL_ONLY (cloud account, sharing, relay, store)
+  'switched-off', // reachable only behind a switched-off flag or a path LOCAL_ONLY never takes
+  'macos-only', // macOS-only code path
+  'gateway-only', // needs the hosted model gateway or a gateway key
+  'make', // Cindy Make, off (CINDY_MAKE_ENABLED = false)
+  'billing', // billing and membership, cloud only
+  'im-later', // chat-app bots (IM), "Later" in the design, hidden and not started under LOCAL_ONLY
+  'mobile', // the mobile app or the phone link
+  'not-shown', // compared, matched or stored by code (keys, fingerprints, reserved names), never shown
+  'log', // log or diagnostic text written through a receiver the logger rule does not cover
+  'dev-only', // development builds, dev tools or tests helpers that ship no user path
+  'third-party', // a third party's own name that happens to be Cindy (a vendor speech voice)
 ];
 
-// Old-name literals that stay in the files above, each with its reason. `text`
-// must equal the whole trimmed literal (or template part), so a new string is
-// never covered by an old exemption.
-export const USER_TEXT_EXEMPT = [
-  {
-    path: 'apps/desktop/src/main/maker-ipc/register.ts',
-    text: 'Cindy Make is still preparing this task',
-    reason: 'Cindy Make is switched off (CINDY_MAKE_ENABLED = false); deferred to the M5 scrub',
-  },
-  {
-    path: 'apps/desktop/src/main/maker-ipc/botCreationDraft.ts',
-    text: 'Cindy',
-    reason: 'a name a generated teammate may not take; compared, never shown',
-  },
-  {
-    path: 'packages/maker-core/src/maker.ts',
-    text: 'Update Cindy on the computer running the agent to rewind this task',
-    reason: 'remote-agent rewind only; the device relay is off under LOCAL_ONLY; deferred to the M5 scrub',
-  },
-];
+const LOG_CALLEE = /^(?:this\.)?(?:console|log|logger|\w*Logger)\.(?:log|info|warn|error|debug|trace)$/;
+const OLD_NAME_ALL = /\b(?:Cindys?|CINDYS?)\b/g;
 
-const LOG_CALLEE = /^(?:console|log|logger|\w*[lL]og(?:ger)?)\.(?:log|info|warn|error|debug|trace)$/;
-const ID_LIKE = /^\S*[.:/_-]\S*$/;
+/** True when the old name at [start, end) sits inside an identifier token, a path or a URL. */
+function isIdentifierOccurrence(text, start, end) {
+  let tokenStart = start;
+  while (tokenStart > 0 && !/\s/.test(text[tokenStart - 1])) tokenStart -= 1;
+  let tokenEnd = end;
+  while (tokenEnd < text.length && !/\s/.test(text[tokenEnd])) tokenEnd += 1;
+  const token = text.slice(tokenStart, tokenEnd);
+  if (token.includes('://')) return true;
+  const isPath =
+    /^(?:~|\.{1,2})?[\\/]/.test(token) ||
+    /^[A-Za-z]:[\\/]/.test(token) ||
+    token.includes('\\') ||
+    (token.match(/\//g) ?? []).length >= 2;
+  if (isPath) return true;
+  const before = text[start - 1];
+  if (before === '.' || before === '@') return true;
+  return /^\.[A-Za-z0-9_]/.test(text.slice(end, end + 2));
+}
 
-/** String literals, template parts and JSX text in TS/TSX source, minus log-call arguments. */
+/** The first old-name occurrence that is not part of an identifier token, or null. */
+function userVisibleOldName(text) {
+  for (const m of text.matchAll(OLD_NAME_ALL)) {
+    if (!isIdentifierOccurrence(text, m.index, m.index + m[0].length)) return m[0];
+  }
+  return null;
+}
+
+/** String literals, template parts and JSX text in TS/TSX source, minus logger-call arguments. */
 function userTextLiterals(filePath, text) {
   const ts = loadTypeScript();
   const kind = filePath.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
@@ -433,31 +447,95 @@ function userTextLiterals(filePath, text) {
   return out;
 }
 
-export function findUserTextLeaks(files, userFiles = USER_TEXT_FILES) {
-  const leaks = [];
-  const listed = new Set(userFiles.map(normalize));
+/** Old-name text in source files: { path, line, text (trimmed literal), match }. */
+export function findUserTextHits(files, promptSourceFiles = PROMPT_SOURCE_FILES) {
+  const hits = [];
+  const promptSources = new Set(promptSourceFiles.map(normalize));
   for (const file of files) {
     const filePath = normalize(file.path);
-    if (!listed.has(filePath)) continue;
-    const exempt = USER_TEXT_EXEMPT.filter((e) => e.path === filePath);
+    if (!isUserTextSourcePath(filePath) || promptSources.has(filePath)) continue;
+    if (!OLD_NAME.test(file.text)) continue;
     for (const literal of userTextLiterals(filePath, file.text)) {
-      const value = literal.text.trim();
-      if (ID_LIKE.test(value) || exempt.some((e) => e.text === value)) continue;
-      const hit = OLD_NAME.exec(literal.text);
-      if (hit) {
-        leaks.push({ path: file.path, line: literal.line, match: hit[0] });
+      const match = userVisibleOldName(literal.text);
+      if (match) {
+        hits.push({ path: file.path, line: literal.line, text: literal.text.trim(), match });
       }
     }
   }
-  return leaks;
+  return hits;
+}
+
+function baselineKey(file, text) {
+  return `${normalize(file)}\u0000${text}`;
+}
+
+/** Hits beyond their baseline count (fresh) and baseline entries found fewer times (stale). */
+export function compareWithBaseline(hits, entries) {
+  const groups = new Map();
+  for (const hit of hits) {
+    const key = baselineKey(hit.path, hit.text);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(hit);
+  }
+  const allowed = new Map(entries.map((e) => [baselineKey(e.file, e.text), e.count]));
+  const fresh = [];
+  for (const [key, group] of groups) {
+    fresh.push(...group.slice(allowed.get(key) ?? 0));
+  }
+  const stale = [];
+  for (const e of entries) {
+    const found = groups.get(baselineKey(e.file, e.text))?.length ?? 0;
+    if (found < e.count) stale.push({ ...e, found });
+  }
+  return { fresh, stale };
+}
+
+/** Problems with the baseline entries themselves (empty when valid). */
+export function validateBaseline(entries) {
+  const problems = [];
+  const seen = new Set();
+  for (const e of entries) {
+    const where = `${e.file ?? '?'}: "${e.text ?? '?'}"`;
+    if (typeof e.file !== 'string' || e.file.length === 0) problems.push(`${where}: no file`);
+    if (typeof e.text !== 'string' || e.text.length === 0) problems.push(`${where}: no text`);
+    if (!Number.isInteger(e.count) || e.count < 1) problems.push(`${where}: count must be a positive integer`);
+    if (!BASELINE_CATEGORIES.includes(e.category)) problems.push(`${where}: unknown category "${e.category}"`);
+    if (typeof e.why !== 'string' || e.why.trim().length === 0) problems.push(`${where}: no reason (why)`);
+    const key = baselineKey(e.file ?? '', e.text ?? '');
+    if (seen.has(key)) problems.push(`${where}: listed twice`);
+    seen.add(key);
+  }
+  return problems;
+}
+
+export function loadBaseline(baselinePath) {
+  return JSON.parse(fs.readFileSync(baselinePath, 'utf8')).entries;
 }
 
 function collectUserTextFiles(root) {
-  // A listed file that moved or vanished must fail loudly, not silently drop coverage.
-  return USER_TEXT_FILES.map((rel) => ({ path: rel, text: fs.readFileSync(path.join(root, rel), 'utf8') }));
+  const out = [];
+  const walk = (dir) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (entry.name === 'node_modules' || entry.name === 'dist') continue;
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(full);
+      } else {
+        const rel = normalize(path.relative(root, full));
+        if (isUserTextSourcePath(rel)) out.push({ path: rel, text: fs.readFileSync(full, 'utf8') });
+      }
+    }
+  };
+  walk(path.join(root, 'apps', 'desktop', 'src'));
+  const packages = path.join(root, 'packages');
+  for (const entry of fs.readdirSync(packages, { withFileTypes: true })) {
+    const src = path.join(packages, entry.name, 'src');
+    if (entry.isDirectory() && fs.existsSync(src)) walk(src);
+  }
+  return out;
 }
 
-function collectPromptFiles(root) {
+function collectPromptFiles(root, promptSourceFiles) {
   const out = [];
   const roots = [
     'apps/desktop/src/main/maker-host',
@@ -480,45 +558,63 @@ function collectPromptFiles(root) {
     }
   };
   for (const r of roots) walk(path.join(root, r));
-  for (const rel of PROMPT_SOURCE_FILES) {
+  for (const rel of promptSourceFiles) {
     // A listed file that moved or vanished must fail loudly, not silently drop coverage.
     out.push({ path: rel, text: fs.readFileSync(path.join(root, rel), 'utf8') });
   }
   return out;
 }
 
-function main() {
-  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+
+/** Runs every check over `root`; returns the process exit code. */
+export function main({
+  root = REPO_ROOT,
+  baselinePath = path.join(root, 'scripts', 'countersign', 'brand-guard-baseline.json'),
+  promptSourceFiles = PROMPT_SOURCE_FILES,
+  log = (line) => console.log(line),
+  error = (line) => console.error(line),
+} = {}) {
   const files = [];
   collect(root, path.join(root, 'apps', 'desktop', 'src'), files);
   collect(root, path.join(root, 'apps', 'desktop', 'help-knowledge'), files);
   const assetPaths = [];
   collectPaths(root, path.join(root, 'apps', 'desktop', 'src', 'renderer', 'assets'), assetPaths);
   collectPaths(root, path.join(root, 'apps', 'desktop', 'resources'), assetPaths);
-  const promptFiles = collectPromptFiles(root);
+  const promptFiles = collectPromptFiles(root, promptSourceFiles);
   const leaks = [...findBrandLeaks(files), ...findBrandAssetNames(assetPaths)];
-  const promptLeaks = findPromptLeaks(promptFiles);
-  const userTextFiles = collectUserTextFiles(root);
-  const userTextLeaks = findUserTextLeaks(userTextFiles);
+  const promptLeaks = findPromptLeaks(promptFiles, promptSourceFiles);
+  const sourceFiles = collectUserTextFiles(root);
+  const hits = findUserTextHits(sourceFiles, promptSourceFiles);
+  const baseline = loadBaseline(baselinePath);
+  const problems = validateBaseline(baseline);
+  const { fresh, stale } = compareWithBaseline(hits, baseline);
   for (const leak of leaks) {
-    console.error(`${leak.path}:${leak.line}: user-visible "${leak.match}"`);
+    error(`${leak.path}:${leak.line}: user-visible "${leak.match}"`);
   }
   for (const leak of promptLeaks) {
-    console.error(`${leak.path}:${leak.line}: model-visible "${leak.match}" in prompt text`);
+    error(`${leak.path}:${leak.line}: model-visible "${leak.match}" in prompt text`);
   }
-  for (const leak of userTextLeaks) {
-    console.error(`${leak.path}:${leak.line}: user-visible "${leak.match}" in a string of a user-facing file`);
+  for (const hit of fresh) {
+    error(`${hit.path}:${hit.line}: "${hit.match}" in "${hit.text}" is not in the baseline`);
   }
-  const total = leaks.length + promptLeaks.length + userTextLeaks.length;
+  for (const e of stale) {
+    error(`${e.file}: baseline text "${e.text}" no longer occurs ${e.count} time(s) (found ${e.found}); shrink the baseline`);
+  }
+  for (const problem of problems) {
+    error(`baseline: ${problem}`);
+  }
+  const total = leaks.length + promptLeaks.length + fresh.length + stale.length + problems.length;
   if (total > 0) {
-    console.error(`brand guard: ${total} leak(s)`);
-    process.exit(1);
+    error(`brand guard: ${total} problem(s)`);
+    return 1;
   }
-  console.log(
-    `brand guard: ok (${files.length} files, ${promptFiles.length} prompt files and ${userTextFiles.length} user-facing files scanned)`,
+  log(
+    `brand guard: ok (${files.length} files, ${promptFiles.length} prompt files and ${sourceFiles.length} source files scanned; ${hits.length} old-name text(s), all in the ${baseline.length}-entry baseline)`,
   );
+  return 0;
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  main();
+  process.exit(main());
 }
