@@ -41,6 +41,12 @@ vi.mock('electron', () => ({
   powerSaveBlocker: { start: () => 0, stop: () => {}, isStarted: () => false },
   nativeImage: { createFromPath: () => ({ isEmpty: () => true }) },
 }));
+// Countersign: LOCAL_ONLY starts the app session in 'local', which stamps pushes with a local data owner.
+// These upstream cases assert unstamped pushes (pre-session state), so LOCAL_ONLY is mocked off.
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
 const deviceLinkSettings = vi.hoisted(() => ({
   value: {
     remoteControlEnabled: true,

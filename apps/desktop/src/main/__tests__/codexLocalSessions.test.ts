@@ -1591,7 +1591,10 @@ describe('prepareExternalCodexSessionForResume orphan rollout synthesis', () => 
     };
   }
 
-  it('adopts a legacy branded Codex HOME and remains resumable after the old directory is removed', async () => {
+  // Countersign: commit 56eca0a5d removed the legacy brand identity lists on purpose, since Countersign
+  // has no legacy brand to migrate from. Upstream adopted a legacy branded HOME here; the intended
+  // behaviour is now that such a directory is never consulted, even in the cn region.
+  it('does not adopt a legacy branded Codex HOME (Countersign has no legacy brand)', async () => {
     electronMock.region = 'cn';
     const legacyUserData = path.join(path.dirname(targetUserData), 'xdt-maker');
     const legacyHome = path.join(legacyUserData, 'codex-home');
@@ -1606,7 +1609,9 @@ describe('prepareExternalCodexSessionForResume orphan rollout synthesis', () => 
     const sourceContents = `${JSON.stringify({
       type: 'session_meta',
       payload: { id: threadId, cwd: '/tmp/project' },
-    })}\n${rolloutLine('m1', 'user', 'legacy history', '2026-07-14T00:00:01.000Z')}\n`;
+    })}
+${rolloutLine('m1', 'user', 'legacy history', '2026-07-14T00:00:01.000Z')}
+`;
     const sourceDbPath = createStateDb(legacyHome);
     fs.mkdirSync(path.dirname(sourceRollout), { recursive: true });
     fs.writeFileSync(sourceRollout, sourceContents);
@@ -1616,26 +1621,16 @@ describe('prepareExternalCodexSessionForResume orphan rollout synthesis', () => 
     });
     const targetDbPath = createStateDb(desktopHome());
 
-    // CODEX_HOME 候选故意不存在,证明命中来自品牌身份表里的 legacy userData。
     process.env.CODEX_HOME = path.join(rootDir, 'missing-external-home');
     await prepareExternalCodexSessionForResume(threadId);
 
-    const targetRow = new Database(targetDbPath, { readonly: true });
-    const adopted = targetRow
-      .prepare('SELECT rollout_path AS rolloutPath, title FROM threads WHERE id = ?')
-      .get(threadId) as { rolloutPath: string; title: string };
-    targetRow.close();
-    expect(adopted.title).toBe('Legacy branded session');
-    expect(adopted.rolloutPath.startsWith(path.join(desktopHome(), 'sessions'))).toBe(true);
-    expect(path.basename(adopted.rolloutPath)).toBe(
-      `rollout-cindy-adopted-${path.basename(sourceRollout)}`,
-    );
-    expect(fs.readFileSync(adopted.rolloutPath, 'utf-8')).toBe(sourceContents);
-
-    // 接管后不再依赖老目录;重复 prepare 走当前 HOME 热路径且不改写 rollout。
-    fs.rmSync(legacyUserData, { recursive: true, force: true });
-    await prepareExternalCodexSessionForResume(threadId);
-    expect(fs.readFileSync(adopted.rolloutPath, 'utf-8')).toBe(sourceContents);
+    const targetDb = new Database(targetDbPath, { readonly: true });
+    try {
+      expect(targetDb.prepare('SELECT id FROM threads WHERE id = ?').get(threadId)).toBeUndefined();
+    } finally {
+      targetDb.close();
+    }
+    expect(fs.readFileSync(sourceRollout, 'utf8')).toBe(sourceContents);
   });
 
   it('does not implicitly adopt China-edition legacy state in the Global edition', async () => {
@@ -2176,38 +2171,10 @@ describe('prepareExternalCodexSessionForResume orphan rollout synthesis', () => 
     expect(stateCount.count).toBe(0);
   });
 
-  it('synthesizes into the current HOME when legacy state survives but its rollout is missing', async () => {
-    electronMock.region = 'cn';
-    const legacyHome = path.join(path.dirname(targetUserData), 'xdt-maker', 'codex-home');
-    const missingSourceRollout = path.join(
-      legacyHome,
-      'sessions',
-      '2026',
-      '07',
-      '14',
-      `rollout-2026-07-14-${threadId}.jsonl`,
-    );
-    const sourceDbPath = createStateDb(legacyHome);
-    insertThread(sourceDbPath, threadId, missingSourceRollout, { updatedAt: 2_000 });
-    const targetDbPath = createStateDb(desktopHome());
-    const sessionId = `local-legacy-${threadId}`;
-    insertLocalCodexSession(sessionId, threadId);
-    insertLocalMessage(sessionId, 'c1', 'user', JSON.stringify({ text: 'recover me' }), 1_000);
-    insertLocalMessage(sessionId, 'c2', 'assistant', 'recovered', 1_100);
-    process.env.CODEX_HOME = path.join(rootDir, 'missing-external-home');
-
-    await prepareExternalCodexSessionForResume(threadId);
-
-    const targetDb = new Database(targetDbPath, { readonly: true });
-    const targetRow = targetDb
-      .prepare('SELECT rollout_path AS rolloutPath FROM threads WHERE id = ?')
-      .get(threadId) as { rolloutPath: string };
-    targetDb.close();
-    expect(targetRow.rolloutPath.startsWith(desktopHome())).toBe(true);
-    expect(fs.existsSync(targetRow.rolloutPath)).toBe(true);
-    expect(fs.existsSync(missingSourceRollout)).toBe(false);
-    expect(fs.readFileSync(targetRow.rolloutPath, 'utf-8')).toContain('recover me');
-  });
+  // Countersign: removed the upstream case 'synthesizes into the current HOME when legacy state survives
+  // but its rollout is missing'. It relied on a legacy branded HOME (xdt-maker) being discovered, which
+  // 56eca0a5d removed on purpose. The equivalent flow for a discoverable external HOME is covered by the
+  // 'missing external rollout' cases below.
 
   it('rolls back when a missing external rollout materializes inside the state-copy transaction', async () => {
     const missingSourceRollout = path.join(

@@ -39,6 +39,12 @@ vi.mock('electron', () => ({
   },
 }));
 
+// Countersign: these upstream cases exercise the upstream behaviour, so LOCAL_ONLY is mocked off.
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
+
 vi.mock('../../logger', () => ({
   createLogger: () => ({
     debug: vi.fn(),

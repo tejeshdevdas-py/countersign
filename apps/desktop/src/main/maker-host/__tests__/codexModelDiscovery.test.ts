@@ -11,6 +11,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // 本套件只测纯 mapper,但按 main 侧测试惯例显式 mock,避免依赖 Node 下 electron 包的
 // 「名导出恰好是 undefined 不炸」这种脆弱行为。
 vi.mock('electron', () => ({ app: { getPath: () => '/tmp/xdt-codex-model-discovery-test' } }));
+// Countersign: LOCAL_ONLY starts the app session in 'local' with a data owner and no native-provider
+// binding on disk, so the real isNativeProviderAuthBound('openai') now answers false where upstream's
+// pre-session path answered true. These upstream cases are about the OAuth/cache read, so the binding
+// check is stubbed to "bound".
+vi.mock('../nativeProviderAuthBinding.js', () => ({ isNativeProviderAuthBound: () => true }));
 vi.mock('node:fs/promises', () => ({ default: { readFile: vi.fn() } }));
 
 import {
