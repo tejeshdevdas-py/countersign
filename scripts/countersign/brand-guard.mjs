@@ -20,6 +20,11 @@
  * Skills, teammate packages, headless profiles) are scanned line by line, and
  * (8) every string literal in a listed set of TS prompt and tool-description
  * modules is scanned. Exemptions there carry their reason (PROMPT_EXEMPT).
+ *
+ * (9) Every string literal and JSX text of a listed set of user-facing renderer,
+ * main and engine files (labels, error messages, browser pages) is scanned,
+ * apart from logging-call arguments, identifier-like literals and the
+ * exemptions in USER_TEXT_EXEMPT, each with its reason.
  */
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
@@ -196,8 +201,8 @@ const PROMPT_TEMPLATE_PATHS = [
 
 // TS modules whose string literals are all model-facing (prompts, tool
 // descriptions, tool guidance). Comments and identifiers are not checked.
-// Files that also carry non-prompt strings with the old name (for example
-// codex/index.ts error text) are not listed; see FORK-CHANGES.md.
+// Files that also carry non-prompt strings (for example codex/index.ts) are
+// not listed here; the user-facing list (9) below scans them.
 export const PROMPT_SOURCE_FILES = [
   'apps/desktop/src/main/agent-app-update/agentAppUpdateService.ts',
   'apps/desktop/src/main/cindy-make/mcpProvider.ts',
@@ -342,6 +347,116 @@ export function findPromptLeaks(files, sourceFiles = PROMPT_SOURCE_FILES) {
   return leaks;
 }
 
+// ---------------------------------------------------------------------------
+// (9) User-facing source files: renderer, main and engine files whose string
+// literals (and JSX text) include text a user reads (labels, error messages,
+// pages shown in the browser). Every literal is scanned except:
+//  - arguments of logging calls (console.*, log.*, logger.*): log text and scopes;
+//  - identifier-like literals (no whitespace and at least one of . : / _ -),
+//    such as protocol ids, file names and keys that code matches on;
+//  - a listed exemption, each with its reason (USER_TEXT_EXEMPT).
+// ---------------------------------------------------------------------------
+
+export const USER_TEXT_FILES = [
+  'apps/desktop/src/main/hook-control/session-runner.ts',
+  'apps/desktop/src/main/local-agent/runtime.ts',
+  'apps/desktop/src/main/local-agent/server.ts',
+  'apps/desktop/src/main/local-agent/service.ts',
+  'apps/desktop/src/main/localDb/ipc/bots.ts',
+  'apps/desktop/src/main/localDb/sharedDbCompatibilityMessage.ts',
+  'apps/desktop/src/main/maker-ipc/botCreationDraft.ts',
+  'apps/desktop/src/main/maker-ipc/botDelegationDispatchOutcome.ts',
+  'apps/desktop/src/main/maker-ipc/botDelegationService.ts',
+  'apps/desktop/src/main/maker-ipc/register.ts',
+  'apps/desktop/src/main/oauthResultPage.ts',
+  'apps/desktop/src/renderer/components/onboarding/ConnectProviderCard.tsx',
+  'apps/desktop/src/renderer/components/settings/MyDevicesPanel.tsx',
+  'apps/desktop/src/renderer/components/settings/ProvidersSection.tsx',
+  'apps/desktop/src/renderer/components/settings/dialogueDirectoryDisplay.ts',
+  'packages/maker-core/src/agents/claude-code/index.ts',
+  'packages/maker-core/src/agents/codex/index.ts',
+  'packages/maker-core/src/agents/codex/retry-escalation.ts',
+  'packages/maker-core/src/agents/pi/pi-subagent-runs.ts',
+  'packages/maker-core/src/maker.ts',
+];
+
+// Old-name literals that stay in the files above, each with its reason. `text`
+// must equal the whole trimmed literal (or template part), so a new string is
+// never covered by an old exemption.
+export const USER_TEXT_EXEMPT = [
+  {
+    path: 'apps/desktop/src/main/maker-ipc/register.ts',
+    text: 'Cindy Make is still preparing this task',
+    reason: 'Cindy Make is switched off (CINDY_MAKE_ENABLED = false); deferred to the M5 scrub',
+  },
+  {
+    path: 'apps/desktop/src/main/maker-ipc/botCreationDraft.ts',
+    text: 'Cindy',
+    reason: 'a name a generated teammate may not take; compared, never shown',
+  },
+  {
+    path: 'packages/maker-core/src/maker.ts',
+    text: 'Update Cindy on the computer running the agent to rewind this task',
+    reason: 'remote-agent rewind only; the device relay is off under LOCAL_ONLY; deferred to the M5 scrub',
+  },
+];
+
+const LOG_CALLEE = /^(?:console|log|logger|\w*[lL]og(?:ger)?)\.(?:log|info|warn|error|debug|trace)$/;
+const ID_LIKE = /^\S*[.:/_-]\S*$/;
+
+/** String literals, template parts and JSX text in TS/TSX source, minus log-call arguments. */
+function userTextLiterals(filePath, text) {
+  const ts = loadTypeScript();
+  const kind = filePath.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
+  const source = ts.createSourceFile(filePath, text, ts.ScriptTarget.Latest, true, kind);
+  const out = [];
+  const visit = (node, inLog) => {
+    if (
+      ts.isStringLiteral(node) ||
+      ts.isNoSubstitutionTemplateLiteral(node) ||
+      ts.isTemplateHead(node) ||
+      ts.isTemplateMiddle(node) ||
+      ts.isTemplateTail(node) ||
+      ts.isJsxText(node)
+    ) {
+      if (!inLog) {
+        const { line } = source.getLineAndCharacterOfPosition(node.getStart(source));
+        out.push({ text: node.text, line: line + 1 });
+      }
+      return;
+    }
+    const logCall =
+      ts.isCallExpression(node) && LOG_CALLEE.test(node.expression.getText(source).replace(/\s+/g, ''));
+    ts.forEachChild(node, (child) => visit(child, inLog || logCall));
+  };
+  visit(source, false);
+  return out;
+}
+
+export function findUserTextLeaks(files, userFiles = USER_TEXT_FILES) {
+  const leaks = [];
+  const listed = new Set(userFiles.map(normalize));
+  for (const file of files) {
+    const filePath = normalize(file.path);
+    if (!listed.has(filePath)) continue;
+    const exempt = USER_TEXT_EXEMPT.filter((e) => e.path === filePath);
+    for (const literal of userTextLiterals(filePath, file.text)) {
+      const value = literal.text.trim();
+      if (ID_LIKE.test(value) || exempt.some((e) => e.text === value)) continue;
+      const hit = OLD_NAME.exec(literal.text);
+      if (hit) {
+        leaks.push({ path: file.path, line: literal.line, match: hit[0] });
+      }
+    }
+  }
+  return leaks;
+}
+
+function collectUserTextFiles(root) {
+  // A listed file that moved or vanished must fail loudly, not silently drop coverage.
+  return USER_TEXT_FILES.map((rel) => ({ path: rel, text: fs.readFileSync(path.join(root, rel), 'utf8') }));
+}
+
 function collectPromptFiles(root) {
   const out = [];
   const roots = [
@@ -383,18 +498,25 @@ function main() {
   const promptFiles = collectPromptFiles(root);
   const leaks = [...findBrandLeaks(files), ...findBrandAssetNames(assetPaths)];
   const promptLeaks = findPromptLeaks(promptFiles);
+  const userTextFiles = collectUserTextFiles(root);
+  const userTextLeaks = findUserTextLeaks(userTextFiles);
   for (const leak of leaks) {
     console.error(`${leak.path}:${leak.line}: user-visible "${leak.match}"`);
   }
   for (const leak of promptLeaks) {
     console.error(`${leak.path}:${leak.line}: model-visible "${leak.match}" in prompt text`);
   }
-  const total = leaks.length + promptLeaks.length;
+  for (const leak of userTextLeaks) {
+    console.error(`${leak.path}:${leak.line}: user-visible "${leak.match}" in a string of a user-facing file`);
+  }
+  const total = leaks.length + promptLeaks.length + userTextLeaks.length;
   if (total > 0) {
     console.error(`brand guard: ${total} leak(s)`);
     process.exit(1);
   }
-  console.log(`brand guard: ok (${files.length} files and ${promptFiles.length} prompt files scanned)`);
+  console.log(
+    `brand guard: ok (${files.length} files, ${promptFiles.length} prompt files and ${userTextFiles.length} user-facing files scanned)`,
+  );
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

@@ -395,7 +395,7 @@ export async function openLocalAgentRuntime(
       return resumed;
     },
     async call(method, params) {
-      if (closed) throw new LocalAgentError('SESSION_UNAVAILABLE', 'Cindy 会话已关闭。');
+      if (closed) throw new LocalAgentError('SESSION_UNAVAILABLE', `${BRAND_NAME} 会话已关闭。`);
       if (method === 'interrupt') {
         const interrupted = ++epoch;
         busy = true;
@@ -472,7 +472,7 @@ export async function openLocalAgentRuntime(
           if (closed || turn !== generation) return;
           if (epoch === current) {
             busy = false;
-            projection.fail(localize('EXECUTION_FAILED', 'Cindy 未能完成本次发送。'));
+            projection.fail(localize('EXECUTION_FAILED', `${BRAND_NAME} 未能完成本次发送。`));
           } else {
             // An interrupt cancelled the turn before the supplier saw it: no native terminal follows.
             projection.fail('', 'interrupted');

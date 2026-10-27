@@ -2279,7 +2279,7 @@ export function createBotDelegationService(deps: BotDelegationServiceDeps) {
     const resumeEpoch = child.activeTurnStartedAt ?? row.acceptedAt ?? row.createdAt;
     const clientId = `bot-delegation-resume:${row.id}:${resumeEpoch}`;
     const message = [
-      'The previous Session task turn was interrupted by a Cindy host restart.',
+      `The previous Session task turn was interrupted by a ${BRAND_NAME} host restart.`,
       'Inspect the existing task history and accepted follow-ups, continue the unfinished work, and return the final result. Do not repeat completed tool actions; verify their recorded outcomes before continuing.',
       `Task ID: ${row.id}`,
       taskObjectiveContext(row),

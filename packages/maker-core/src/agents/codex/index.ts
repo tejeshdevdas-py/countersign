@@ -5279,7 +5279,7 @@ assertRouteCurrent();
     const retireSingleSessionHost = async (throwOnShutdownFailure = accountSessionHost): Promise<void> => {
       if (!reviewMode && !usesCustomContextHost && !accountSessionHost && !sessionSqliteHome) return;
       const purpose = reviewMode ? 'Review' : accountSessionHost ? 'account' : 'custom context';
-      const reason = `Cindy ${purpose} host is single-session`;
+      const reason = `${BRAND_NAME} ${purpose} host is single-session`;
       await this.retireHostKey(currentHostKey, reason, {
         failIfActive: false,
         logPrefix: `codex ${purpose.toLowerCase()} host cleanup`,

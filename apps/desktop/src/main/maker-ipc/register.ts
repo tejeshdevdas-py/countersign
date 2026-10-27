@@ -16617,7 +16617,7 @@ export function registerMakerIpc(maker: Maker, options: RegisterMakerIpcOptions)
       },
       assertCurrent: () => {
         if (getActiveAppSession().generation !== owner.generation) {
-          throw new Error('Account changed during Cindy Auto provider follow');
+          throw new Error(`Account changed during ${BRAND_NAME} Auto provider follow`);
         }
       },
       logger: log,

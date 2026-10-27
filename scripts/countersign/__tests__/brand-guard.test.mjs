@@ -7,9 +7,12 @@ import { fileURLToPath } from 'node:url';
 
 import {
   PROMPT_SOURCE_FILES,
+  USER_TEXT_EXEMPT,
+  USER_TEXT_FILES,
   findBrandAssetNames,
   findBrandLeaks,
   findPromptLeaks,
+  findUserTextLeaks,
   isPromptTemplatePath,
 } from '../brand-guard.mjs';
 
@@ -203,5 +206,54 @@ test('every listed prompt source exists', () => {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
   for (const rel of PROMPT_SOURCE_FILES) {
     assert.equal(fs.existsSync(path.join(root, rel)), true, rel);
+  }
+});
+
+// User-facing source files: every string literal, minus log calls, ids and listed exemptions.
+
+test('flags error and label text in a listed user-facing file, not its logs, ids or comments', () => {
+  const p = 'packages/maker-core/src/agents/codex/index.ts';
+  const text = [
+    '// Cindy Review runs here.',
+    "throw new Error('Cindy Review requires Codex 0.145');",
+    "log.warn('Cindy Auto provider follow failed', { id });",
+    "console.error(`[Cindy] ${reason}`);",
+    "const scope = 'Cindy.begin';",
+    "const file = 'Cindy/owners';",
+    'const label = `Return to Cindy ${version}`;',
+    "const name = 'Cindy';",
+  ].join('\n');
+  assert.deepEqual(findUserTextLeaks([{ path: p, text }]).map((leak) => leak.line), [2, 7, 8]);
+});
+
+test('flags JSX text in a listed renderer file', () => {
+  const p = 'apps/desktop/src/renderer/components/settings/MyDevicesPanel.tsx';
+  const text = 'export const A = () => <span>Cindy device</span>;\n';
+  assert.deepEqual(findUserTextLeaks([{ path: p, text }]).map((leak) => leak.line), [1]);
+});
+
+test('an exemption covers only its exact text in its own file', () => {
+  const exempt = USER_TEXT_EXEMPT.find((e) => e.path.endsWith('register.ts'));
+  assert.ok(exempt && exempt.reason);
+  const same = `throwIpcError('PRECONDITION_FAILED', '${exempt.text}');\n`;
+  const other = "throwIpcError('PRECONDITION_FAILED', 'Cindy Make is busy');\n";
+  assert.deepEqual(findUserTextLeaks([{ path: exempt.path, text: same }]), []);
+  assert.equal(findUserTextLeaks([{ path: exempt.path, text: other }]).length, 1);
+  assert.equal(findUserTextLeaks([{ path: 'packages/maker-core/src/maker.ts', text: same }]).length, 1);
+});
+
+test('does not scan files outside the user-facing list', () => {
+  const text = "throw new Error('Cindy Review requires Codex 0.145');\n";
+  assert.deepEqual(findUserTextLeaks([{ path: 'apps/desktop/src/main/updateService.ts', text }]), []);
+});
+
+test('every listed user-facing file exists and every exemption names a listed file', () => {
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
+  for (const rel of USER_TEXT_FILES) {
+    assert.equal(fs.existsSync(path.join(root, rel)), true, rel);
+  }
+  for (const e of USER_TEXT_EXEMPT) {
+    assert.equal(USER_TEXT_FILES.includes(e.path), true, e.path);
+    assert.ok(e.reason, e.path);
   }
 });
