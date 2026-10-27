@@ -401,16 +401,16 @@ describe('notificationService — channels 分发', () => {
     let release!: () => void;
     drainPersistQueue.mockReturnValueOnce(new Promise<void>((resolve) => { release = resolve; }));
     readSessionNotificationPreview.mockImplementation(async (_id, includeReply = true) => ({
-      teammateName: 'Cindy', eventId: 'turn:100:200',
+      teammateName: 'Countersign', eventId: 'turn:100:200',
       ...(includeReply ? { reply: { clientId: 'final-2', text: '**Finished**' } } : {}),
     }));
-    const payload = { sessionId: 's1', title: 'Cindy', kind: 'done', channels: { desktop: true, feishu: true, mobile: true } };
+    const payload = { sessionId: 's1', title: 'Countersign', kind: 'done', channels: { desktop: true, feishu: true, mobile: true } };
     await registeredHandlers.get('notification:show-session-event')!({}, payload);
     expect(feishuIm.sendText).not.toHaveBeenCalled();
     await vi.advanceTimersByTimeAsync(1_000);
-    expect(notificationCtor).toHaveBeenCalledWith(expect.objectContaining({ title: 'Cindy', body: '有新回复' }));
+    expect(notificationCtor).toHaveBeenCalledWith(expect.objectContaining({ title: 'Countersign', body: '有新回复' }));
     expect(sendMobileSessionNotify).toHaveBeenCalledWith(expect.objectContaining({ fallbackBody: '有新回复' }));
-    expect(feishuIm.sendText).toHaveBeenCalledWith('ou_owner', 'Cindy\n有新回复');
+    expect(feishuIm.sendText).toHaveBeenCalledWith('ou_owner', 'Countersign\n有新回复');
     expect((sendMobileSessionNotify.mock.calls[0] as unknown as [Record<string, unknown>])[0]).not.toHaveProperty('eventId');
     release();
     await vi.advanceTimersByTimeAsync(0);
@@ -446,12 +446,12 @@ describe('notificationService — channels 分发', () => {
     vi.useFakeTimers();
     let release!: () => void;
     drainPersistQueue.mockReturnValueOnce(new Promise<void>((resolve) => { release = resolve; }));
-    readSessionNotificationPreview.mockResolvedValueOnce({ teammateName: 'Cindy', suppress: true });
-    const payload = { sessionId: 'bot-main', title: 'Cindy', kind: 'done', channels: { desktop: true, mobile: true } };
+    readSessionNotificationPreview.mockResolvedValueOnce({ teammateName: 'Countersign', suppress: true });
+    const payload = { sessionId: 'bot-main', title: 'Countersign', kind: 'done', channels: { desktop: true, mobile: true } };
 
     await registeredHandlers.get('notification:show-session-event')!({}, payload);
     await vi.advanceTimersByTimeAsync(1_000);
-    expect(notificationCtor).toHaveBeenCalledWith(expect.objectContaining({ title: 'Cindy', body: '有新回复' }));
+    expect(notificationCtor).toHaveBeenCalledWith(expect.objectContaining({ title: 'Countersign', body: '有新回复' }));
     expect(sendMobileSessionNotify).toHaveBeenCalledTimes(1);
     release();
     await vi.advanceTimersByTimeAsync(0);
@@ -467,9 +467,9 @@ describe('notificationService — channels 分发', () => {
     });
     // The write chain drained, but its swallowed UPDATE failure left SQLite
     // with startedAt > endedAt. No old final may be used as the preview.
-    readSessionNotificationPreview.mockResolvedValue({ teammateName: 'Cindy', suppress: true });
+    readSessionNotificationPreview.mockResolvedValue({ teammateName: 'Countersign', suppress: true });
     const payload = {
-      sessionId: 'bot-main', title: 'Cindy', kind: 'done',
+      sessionId: 'bot-main', title: 'Countersign', kind: 'done',
       channels: { desktop: true, mobile: true, feishu: true },
     };
 
@@ -483,7 +483,7 @@ describe('notificationService — channels 分发', () => {
       fallbackBody: '有新回复', eventId: 'turn:100:200:signal-ended',
     }));
     expect(feishuIm.sendText).toHaveBeenCalledTimes(1);
-    expect(feishuIm.sendText).toHaveBeenCalledWith('owner', 'Cindy\n有新回复');
+    expect(feishuIm.sendText).toHaveBeenCalledWith('owner', 'Countersign\n有新回复');
   });
 
   it('drops the bounded fallback after the data owner changes', async () => {
@@ -507,7 +507,7 @@ describe('notificationService — channels 分发', () => {
     getSessionNotificationTurnSignal.mockReturnValue({ id: 'turn:100:200', fallbackEventId: 'turn:100:200', ended: true });
     getMobileNotifyGeneration.mockReturnValueOnce(7).mockReturnValueOnce(8);
     const payload = {
-      sessionId: 's1', title: 'Cindy', kind: 'done',
+      sessionId: 's1', title: 'Countersign', kind: 'done',
       channels: { desktop: true, mobile: true, feishu: true },
     };
 
@@ -526,7 +526,7 @@ describe('notificationService — channels 分发', () => {
     const feishuIm = makeFeishuIm('owner');
     initNotificationService(baseDeps(feishuIm));
     getSessionNotificationTurnSignal.mockReturnValue({ id: 'turn:100:200', fallbackEventId: 'turn:100:200', ended: true });
-    const payload = { sessionId: 's1', title: 'Cindy', kind: 'done', channels: { desktop: true, feishu: true } };
+    const payload = { sessionId: 's1', title: 'Countersign', kind: 'done', channels: { desktop: true, feishu: true } };
 
     await invokeHandler(payload);
     ownerScopeKey = 'account-b:2';
@@ -541,7 +541,7 @@ describe('notificationService — channels 分发', () => {
     const feishuIm = makeFeishuIm('owner');
     initNotificationService(baseDeps(feishuIm));
     const payload = {
-      sessionId: 's1', title: 'Cindy', kind: 'done',
+      sessionId: 's1', title: 'Countersign', kind: 'done',
       channels: { desktop: true, mobile: true, feishu: true },
     };
     getSessionNotificationTurnSignal.mockReturnValue({
@@ -580,10 +580,10 @@ describe('notificationService — channels 分发', () => {
   it('keeps the teammate fallback when final preview lookup rejects', async () => {
     const { initNotificationService } = await freshService();
     initNotificationService(baseDeps(makeFeishuIm('owner')));
-    readSessionNotificationPreview.mockResolvedValueOnce({ teammateName: 'Cindy', eventId: 'turn:100:200' })
+    readSessionNotificationPreview.mockResolvedValueOnce({ teammateName: 'Countersign', eventId: 'turn:100:200' })
       .mockRejectedValueOnce(new Error('read unavailable'));
-    await invokeHandler({ sessionId: 's1', title: 'Cindy', kind: 'done', channels: { desktop: true, mobile: true } });
-    expect(notificationCtor).toHaveBeenCalledWith(expect.objectContaining({ title: 'Cindy', body: '有新回复' }));
+    await invokeHandler({ sessionId: 's1', title: 'Countersign', kind: 'done', channels: { desktop: true, mobile: true } });
+    expect(notificationCtor).toHaveBeenCalledWith(expect.objectContaining({ title: 'Countersign', body: '有新回复' }));
     expect(sendMobileSessionNotify).toHaveBeenCalledWith(expect.objectContaining({ fallbackBody: '有新回复' }));
   });
 
@@ -624,11 +624,11 @@ describe('notificationService — channels 分发', () => {
     const { initNotificationService } = await freshService();
     initNotificationService(baseDeps(makeFeishuIm('ou_owner')));
     readSessionNotificationPreview.mockImplementation(async (_id, includeReply = true) => ({
-      teammateName: 'Cindy', teammateBotId: 'bot-1', eventId: 'turn:100:200',
+      teammateName: 'Countersign', teammateBotId: 'bot-1', eventId: 'turn:100:200',
       teammateAvatar: { kind: 'preset', value: 'cindy' },
       ...(includeReply ? { reply: { clientId: 'final-2', text: 'Done' } } : {}),
     }));
-    await invokeHandler({ sessionId: 's1', title: 'Cindy', kind: 'done', channels: { desktop: false, feishu: false, mobile: true } });
+    await invokeHandler({ sessionId: 's1', title: 'Countersign', kind: 'done', channels: { desktop: false, feishu: false, mobile: true } });
     await flushAsync();
     expect(sendMobileSessionNotify).toHaveBeenCalledWith(expect.objectContaining({ sessionId: 's1', teammateBotId: 'bot-1', teammateAvatar: { kind: 'preset', value: 'cindy' } }));
   });
@@ -636,14 +636,14 @@ describe('notificationService — channels 分发', () => {
   it.each(['error', 'needs-reply'] as const)('routes teammate %s with its actual identity and state, never an older answer', async (kind) => {
     const { initNotificationService } = await freshService();
     initNotificationService(baseDeps(makeFeishuIm('ou_owner')));
-    readSessionNotificationPreview.mockResolvedValue({ teammateName: 'Cindy', teammateBotId: 'bot-1', teammateAvatar: { kind: 'jpeg', value: 'YQ==' } });
+    readSessionNotificationPreview.mockResolvedValue({ teammateName: 'Countersign', teammateBotId: 'bot-1', teammateAvatar: { kind: 'jpeg', value: 'YQ==' } });
     await invokeHandler({ sessionId: 's1', title: 'Hello', kind, channels: { desktop: true, feishu: false, mobile: true } });
     await flushAsync();
     expect(sendMobileSessionNotify).toHaveBeenCalledWith({
-      sessionId: 's1', title: 'Cindy', kind, generation: 7, teammateBotId: 'bot-1', teammateAvatar: { kind: 'jpeg', value: 'YQ==' },
+      sessionId: 's1', title: 'Countersign', kind, generation: 7, teammateBotId: 'bot-1', teammateAvatar: { kind: 'jpeg', value: 'YQ==' },
     });
     expect(latestMessageText).not.toHaveBeenCalled();
-    expect(notificationCtor).toHaveBeenCalledWith(expect.objectContaining({ title: 'Cindy', icon: expect.objectContaining({ bytes: Buffer.from('a') }) }));
+    expect(notificationCtor).toHaveBeenCalledWith(expect.objectContaining({ title: 'Countersign', icon: expect.objectContaining({ bytes: Buffer.from('a') }) }));
     // A failed identity read keeps the ordinary push.
     sendMobileSessionNotify.mockClear();
     readSessionNotificationPreview.mockRejectedValueOnce(new Error('read unavailable'));
@@ -741,14 +741,14 @@ describe('notificationService — channels 分发', () => {
     expect(notificationCtor).toHaveBeenCalledTimes(1);
     expect(notificationCtor).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: 'Cindy · Hello',
+        title: 'Countersign · Hello',
         body: '已完成 ✓',
       }),
     );
     expect(feishuIm.sendMarkdownText).not.toHaveBeenCalled();
   });
 
-  it('needs-reply kind → 桌面显示需要你回复并标识 Cindy', async () => {
+  it('needs-reply kind → 桌面显示需要你回复并标识 Countersign', async () => {
     const { initNotificationService } = await freshService();
     const feishuIm = makeFeishuIm('ou_owner');
     initNotificationService(baseDeps(feishuIm));
@@ -762,7 +762,7 @@ describe('notificationService — channels 分发', () => {
 
     expect(notificationCtor).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: 'Cindy · Needs input',
+        title: 'Countersign · Needs input',
         body: '需要你回复',
       }),
     );
@@ -815,16 +815,16 @@ describe('notificationService — channels 分发', () => {
     const feishuIm = makeFeishuIm('ou_owner');
     initNotificationService(baseDeps(feishuIm));
     readSessionNotificationPreview.mockImplementation(async (_id, includeReply = true) => ({
-      teammateName: 'Cindy', eventId: 'turn:100:200',
+      teammateName: 'Countersign', eventId: 'turn:100:200',
       ...(includeReply ? { reply: { clientId: 'final-1', text: '## **修好了**\n[结果](https://example.com)' } } : {}),
     }));
-    const payload = { sessionId: 'bot-main', title: 'Cindy', kind: 'done', channels: { desktop: false, feishu: true } };
+    const payload = { sessionId: 'bot-main', title: 'Countersign', kind: 'done', channels: { desktop: false, feishu: true } };
 
     await invokeHandler(payload);
     await invokeHandler(payload);
 
     expect(feishuIm.sendText).toHaveBeenCalledTimes(1);
-    expect(feishuIm.sendText).toHaveBeenCalledWith('ou_owner', 'Cindy\n修好了 结果');
+    expect(feishuIm.sendText).toHaveBeenCalledWith('ou_owner', 'Countersign\n修好了 结果');
     expect(feishuIm.sendMarkdownText).not.toHaveBeenCalled();
   });
 
@@ -849,17 +849,17 @@ describe('notificationService — channels 分发', () => {
     feishuIm.sendText.mockRejectedValueOnce(new Error('offline'));
     initNotificationService(baseDeps(feishuIm));
     readSessionNotificationPreview.mockImplementation(async (_id, includeReply = true) => ({
-      teammateName: 'Cindy', eventId: 'turn:500:600',
+      teammateName: 'Countersign', eventId: 'turn:500:600',
       ...(includeReply ? { reply: { clientId: 'final-3', text: '继续处理' } } : {}),
     }));
-    const payload = { sessionId: 'bot-main', title: 'Cindy', kind: 'done', channels: { desktop: false, feishu: true } };
+    const payload = { sessionId: 'bot-main', title: 'Countersign', kind: 'done', channels: { desktop: false, feishu: true } };
 
     await invokeHandler(payload);
     await invokeHandler(payload);
     await invokeHandler(payload);
 
     expect(feishuIm.sendText).toHaveBeenCalledTimes(2);
-    expect(feishuIm.sendText).toHaveBeenLastCalledWith('ou_owner', 'Cindy\n继续处理');
+    expect(feishuIm.sendText).toHaveBeenLastCalledWith('ou_owner', 'Countersign\n继续处理');
   });
 
   it('飞书发送尚未确认时，同一轮并发终态只发送一次', async () => {
@@ -871,10 +871,10 @@ describe('notificationService — channels 分发', () => {
     }));
     initNotificationService(baseDeps(feishuIm));
     readSessionNotificationPreview.mockImplementation(async (_id, includeReply = true) => ({
-      teammateName: 'Cindy', eventId: 'turn:700:800',
+      teammateName: 'Countersign', eventId: 'turn:700:800',
       ...(includeReply ? { reply: { clientId: 'final-4', text: '并发完成' } } : {}),
     }));
-    const payload = { sessionId: 'bot-main', title: 'Cindy', kind: 'done', channels: { desktop: false, feishu: true } };
+    const payload = { sessionId: 'bot-main', title: 'Countersign', kind: 'done', channels: { desktop: false, feishu: true } };
 
     await invokeHandler(payload);
     await invokeHandler(payload);
@@ -899,7 +899,7 @@ describe('notificationService — channels 分发', () => {
 
     expect(notificationCtor).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: 'Cindy · Broken model',
+        title: 'Countersign · Broken model',
         body: '执行失败',
       }),
     );
@@ -925,7 +925,7 @@ describe('notificationService — channels 分发', () => {
 
     expect(notificationCtor).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: 'Cindy · 整理報告',
+        title: 'Countersign · 整理報告',
         body: '需要你回覆',
       }),
     );
@@ -939,7 +939,7 @@ describe('notificationService — channels 分发', () => {
     showDesktopSessionEvent(() => null, { sessionId: '', title: '', kind: 'error' });
     expect(notificationCtor).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: 'Cindy · 未命名任務',
+        title: 'Countersign · 未命名任務',
         body: '執行失敗',
       }),
     );
@@ -993,7 +993,7 @@ describe('teammate reply previews', () => {
     const feishuIm = makeFeishuIm('owner');
     initNotificationService(baseDeps(feishuIm));
     const payload = {
-      sessionId: 'bot-main', title: 'Cindy', kind: 'done',
+      sessionId: 'bot-main', title: 'Countersign', kind: 'done',
       channels: { desktop: true, mobile: true, feishu: true },
     };
     const turnA = { id: 'signal:A', fallbackEventId: 'turn:100:200:signal-A', ended: true };
@@ -1005,7 +1005,7 @@ describe('teammate reply previews', () => {
       releaseFirstDrain = resolve;
     }));
     readSessionNotificationPreview.mockImplementation(async (_id, includeReply = true) => ({
-      teammateName: 'Cindy', eventId: 'turn:300:400',
+      teammateName: 'Countersign', eventId: 'turn:300:400',
       ...(includeReply ? { reply: { clientId: 'final-B', text: 'Turn B answer' } } : {}),
     }));
 
@@ -1020,15 +1020,15 @@ describe('teammate reply previews', () => {
     expect(sendMobileSessionNotify).toHaveBeenCalledTimes(1);
     expect(sendMobileSessionNotify).toHaveBeenCalledWith(expect.objectContaining({ detail: 'Turn B answer' }));
     expect(feishuIm.sendText).toHaveBeenCalledTimes(1);
-    expect(feishuIm.sendText).toHaveBeenCalledWith('owner', 'Cindy\nTurn B answer');
+    expect(feishuIm.sendText).toHaveBeenCalledWith('owner', 'Countersign\nTurn B answer');
   });
 
   it('delivers a later turn when its preview fails after the previous turn was identified', async () => {
     const { initNotificationService } = await freshService();
     initNotificationService(baseDeps(makeFeishuIm('owner')));
-    const payload = { sessionId: 'bot-main', title: 'Cindy', kind: 'done', channels: { desktop: true, mobile: true } };
+    const payload = { sessionId: 'bot-main', title: 'Countersign', kind: 'done', channels: { desktop: true, mobile: true } };
     getSessionNotificationTurnSignal.mockReturnValue({ id: 'signal:1', fallbackEventId: 'turn:100:200:signal-1', ended: true });
-    readSessionNotificationPreview.mockResolvedValue({ teammateName: 'Cindy', eventId: 'turn:100:200' });
+    readSessionNotificationPreview.mockResolvedValue({ teammateName: 'Countersign', eventId: 'turn:100:200' });
     await invokeHandler(payload);
 
     getSessionNotificationTurnSignal.mockReturnValue({ id: 'signal:2', fallbackEventId: 'turn:300:400:signal-2', ended: true });
@@ -1038,7 +1038,7 @@ describe('teammate reply previews', () => {
     expect(sendMobileSessionNotify).toHaveBeenCalledTimes(2);
     expect(sendMobileSessionNotify).toHaveBeenLastCalledWith(expect.objectContaining({ eventId: 'turn:300:400:signal-2' }));
 
-    readSessionNotificationPreview.mockResolvedValue({ teammateName: 'Cindy', eventId: 'turn:300:400' });
+    readSessionNotificationPreview.mockResolvedValue({ teammateName: 'Countersign', eventId: 'turn:300:400' });
     await invokeHandler(payload);
     expect(notificationCtor).toHaveBeenCalledTimes(2);
     expect(sendMobileSessionNotify).toHaveBeenCalledTimes(2);
@@ -1053,14 +1053,14 @@ describe('teammate reply previews', () => {
     }));
     initNotificationService(baseDeps(feishuIm));
     getSessionNotificationTurnSignal.mockReturnValue({ id: 'signal:3', fallbackEventId: 'turn:500:600:signal-3', ended: true });
-    readSessionNotificationPreview.mockImplementationOnce(async () => ({ teammateName: 'Cindy' }))
+    readSessionNotificationPreview.mockImplementationOnce(async () => ({ teammateName: 'Countersign' }))
       .mockRejectedValueOnce(new Error('db busy'));
-    const payload = { sessionId: 'bot-main', title: 'Cindy', kind: 'done', channels: { desktop: false, feishu: true } };
+    const payload = { sessionId: 'bot-main', title: 'Countersign', kind: 'done', channels: { desktop: false, feishu: true } };
     await invokeHandler(payload);
     expect(feishuIm.sendText).toHaveBeenCalledTimes(1);
 
     readSessionNotificationPreview.mockResolvedValue({
-      teammateName: 'Cindy', eventId: 'turn:500:600', reply: { clientId: 'final', text: 'Current answer' },
+      teammateName: 'Countersign', eventId: 'turn:500:600', reply: { clientId: 'final', text: 'Current answer' },
     });
     await invokeHandler(payload);
     expect(feishuIm.sendText).toHaveBeenCalledTimes(1);
@@ -1095,16 +1095,16 @@ describe('teammate reply previews', () => {
   it('waits for the current turn marker before using a persisted reply identity', async () => {
     const { initNotificationService } = await freshService();
     const oldPreview = {
-      teammateName: 'Cindy', eventId: 'turn:100:200',
+      teammateName: 'Countersign', eventId: 'turn:100:200',
       reply: { clientId: 'old-final', text: 'Previous answer' },
     };
     const newPreview = {
-      teammateName: 'Cindy', eventId: 'turn:300:400',
+      teammateName: 'Countersign', eventId: 'turn:300:400',
       reply: { clientId: 'new-final', text: 'Current answer' },
     };
     readSessionNotificationPreview.mockResolvedValue(oldPreview);
     initNotificationService(baseDeps(makeFeishuIm('owner')));
-    const payload = { sessionId: 'bot-main', title: 'Cindy', kind: 'done', channels: { desktop: true, mobile: true } };
+    const payload = { sessionId: 'bot-main', title: 'Countersign', kind: 'done', channels: { desktop: true, mobile: true } };
     await invokeHandler(payload);
     expect(notificationCtor).toHaveBeenCalledTimes(1);
 
@@ -1132,7 +1132,7 @@ describe('teammate reply previews', () => {
     try {
       readSessionNotificationPreview.mockRejectedValueOnce(new Error('db busy'));
       initNotificationService(baseDeps(makeFeishuIm('owner')));
-      const payload = { sessionId: 'bot-main', title: 'Cindy', kind: 'done', channels: { desktop: true, mobile: true } };
+      const payload = { sessionId: 'bot-main', title: 'Countersign', kind: 'done', channels: { desktop: true, mobile: true } };
 
       await invokeHandler(payload);
       expect(notificationCtor).toHaveBeenCalledTimes(1);
@@ -1142,7 +1142,7 @@ describe('teammate reply previews', () => {
       expect(sendMobileSessionNotify).toHaveBeenCalledTimes(1);
 
       readSessionNotificationPreview.mockResolvedValue({
-        teammateName: 'Cindy', eventId: 'turn:900:950',
+        teammateName: 'Countersign', eventId: 'turn:900:950',
         reply: { clientId: 'old-final', text: 'Already delivered' },
       });
       await invokeHandler(payload);
@@ -1150,7 +1150,7 @@ describe('teammate reply previews', () => {
       expect(sendMobileSessionNotify).toHaveBeenCalledTimes(1);
 
       readSessionNotificationPreview.mockResolvedValue({
-        teammateName: 'Cindy', eventId: 'turn:1100:1200',
+        teammateName: 'Countersign', eventId: 'turn:1100:1200',
         reply: { clientId: 'new-final', text: 'New answer' },
       });
       await invokeHandler(payload);
@@ -1166,10 +1166,10 @@ describe('teammate reply previews', () => {
     readSessionNotificationPreview.mockRejectedValueOnce(new Error('db busy'));
     sendMobileSessionNotify.mockReturnValueOnce(false);
     initNotificationService(baseDeps(makeFeishuIm('owner')));
-    const payload = { sessionId: 'bot-main', title: 'Cindy', kind: 'done', channels: { desktop: false, mobile: true } };
+    const payload = { sessionId: 'bot-main', title: 'Countersign', kind: 'done', channels: { desktop: false, mobile: true } };
 
     await invokeHandler(payload);
-    readSessionNotificationPreview.mockResolvedValue({ teammateName: 'Cindy', eventId: 'turn:100:200' });
+    readSessionNotificationPreview.mockResolvedValue({ teammateName: 'Countersign', eventId: 'turn:100:200' });
     await invokeHandler(payload);
     expect(sendMobileSessionNotify).toHaveBeenCalledTimes(2);
     await invokeHandler(payload);
@@ -1179,12 +1179,12 @@ describe('teammate reply previews', () => {
   it('retries the same final reply after a mobile-only send was rejected, then dedupes the accepted send', async () => {
     const { initNotificationService } = await freshService();
     readSessionNotificationPreview.mockResolvedValue({
-      teammateName: 'Cindy', eventId: 'turn:100:200',
+      teammateName: 'Countersign', eventId: 'turn:100:200',
       reply: { clientId: 'final-2', text: '**Ready**' },
     });
     sendMobileSessionNotify.mockReturnValueOnce(false);
     initNotificationService(baseDeps(makeFeishuIm('owner')));
-    const payload = { sessionId: 'bot-main', title: 'Cindy', kind: 'done', channels: { desktop: false, mobile: true } };
+    const payload = { sessionId: 'bot-main', title: 'Countersign', kind: 'done', channels: { desktop: false, mobile: true } };
 
     await invokeHandler(payload);
     expect(sendMobileSessionNotify).toHaveBeenCalledTimes(1);
@@ -1197,10 +1197,10 @@ describe('teammate reply previews', () => {
 
   it('does not repeat an accepted desktop toast when the mobile channel rejects the same reply', async () => {
     const { initNotificationService } = await freshService();
-    readSessionNotificationPreview.mockResolvedValue({ teammateName: 'Cindy', eventId: 'turn:100:200' });
+    readSessionNotificationPreview.mockResolvedValue({ teammateName: 'Countersign', eventId: 'turn:100:200' });
     sendMobileSessionNotify.mockReturnValueOnce(false);
     initNotificationService(baseDeps(makeFeishuIm('owner')));
-    const payload = { sessionId: 'bot-main', title: 'Cindy', kind: 'done', channels: { desktop: true, mobile: true } };
+    const payload = { sessionId: 'bot-main', title: 'Countersign', kind: 'done', channels: { desktop: true, mobile: true } };
 
     await invokeHandler(payload);
     await invokeHandler(payload);
@@ -1216,10 +1216,10 @@ describe('teammate reply previews', () => {
     readSessionNotificationPreview.mockRejectedValueOnce(new Error('db busy'));
     sendMobileSessionNotify.mockReturnValueOnce(false);
     initNotificationService(baseDeps(makeFeishuIm('owner')));
-    const payload = { sessionId: 'bot-main', title: 'Cindy', kind: 'done', channels: { desktop: true, mobile: true } };
+    const payload = { sessionId: 'bot-main', title: 'Countersign', kind: 'done', channels: { desktop: true, mobile: true } };
 
     await invokeHandler(payload);
-    readSessionNotificationPreview.mockResolvedValue({ teammateName: 'Cindy', eventId: 'turn:100:200' });
+    readSessionNotificationPreview.mockResolvedValue({ teammateName: 'Countersign', eventId: 'turn:100:200' });
     await invokeHandler(payload);
     expect(notificationCtor).toHaveBeenCalledTimes(1);
     expect(sendMobileSessionNotify).toHaveBeenCalledTimes(2);
@@ -1230,11 +1230,11 @@ describe('teammate reply previews', () => {
 
   it('does not mark an unsupported desktop toast as delivered when mobile is also offline', async () => {
     const { initNotificationService } = await freshService();
-    readSessionNotificationPreview.mockResolvedValue({ teammateName: 'Cindy', eventId: 'turn:100:200' });
+    readSessionNotificationPreview.mockResolvedValue({ teammateName: 'Countersign', eventId: 'turn:100:200' });
     notificationSupported = false;
     sendMobileSessionNotify.mockReturnValueOnce(false);
     initNotificationService(baseDeps(makeFeishuIm('owner')));
-    const payload = { sessionId: 'bot-main', title: 'Cindy', kind: 'done', channels: { desktop: true, mobile: true } };
+    const payload = { sessionId: 'bot-main', title: 'Countersign', kind: 'done', channels: { desktop: true, mobile: true } };
 
     await invokeHandler(payload);
     expect(notificationCtor).not.toHaveBeenCalled();
@@ -1244,12 +1244,12 @@ describe('teammate reply previews', () => {
 
   it('shows current final Markdown as plain text on desktop and keeps mobile routing/fallback', async () => {
     const { initNotificationService } = await freshService();
-    readSessionNotificationPreview.mockResolvedValue({ teammateName: 'Cindy', eventId: 'turn:100:200', reply: { clientId: 'final-2', text: '**完成**：[报告](https://example.com) `a_b * 2`' } });
+    readSessionNotificationPreview.mockResolvedValue({ teammateName: 'Countersign', eventId: 'turn:100:200', reply: { clientId: 'final-2', text: '**完成**：[报告](https://example.com) `a_b * 2`' } });
     initNotificationService(baseDeps(makeFeishuIm('owner')));
-    const payload = { sessionId: 'bot-main', title: 'Cindy · Old title', kind: 'done', channels: { desktop: true, mobile: true } };
+    const payload = { sessionId: 'bot-main', title: 'Countersign · Old title', kind: 'done', channels: { desktop: true, mobile: true } };
     await invokeHandler(payload);
-    expect(notificationCtor).toHaveBeenCalledWith(expect.objectContaining({ title: 'Cindy', body: '完成：报告 a_b * 2' }));
-    expect(sendMobileSessionNotify).toHaveBeenCalledWith(expect.objectContaining({ sessionId: 'bot-main', title: 'Cindy', eventId: 'turn:100:200', fallbackBody: '有新回复' }));
+    expect(notificationCtor).toHaveBeenCalledWith(expect.objectContaining({ title: 'Countersign', body: '完成：报告 a_b * 2' }));
+    expect(sendMobileSessionNotify).toHaveBeenCalledWith(expect.objectContaining({ sessionId: 'bot-main', title: 'Countersign', eventId: 'turn:100:200', fallbackBody: '有新回复' }));
     await invokeHandler(payload);
     expect(notificationCtor).toHaveBeenCalledTimes(1);
     expect(sendMobileSessionNotify).toHaveBeenCalledTimes(1);
@@ -1261,6 +1261,16 @@ describe('teammate reply previews', () => {
     readSessionNotificationPreview.mockResolvedValue({ teammateName: 'Mochi' });
     initNotificationService(baseDeps(makeFeishuIm('owner')));
     await invokeHandler({ sessionId: 'bot-main', title: 'Mochi', kind: 'done' });
-    expect(notificationCtor).toHaveBeenCalledWith(expect.objectContaining({ title: 'Cindy · Mochi', body: 'New reply' }));
+    expect(notificationCtor).toHaveBeenCalledWith(expect.objectContaining({ title: 'Countersign · Mochi', body: 'New reply' }));
+  });
+
+  it('names the app Countersign in every toast title, also for a teammate still called by the old name', async () => {
+    const { initNotificationService } = await freshService();
+    readSessionNotificationPreview.mockResolvedValue({ teammateName: 'Cindy' });
+    initNotificationService(baseDeps(makeFeishuIm('owner')));
+    await invokeHandler({ sessionId: 'bot-main', title: 'Cindy', kind: 'done' });
+    const toast = notificationCtor.mock.calls[0]?.[0] as { title: string };
+    expect(toast.title.startsWith('Countersign')).toBe(true);
+    expect(toast.title).toBe('Countersign · Cindy');
   });
 });
