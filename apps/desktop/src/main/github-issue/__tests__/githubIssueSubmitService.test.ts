@@ -610,7 +610,7 @@ describe('Countersign: issue proxy switched off', () => {
     const res = await submitGithubIssueWithConfirm(deps, REQ);
     expect(res).toMatchObject({ ok: false, errorCode: 'SERVER_ERROR' });
     expect((res as { message: string }).message.startsWith(
-      "Issue reporting is not available in Countersign: it needs Cindy's cloud service.",
+      "Issue reporting is not available in Countersign: it needs a cloud service that this local-only app does not use.",
     )).toBe(true);
   });
 });

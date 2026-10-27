@@ -155,14 +155,14 @@ describe('Countersign: provider sharing switched off', () => {
   it('shows the LocalOnlyError message from the IPC rejection and stops loading', async () => {
     state.command.mockRejectedValue(
       new Error(
-        "Error invoking remote method 'provider-share:command': LocalOnlyError: Phone link and sharing is not available in Countersign: it needs Cindy's cloud service.",
+        "Error invoking remote method 'provider-share:command': LocalOnlyError: Phone link and sharing is not available in Countersign: it needs a cloud service that this local-only app does not use.",
       ),
     );
     renderDialog();
     await waitFor(() => expect(dialogState()).toBe('error'));
     expect(
       screen.getByText(
-        "Phone link and sharing is not available in Countersign: it needs Cindy's cloud service.",
+        "Phone link and sharing is not available in Countersign: it needs a cloud service that this local-only app does not use.",
       ),
     ).toBeTruthy();
   });

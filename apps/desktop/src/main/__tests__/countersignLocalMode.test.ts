@@ -42,7 +42,7 @@ describe('Countersign local-only constants', () => {
     expect(error).toBeInstanceOf(Error);
     expect(error.name).toBe('LocalOnlyError');
     expect(error.message).toBe(
-      "Sign-in is not available in Countersign: it needs Cindy's cloud service.",
+      "Sign-in is not available in Countersign: it needs a cloud service that this local-only app does not use.",
     );
   });
 });

@@ -288,7 +288,7 @@ describe('Countersign: platform issue list switched off', () => {
     );
     render(<IssueTrackerFeatureLayout />);
     expect(
-      screen.getByText("Issue reporting is not available in Countersign: it needs Cindy's cloud service."),
+      screen.getByText("Issue reporting is not available in Countersign: it needs a cloud service that this local-only app does not use."),
     ).toBeTruthy();
     expect(screen.queryByText('issueTracker.mine.notSignedInHint')).toBeNull();
     expect(screen.getByText('已经加载出来的那条 issue')).toBeTruthy();

@@ -688,7 +688,7 @@ describe('Countersign: no website endpoint', () => {
     );
     expect(
       await screen.findByText(
-        "Mobile app download is not available in Countersign: it needs Cindy's cloud service.",
+        "Mobile app download is not available in Countersign: it needs a cloud service that this local-only app does not use.",
       ),
     ).toBeTruthy();
     expect(screen.queryByText('sidebar.mobileDownload.preparing')).toBeNull();

@@ -7,7 +7,7 @@ export const LOCAL_ONLY = true as const;
 /** Thrown by an entry point that needs the upstream cloud service. */
 export class LocalOnlyError extends Error {
   constructor(feature: string) {
-    super(`${feature} is not available in Countersign: it needs Cindy's cloud service.`);
+    super(`${feature} is not available in Countersign: it needs a cloud service that this local-only app does not use.`);
     this.name = 'LocalOnlyError';
   }
 }

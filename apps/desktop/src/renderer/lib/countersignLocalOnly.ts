@@ -5,7 +5,7 @@ export function localOnlyMessage(feature: string): string {
   return new LocalOnlyError(feature).message;
 }
 
-const LOCAL_ONLY_SENTENCE = /([^:'"\n]*? is not available in Countersign: it needs Cindy's cloud service\.)/;
+const LOCAL_ONLY_SENTENCE = /([^:'"\n]*? is not available in Countersign: it needs a cloud service that this local-only app does not use\.)/;
 
 /**
  * Extracts a LocalOnlyError message from an IPC rejection

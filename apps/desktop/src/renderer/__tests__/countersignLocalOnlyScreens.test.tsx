@@ -73,7 +73,7 @@ describe('LocalOnlyError message in the renderer', () => {
       `Error invoking remote method 'provider-share:command': LocalOnlyError: ${new LocalOnlyError('Phone link and sharing').message}`,
     );
     expect(localOnlyMessageFromError(ipc)).toBe(
-      "Phone link and sharing is not available in Countersign: it needs Cindy's cloud service.",
+      "Phone link and sharing is not available in Countersign: it needs a cloud service that this local-only app does not use.",
     );
     expect(localOnlyMessageFromError(new Error('ECONNRESET'))).toBeNull();
     expect(localOnlyMessage('Plugin market')).toBe(new LocalOnlyError('Plugin market').message);

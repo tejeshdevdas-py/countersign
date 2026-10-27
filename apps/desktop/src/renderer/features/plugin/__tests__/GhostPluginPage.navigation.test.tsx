@@ -722,7 +722,7 @@ describe('Countersign: plugin market switched off', () => {
       render(page('/plugins'));
       expect(
         await screen.findByText(
-          "Plugin market is not available in Countersign: it needs Cindy's cloud service.",
+          "Plugin market is not available in Countersign: it needs a cloud service that this local-only app does not use.",
         ),
       ).toBeTruthy();
       expect(screen.queryByText('settings.ghosts.market.notConfigured')).toBeNull();

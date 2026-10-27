@@ -415,7 +415,7 @@ describe('Countersign: platform issue proxy switched off', () => {
     const onRespond = vi.fn();
     render(<IssueConfirmCard sessionId="session-b" pending={platformPending} onRespond={onRespond} />);
     expect(
-      screen.getByText("Issue reporting is not available in Countersign: it needs Cindy's cloud service."),
+      screen.getByText("Issue reporting is not available in Countersign: it needs a cloud service that this local-only app does not use."),
     ).toBeTruthy();
     confirmPublicContent();
     const submit = screen.getByRole('button', { name: /issueAgent\.confirm\.submit/ }) as HTMLButtonElement;
@@ -428,7 +428,7 @@ describe('Countersign: platform issue proxy switched off', () => {
     localOnlyFlag.value = true;
     render(<IssueConfirmCard sessionId="session-b" pending={legacyGithubPending} onRespond={vi.fn()} />);
     expect(
-      screen.queryByText("Issue reporting is not available in Countersign: it needs Cindy's cloud service."),
+      screen.queryByText("Issue reporting is not available in Countersign: it needs a cloud service that this local-only app does not use."),
     ).toBeNull();
   });
 });
