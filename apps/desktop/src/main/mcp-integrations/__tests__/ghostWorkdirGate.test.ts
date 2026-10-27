@@ -2243,7 +2243,7 @@ describe('Cindy media 本机路径揭示', () => {
       'media-path',
       expect.objectContaining({
         ghostId: 'cindy-media',
-        ghostName: 'Cindy Media',
+        ghostName: 'Countersign Media',
         lane: 'reveal_path',
         items: [
           expect.objectContaining({

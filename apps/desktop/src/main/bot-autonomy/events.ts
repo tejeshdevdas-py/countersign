@@ -6,6 +6,7 @@
  * 引擎另有 24h 回执去重）；防打转：同一任务同一类事件 24h 内最多
  * `AUTONOMY_THRESHOLDS.maxEventsPerSessionPerDay` 次，超出只记日志。
  */
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import type { RoutineEvent, RoutineSource } from '@cindy/maker-scheduler';
 import {
   AUTONOMY_EVENT_TYPES,
@@ -49,7 +50,7 @@ export const AUTONOMY_EVENT_FIELDS: readonly (keyof AutonomyEventData)[] = [
 export function hostSessionsSource(): RoutineSource {
   return {
     id: HOST_SESSIONS_SOURCE_ID,
-    name: 'Cindy 任务',
+    name: `${BRAND_NAME} 任务`,
     status: 'listening',
     events: AUTONOMY_EVENT_TYPES.map((type) => ({
       type,

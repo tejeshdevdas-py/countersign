@@ -17,6 +17,7 @@
  * The pool itself is in-memory; on app restart, hydrate() rebuilds it from disk.
  */
 
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { app, ipcMain, BrowserWindow, dialog } from 'electron';
 import { t } from '../i18n.js';
 import { assertTrustedAppRendererEvent } from '../security/trustedAppRenderer.js';
@@ -1081,7 +1082,7 @@ function throwManagedConfigWriteError(action: 'update' | 'remove', error: unknow
   if (code === MANAGED_CONFIG_OWNERSHIP_REQUIRED_CODE) {
     throwIpcError(
       'SSH_CONFIG_OWNERSHIP_REQUIRED',
-      'The existing Cindy SSH config is not owned by Cindy; add the ownership marker or choose another file.',
+      `The existing ${BRAND_NAME} SSH config is not owned by ${BRAND_NAME}; add the ownership marker or choose another file.`,
     );
   }
   if (code === MANAGED_CONFIG_WRITE_TOKEN_REQUIRED_CODE) {
@@ -1097,7 +1098,7 @@ function throwReloadRequired(action: string, error: unknown): never {
   });
   throwIpcError(
     'SSH_CONFIG_RELOAD_REQUIRED',
-    `${action}已写入 SSH 配置，但 Cindy 刷新失败；请重新加载 SSH 配置。`,
+    `${action}已写入 SSH 配置，但 ${BRAND_NAME} 刷新失败；请重新加载 SSH 配置。`,
   );
 }
 
@@ -1200,7 +1201,7 @@ export function registerRemoteSshIpc(): void {
         if ((err as { code?: string }).code === MANAGED_CONFIG_OWNERSHIP_REQUIRED_CODE) {
           throwIpcError(
             'SSH_CONFIG_OWNERSHIP_REQUIRED',
-            'The existing Cindy SSH config is not owned by Cindy; add the ownership marker or choose another file.',
+            `The existing ${BRAND_NAME} SSH config is not owned by ${BRAND_NAME}; add the ownership marker or choose another file.`,
           );
         }
         throwIpcError('SSH_CONFIG_IO_FAILED', SSH_CONFIG_WRITE_FAILED_MESSAGE);
@@ -1295,7 +1296,7 @@ export function registerRemoteSshIpc(): void {
         if (!latestHost?.managedByCindy) {
           throwIpcError(
             'SSH_CONFIG_OWNERSHIP_REQUIRED',
-            'This SSH host is no longer uniquely managed by Cindy. Reload the SSH configuration before editing.',
+            `This SSH host is no longer uniquely managed by ${BRAND_NAME}. Reload the SSH configuration before editing.`,
           );
         }
         if (remoteConnectionFieldsChanged(existing.config, latestHost)) {
@@ -1369,7 +1370,7 @@ export function registerRemoteSshIpc(): void {
       if (!latestHost?.managedByCindy) {
         throwIpcError(
           'SSH_CONFIG_OWNERSHIP_REQUIRED',
-          'This SSH host is no longer uniquely managed by Cindy. Reload the SSH configuration before removing it.',
+          `This SSH host is no longer uniquely managed by ${BRAND_NAME}. Reload the SSH configuration before removing it.`,
         );
       }
       const managedWriteToken = managedWriteTokenOrThrow(latest);
@@ -1650,7 +1651,7 @@ export function registerRemoteSshIpc(): void {
       if (!env) {
         throwIpcError(
           'SSH_AGENT_NOT_INSTALLED',
-          'Cindy AI is not connected in Cindy; connect it in Settings → Model Providers first',
+          `Claude Code on an SSH host needs the hosted model service, which is not available in ${BRAND_NAME}`,
         );
       }
       // tunnel 模式内部会等隧道 armed (超时抛错, fail-closed 不静默直连);
@@ -1667,7 +1668,7 @@ export function registerRemoteSshIpc(): void {
       if (!apiKey || !endpoint) {
         throwIpcError(
           'SSH_AGENT_NOT_INSTALLED',
-          'Cindy AI is not connected in Cindy; connect it in Settings → Model Providers first',
+          `Claude Code on an SSH host needs the hosted model service, which is not available in ${BRAND_NAME}`,
         );
       }
       // heredoc 注入防御:endpoint 进 bash heredoc(<<'PIEOF'),含换行会提前终止
@@ -1786,7 +1787,7 @@ export function registerRemoteSshIpc(): void {
     if (!localAuthPath) {
       throwIpcError(
         'SSH_AGENT_NOT_INSTALLED',
-        'no local Codex auth.json found; log in via Cindy (or `codex login`) first',
+        `no local Codex auth.json found; sign in to Codex in ${BRAND_NAME} (or run codex login) first`,
       );
     }
 

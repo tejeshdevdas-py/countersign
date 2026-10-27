@@ -1,3 +1,4 @@
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import type {
   DeviceAuthorizationHandle,
   DeviceAuthorizationInput,
@@ -936,7 +937,7 @@ export class GhostNodeRuntimeBroker {
       ghost.manifest.node.protocol === 'mcp-stdio' &&
       isGhostNodeMcpReservedMethod(request.method as string)
     ) {
-      return errorResult('INVALID_REQUEST', 'MCP 初始化由 Cindy 主机统一管理');
+      return errorResult('INVALID_REQUEST', `MCP 初始化由 ${BRAND_NAME} 主机统一管理`);
     }
 
     let ownerScopeSnapshot: unknown;
@@ -2304,7 +2305,7 @@ export class GhostNodeRuntimeBroker {
       this.writeLine(entry, {
         jsonrpc: '2.0',
         id: msg.id,
-        error: { code: -32601, message: 'Cindy host does not expose reverse RPC methods' },
+        error: { code: -32601, message: `${BRAND_NAME} host does not expose reverse RPC methods` },
       });
       return;
     }

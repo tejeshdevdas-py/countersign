@@ -1,4 +1,5 @@
 /** Universal host retirement page. No former plugin code, settings, or webview is mounted. */
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { Info, CheckCircle2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
@@ -63,7 +64,7 @@ export function RetiredFeatureDetail({
               {t(`${descriptor.copyKey}.replacementName`)}
             </h2>
             <p className="mt-1 text-12 text-[var(--text-tertiary)]">
-              Cindy · {t('settings.ghosts.title')}
+              {BRAND_NAME} · {t('settings.ghosts.title')}
             </p>
             <p className="mt-4 text-14 leading-6 text-[var(--text-secondary)]">
               {t(`${descriptor.copyKey}.replacementDescription`)}

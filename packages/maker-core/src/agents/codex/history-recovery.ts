@@ -1,10 +1,12 @@
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
+
 /** Indexed native history belongs to Codex. The host can rebuild from Cindy's transcript. */
 export class CodexHistoryRecoveryRequiredError extends Error {
   readonly code = 'CODEX_HISTORY_RECOVERY_REQUIRED';
 
   constructor() {
     super(
-      'Codex native history requires a Cindy context handoff instead of in-place rewriting',
+      `Codex native history requires a ${BRAND_NAME} context handoff instead of in-place rewriting`,
     );
     this.name = 'CodexHistoryRecoveryRequiredError';
   }

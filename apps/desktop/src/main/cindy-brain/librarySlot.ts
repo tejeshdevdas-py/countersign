@@ -17,6 +17,7 @@
  * 全部经 deps,单测拿 tmpdir + 进程内 core 直测,零 Electron。
  */
 
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { createHash, randomBytes } from 'node:crypto';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -1101,7 +1102,7 @@ export class GhostLibrarySlot {
     if (session.drift !== null && op !== 'open' && op !== 'status') {
       return fail(
         'LIBRARY_UNAVAILABLE',
-        `Library 不可用(${session.drift});请在 Cindy 设置中重新确认存储位置`,
+        `Library 不可用(${session.drift});请在 ${BRAND_NAME} 设置中重新确认存储位置`,
         'LIBRARY_UNAVAILABLE',
       );
     }

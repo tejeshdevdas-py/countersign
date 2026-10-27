@@ -377,7 +377,7 @@ describe('OpenSSH config discovery', () => {
       user: os.userInfo().username,
       port: 22,
       sshAuthentication: {
-        unsupportedReason: expect.stringContaining('does not evaluate a Match block'),
+        unsupportedReason: expect.stringContaining('Match block that may affect this SSH host is not evaluated'),
       },
     }]);
     expect(result.warnings.filter((warning) => warning.includes('Match is not evaluated')))
@@ -402,7 +402,7 @@ describe('OpenSSH config discovery', () => {
       port: 22,
       user: os.userInfo().username,
       sshAuthentication: {
-        unsupportedReason: expect.stringContaining('does not evaluate a Match block'),
+        unsupportedReason: expect.stringContaining('Match block that may affect this SSH host is not evaluated'),
       },
     }]);
   });

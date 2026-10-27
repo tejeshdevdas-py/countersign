@@ -1,3 +1,4 @@
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { BrowserWindow, nativeTheme, type BrowserWindowConstructorOptions } from 'electron';
 
 import { resolveAppThemeIsDark } from '../resolved-app-theme.js';
@@ -100,7 +101,7 @@ export function buildReviewArtifactConfirmDocument(
 </head>
 <body>
   <main aria-labelledby="review-confirm-title">
-    <p class="brand">Cindy</p>
+    <p class="brand">${BRAND_NAME}</p>
     <h1 id="review-confirm-title">${escapeHtml(model.title)}</h1>
     <p class="message">${escapeHtml(model.message)}</p>
     <p class="detail">${escapeHtml(model.detail)}</p>

@@ -6,6 +6,7 @@
  * original caller only when the current assessment is ready.
  */
 
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { randomUUID } from 'node:crypto';
 
 import { getRemoteOauthContext } from '../plugin-oauth/context.js';
@@ -245,7 +246,7 @@ export class GhostSetupCoordinator {
       return {
         ok: false,
         errorCode: 'SETUP_REQUIRED',
-        message: '该插件尚未完成设置，请在 Cindy Desktop 中完成配置后重试。',
+        message: `该插件尚未完成设置，请在 ${BRAND_NAME} 中完成配置后重试。`,
         setup: assessment,
       };
     }

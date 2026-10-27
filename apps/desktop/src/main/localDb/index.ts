@@ -23,6 +23,7 @@
  * （schema migration 时生成,较陈旧）作为最后保障。
  */
 
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import type Database from 'better-sqlite3';
 import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { app, dialog, BrowserWindow } from 'electron';
@@ -248,7 +249,7 @@ export async function ensureReady(userId: string): Promise<EnsureReadyResult> {
     if (errCode === 'SQLITE_CORRUPT' || /corrupt/i.test(message)) {
       if (passiveSharedUserData || schemaMaintenanceReadOnly) {
         const readOnlyStartupMessage =
-          '共享数据库当前由其它实例使用，Cindy 不会在其运行期间自动恢复或修改 schema。' +
+          `共享数据库当前由其它实例使用，${BRAND_NAME} 不会在其运行期间自动恢复或修改 schema。` +
           '请关闭共享该 userData 的 passive 实例后重试，或改用 --isolated。';
         showFatalDialog('共享数据库无法恢复', readOnlyStartupMessage, 'DB_CORRUPT_NO_BACKUP');
         releaseSchemaLeasesAfterFailure();

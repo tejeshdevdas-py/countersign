@@ -5,6 +5,7 @@
  * 应该是能直接看的表,而不是一片等宽未冻结的裸数据。
  */
 
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import ExcelJS from 'exceljs';
 import { z } from 'zod';
 
@@ -347,7 +348,7 @@ export function registerMakeXlsxTool(
         const palette = resolveDocsTheme((theme ?? DEFAULT_DOCS_THEME) as DocsThemeName);
 
         const workbook = new ExcelJS.Workbook();
-        workbook.creator = 'Cindy';
+        workbook.creator = BRAND_NAME;
         workbook.created = new Date();
 
         // Excel 的工作表名比较大小写不敏感,但展示名仍保留用户原始大小写。

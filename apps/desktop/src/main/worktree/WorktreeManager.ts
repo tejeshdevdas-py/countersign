@@ -10,6 +10,7 @@
  * 记录精确匹配的预创建 worktree，调用方还必须注入实时 ownership guard。
  */
 
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import fs from 'node:fs/promises';
@@ -610,7 +611,7 @@ async function getTakenNames(baseRepo: string): Promise<string[]> {
     const displayBranch = isLocal ? branch : `origin/${branch}`;
     if (isLocal && blocksManagedWorktreeBranchNamespace(branch)) {
       throw new Error(
-        `无法创建 Cindy Worktree：分支 "${displayBranch}" 占用了 "cindy/*" 命名空间。请先重命名或删除该分支。`,
+        `无法创建 ${BRAND_NAME} Worktree：分支 "${displayBranch}" 占用了 "cindy/*" 命名空间。请先重命名或删除该分支。`,
       );
     }
     // 本地 current-prefix 后代 ref 会在 refs/heads 下真实阻塞父级，需预留首段；

@@ -9,6 +9,7 @@
 import { projectNativeSessionMetadata, type NativeSessionScope } from './native-session-metadata.js';
 import { historyHomeForRollout } from './codex-thread-locations.js';
 import { app } from 'electron';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { atomicWriteFileSync } from '../utils/atomicWriteFile';
 import type Database from 'better-sqlite3';
 import fs from 'node:fs';
@@ -2050,7 +2051,7 @@ async function recoverMissingPrivateRollout(
   if (materializedBeforeCas === 'unsafe') {
     throw resumePreparationBlocked(
       threadId,
-      'the private orphan materialized outside Cindy storage or as a non-file',
+      `the private orphan materialized outside ${BRAND_NAME} storage or as a non-file`,
     );
   }
 
@@ -2087,7 +2088,7 @@ async function recoverMissingPrivateRollout(
     if (materializedAfterCas === 'unsafe') {
       throw resumePreparationBlocked(
         threadId,
-        'the private orphan materialized outside Cindy storage or as a non-file',
+        `the private orphan materialized outside ${BRAND_NAME} storage or as a non-file`,
       );
     }
   } else if (materializedAfterCas !== 'missing') {

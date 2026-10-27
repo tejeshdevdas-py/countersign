@@ -1,3 +1,4 @@
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { randomUUID } from 'node:crypto';
 import { GHOST_HARNESS_CAPABILITIES } from '@cindy/plugin-protocol';
 import type { AgentEvent, HarnessHookRequest, HarnessHookResult, Session } from '@cindy/maker-core';
@@ -633,7 +634,7 @@ export class GhostHarnessSlot {
         return {
           action: 'block',
           // Native denials can enter model context. Keep plugin-controlled text out.
-          reason: 'Blocked by a Cindy plugin.',
+          reason: `Blocked by a ${BRAND_NAME} plugin.`,
         };
     }
     return CONTINUE;

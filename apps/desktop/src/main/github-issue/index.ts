@@ -58,7 +58,7 @@ export async function submitGithubIssueForSession(
     return {
       ok: false,
       errorCode: 'AUTH_NOT_READY',
-      message: '提交官方反馈需要登录 Cindy 账号。',
+      message: `官方反馈需要托管账号，${BRAND_NAME} 本地版不提供。`,
     };
   }
   const bridge = bridgeHolder;

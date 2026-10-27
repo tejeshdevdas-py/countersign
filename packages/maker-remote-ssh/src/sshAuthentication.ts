@@ -141,7 +141,7 @@ export function previewAgentEndpoint(identityAgent?: string): {
   }
   if (identityAgent.includes('%')) {
     return {
-      unsupportedReason: 'Cindy does not support percent-token expansion in IdentityAgent',
+      unsupportedReason: 'IdentityAgent percent-token expansion is not supported',
       explicit: true,
     };
   }
