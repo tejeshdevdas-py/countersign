@@ -1,4 +1,5 @@
 import { isModelVisible } from '@cindy/model-providers';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { getModelVisibilityOverride, waitForModelVisibilityMirror } from '../maker-host/model-visibility-mirror.js';
 import { getDesktopProviderService } from '../maker-host/createDesktopProviderService.js';
 import fs from 'node:fs/promises';
@@ -93,7 +94,7 @@ export async function generateBotCreationDraft(
       const provider = providers.find(p => p.id === selection.providerId);
       const model = provider?.models[selection.agentKind]?.find(m => m.id === selection.model);
       if (!model || !isModelVisible(getModelVisibilityOverride(selection.agentKind, selection.providerId, selection.model), model.defaultEnabled))
-        throwIpcError('BOT_CREATION_MODEL_UNAVAILABLE', 'Cindy 默认模型未开启，请先选择可用模型');
+        throwIpcError('BOT_CREATION_MODEL_UNAVAILABLE', `${BRAND_NAME} 默认模型未开启，请先选择可用模型`);
     };
     if (route.providerId) assertEnabled({ ...route, providerId: route.providerId });
     const botId = `bot_${randomUUID()}`;
@@ -130,7 +131,7 @@ ${JSON.stringify({ skills, tools, previous: previous ? { ...previous, name: inpu
     });
     assertOwner();
     if (!result.ok && result.reason === 'no_candidate')
-      throwIpcError('BOT_CREATION_MODEL_UNAVAILABLE', 'Cindy 默认模型不可用，请先选择可用模型');
+      throwIpcError('BOT_CREATION_MODEL_UNAVAILABLE', `${BRAND_NAME} 默认模型不可用，请先选择可用模型`);
     if (!result.ok || result.text.length > 40000) throwIpcError('INTERNAL', '伙伴生成失败，请重试');
     const draft = schema.parse(
       JSON.parse(result.text.trim().replace(/^```(?:json)?\s*|\s*```$/g, '')),

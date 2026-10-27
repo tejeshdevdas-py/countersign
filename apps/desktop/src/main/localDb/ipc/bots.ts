@@ -1867,7 +1867,7 @@ export async function createBotProfile(raw: unknown, restored?: RestoredBotOrigi
   if (templateId === 'cindy') {
     const existingCindy = await findExistingCindy(client);
     assertCreationOwnerStillCurrent();
-    if (existingCindy?.status === 'deleting') throwIpcError('PRECONDITION_FAILED', 'Cindy 正在删除，请稍后重试');
+    if (existingCindy?.status === 'deleting') throwIpcError('PRECONDITION_FAILED', `${COUNTERSIGN_DEFAULT_TEAMMATE_NAME} 正在删除，请稍后重试`);
     if (existingCindy) return existingCindy;
   }
   assertCreationOwnerStillCurrent();
@@ -1898,7 +1898,7 @@ export async function createBotProfile(raw: unknown, restored?: RestoredBotOrigi
     assertCreationOwnerStillCurrent();
     if (templateId === 'cindy' && (error as { code?: string }).code === 'ALREADY_EXISTS') {
       const existing = await findExistingCindy(client);
-      if (existing?.status === 'deleting') throwIpcError('PRECONDITION_FAILED', 'Cindy 正在删除，请稍后重试');
+      if (existing?.status === 'deleting') throwIpcError('PRECONDITION_FAILED', `${COUNTERSIGN_DEFAULT_TEAMMATE_NAME} 正在删除，请稍后重试`);
       if (existing) return existing;
     }
     if ((error as { code?: string }).code === 'ALREADY_EXISTS') throwIpcError('ALREADY_EXISTS', '已有同名伙伴，请换一个名字');

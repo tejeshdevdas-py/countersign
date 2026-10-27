@@ -1,4 +1,5 @@
 import { execFile, spawnSync } from 'node:child_process';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { randomUUID } from 'node:crypto';
 import {
   constants as fsConstants,
@@ -2455,7 +2456,7 @@ async function acquirePiSubagentResumeClaim(
       ...(holder.hostStartTimeSec !== undefined ? { startTimeSec: holder.hostStartTimeSec } : {}),
     })) {
       throw new PiSubagentResumeClaimedError(
-        'Another running Cindy instance is already resuming this Subagent generation.',
+        `Another running ${BRAND_NAME} instance is already resuming this Subagent generation.`,
       );
     }
     if (attempt === 0) {
@@ -2786,7 +2787,7 @@ async function resumeClaimedPiSubagentRun(
     });
     const agentHome = piSubagentAgentHomeFromRunRoot(root);
     if (isPiSubagentLaunchFenceActive(agentHome, process.pid)) {
-      throw new Error('Cindy is restarting for an update; retry this resume shortly.');
+      throw new Error(`${BRAND_NAME} is restarting for an update; retry this resume shortly.`);
     }
     if (isPiSubagentDeletedTombstonePresent(agentHome, path.basename(root))) {
       throw new Error('The parent task was deleted; this resume will not start.');
@@ -2815,7 +2816,7 @@ async function resumeClaimedPiSubagentRun(
     // before spawn so a deleted parent never starts a runner. Refusal falls
     // into the rollback below.
     if (isPiSubagentLaunchFenceActive(agentHome, process.pid)) {
-      throw new Error('Cindy is restarting for an update; retry this resume shortly.');
+      throw new Error(`${BRAND_NAME} is restarting for an update; retry this resume shortly.`);
     }
     if (isPiSubagentDeletedTombstonePresent(agentHome, path.basename(root))) {
       throw new Error('The parent task was deleted; this resume will not start.');
@@ -2856,7 +2857,7 @@ export async function resumePiSubagentRun(
   // directory; the fence lives one level up, next to every session's runs.
   const agentHome = piSubagentAgentHomeFromRunRoot(root);
   if (isPiSubagentLaunchFenceActive(agentHome, process.pid)) {
-    throw new Error('Cindy is restarting for an update; retry this resume shortly.');
+    throw new Error(`${BRAND_NAME} is restarting for an update; retry this resume shortly.`);
   }
   if (isPiSubagentDeletedTombstonePresent(agentHome, path.basename(root))) {
     throw new Error('The parent task was deleted; this resume will not start.');

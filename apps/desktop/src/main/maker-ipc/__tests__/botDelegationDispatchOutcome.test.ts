@@ -16,7 +16,7 @@ describe('Bot delegation dispatch outcome', () => {
     expect(verdict).toEqual({
       kind: 'fatal',
       errorCode: 'ACCOUNT_NOT_READY',
-      message: expect.stringContaining('需要登录后才能执行'),
+      message: expect.stringContaining('当前没有可用的账号与模型来源'),
     });
   });
 

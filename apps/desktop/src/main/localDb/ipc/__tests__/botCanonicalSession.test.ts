@@ -9593,7 +9593,7 @@ describe('Bot Session task end-to-end runtime', () => {
         .get(delegationId) as { status: string; lastError: string };
       expect(row.status).toBe('failed');
       expect(row.lastError).toContain('ACCOUNT_NOT_READY');
-      expect(row.lastError).toContain('需要登录后才能执行');
+      expect(row.lastError).toContain('当前没有可用的账号与模型来源');
 
       // 任务卡靠这条推送翻终态；没有它，卡片就永远停在「进行中」。用户看到的
       // 失败交代由卡片承载——账号没就绪时连完成指令都送不进会话,卡片就是兜底。

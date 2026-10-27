@@ -1,5 +1,6 @@
 /** Adapt existing Maker sessions, without importing a second agent loop or transcript store. */
 import fs from 'node:fs/promises';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import {
@@ -138,7 +139,7 @@ export function createEventProjection(
         (typeof d.isTerminal === 'boolean' ? d.isTerminal : d.willRetry !== true) &&
         !ended
       ) {
-        const failed = string(d.message) || message('EXECUTION_FAILED', 'Cindy 执行未完成。');
+        const failed = string(d.message) || message('EXECUTION_FAILED', `${BRAND_NAME} 执行未完成。`);
         if (d.usage) {
           addEventUsage(d);
           reportUsage();
@@ -219,7 +220,7 @@ export async function openLocalAgentRuntime(
   let epoch = 0,
     turn = 0;
   const assertCurrent = (expected: number) => {
-    if (closed) throw new LocalAgentError('SESSION_UNAVAILABLE', 'Cindy 会话已关闭。');
+    if (closed) throw new LocalAgentError('SESSION_UNAVAILABLE', `${BRAND_NAME} 会话已关闭。`);
     if (epoch !== expected)
       throw new LocalAgentError('INTERRUPTED', '本次发送已停止，未继续提交消息。');
   };
@@ -265,7 +266,7 @@ export async function openLocalAgentRuntime(
       await next.close();
       throw new LocalAgentError(
         'RESUME_UNAVAILABLE',
-        'Cindy 原会话已不存在，请在调用应用中开始新的任务。未重放旧消息。',
+        `${BRAND_NAME} 原会话已不存在，请在调用应用中开始新的任务。未重放旧消息。`,
       );
     }
     handle = next;
@@ -285,7 +286,7 @@ export async function openLocalAgentRuntime(
       // Native interactive prompts cannot be answered on behalf of the user. The dismissal
       // goes back to the engine first; the turn fails once it actually settles.
       projection.failAtEnd(
-        localize('INTERACTION_UNAVAILABLE', 'Cindy 引擎需要交互确认，当前应用无法接收。'),
+        localize('INTERACTION_UNAVAILABLE', `${BRAND_NAME} 引擎需要交互确认，当前应用无法接收。`),
       );
       if (request.kind === 'ask_user_question')
         return { kind: 'ask_user_question', answers: {}, dismissed: true };
@@ -310,7 +311,7 @@ export async function openLocalAgentRuntime(
       if (status === 'closed') unsubscribe();
       if (!closed && handle === next && !preparing && (status === 'closed' || status === 'error')) {
         busy = false;
-        projection.fail(localize('SESSION_UNAVAILABLE', 'Cindy 执行连接已结束。'));
+        projection.fail(localize('SESSION_UNAVAILABLE', `${BRAND_NAME} 执行连接已结束。`));
       }
     });
     return next;
@@ -383,7 +384,7 @@ export async function openLocalAgentRuntime(
           pathOrigin: 'desktop-host',
         });
         await fs.writeFile(file, bytes, { mode: 0o600 });
-      } else throw new LocalAgentError('INVALID_INPUT', '所选 Cindy 模型不支持这类输入。');
+      } else throw new LocalAgentError('INVALID_INPUT', `所选 ${BRAND_NAME} 模型不支持这类输入。`);
     }
   };
   return {

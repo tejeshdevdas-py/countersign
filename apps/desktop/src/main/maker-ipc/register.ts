@@ -1,4 +1,5 @@
 import { setVoiceTaskDispatch, setVoiceCallMemoryReader } from '../voice-conversation/taskBridge.js';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { buildBotMemoryScopeKey } from '@cindy/maker-core';
 import { createOrcaWorkerProjectHandlers } from './orcaWorkerProjectHandlers';
 import { getTeamByWorkerSession } from '../localDb/orcaTeamStore';
@@ -7060,7 +7061,7 @@ export function registerMakerIpc(maker: Maker, options: RegisterMakerIpcOptions)
       if (!isPiSubagentTerminal(run.state) && !canHostControlPiSubagentRun(run, process.pid)) {
         throwIpcError(
           'PRECONDITION_FAILED',
-          'This Subagent run belongs to another running Cindy instance. Control it from that window.',
+          `This Subagent run belongs to another running ${BRAND_NAME} instance. Control it from that window.`,
         );
       }
       return (await controlPiSubagentRuns(runRoot, run.runId, 'stop')) > 0;
@@ -7131,7 +7132,7 @@ export function registerMakerIpc(maker: Maker, options: RegisterMakerIpcOptions)
     if (!canHostControlPiSubagentRun(run, process.pid)) {
       throwIpcError(
         'PRECONDITION_FAILED',
-        'This Subagent run belongs to another running Cindy instance. Control it from that window.',
+        `This Subagent run belongs to another running ${BRAND_NAME} instance. Control it from that window.`,
       );
     }
     const controlled = await controlPiSubagentRuns(

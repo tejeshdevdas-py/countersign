@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import {
   mkdirSync,
   mkdtempSync,
@@ -1156,14 +1157,14 @@ describe('Maker session creation singleflight', () => {
 
     await maker.createSession(options('session-a'));
     await expect(maker.createSession(options('session-b'))).rejects.toThrow(
-      /already active in another Cindy task/i,
+      new RegExp(`already active in another ${BRAND_NAME} task`, 'i'),
     );
     expect(startSession).toHaveBeenCalledTimes(1);
 
     const closing = maker.closeSession('session-a');
     await vi.waitFor(() => expect(firstHandle.close).toHaveBeenCalledTimes(1));
     await expect(maker.createSession(options('session-b'))).rejects.toThrow(
-      /already active in another Cindy task/i,
+      new RegExp(`already active in another ${BRAND_NAME} task`, 'i'),
     );
     expect(startSession).toHaveBeenCalledTimes(1);
 
@@ -1284,7 +1285,7 @@ describe('Maker session creation singleflight', () => {
       ...base,
       id: 'session-next-thread-conflict',
       resumeSessionId: nextThread,
-    })).rejects.toThrow(/already active in another Cindy task/i);
+    })).rejects.toThrow(new RegExp(`already active in another ${BRAND_NAME} task`, 'i'));
 
     await Promise.all([first.close(), oldThreadReuse.close()]);
   });
