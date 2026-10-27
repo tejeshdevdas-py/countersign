@@ -4,6 +4,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 
 import {
   TurnRetryTracker,
@@ -153,7 +154,7 @@ describe('buildBackendUnreachableMessage', () => {
       },
     });
     expect(msg).not.toContain('127.0.0.1:7890');
-    expect(msg).not.toContain("Cindy's outbound path");
+    expect(msg).not.toContain(`${BRAND_NAME}'s outbound path`);
     expect(msg).toContain('Route agent traffic via local proxy');
   });
 });

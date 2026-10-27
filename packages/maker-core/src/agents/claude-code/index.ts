@@ -22,6 +22,7 @@
  * 文件结构对标 codex/index.ts，方便对照阅读。
  */
 
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { LIBRARY_READ_ROOT, withLibraryNativeReadContext } from '../shared/library-native-read.js';
 import { promises as fs } from 'node:fs';
 import { randomUUID } from 'node:crypto';
@@ -1389,7 +1390,7 @@ export class ClaudeCodeAgent extends BaseAgent {
     const log = this.deps.logger.child(sid ? `s:${sid}/claude-code` : 'claude-code');
     const reviewMode = opts.reviewMode === true;
     if (reviewMode && opts.remoteHostId) {
-      throw new Error('Cindy Review currently supports local Claude Code sessions only');
+      throw new Error(`${BRAND_NAME} Review currently supports local Claude Code sessions only`);
     }
     // 设备托管：Claude Code 在本机运行(本机的登录、订阅与供应商)，项目、文件与命令在任务所在
     // 电脑上。自带的文件与命令工具关掉，改用经隧道回到那台电脑的 Cindy 工具(cindy_exec)；

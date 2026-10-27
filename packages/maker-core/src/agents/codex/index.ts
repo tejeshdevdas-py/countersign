@@ -218,6 +218,7 @@ import { CodexForkError, type CodexForkStage } from './fork-error.js';
 import { resolveForkTurnAnchor } from './fork-turn-anchor.js';
 import { parseReconnectAttemptMessage } from '../shared/network-error.js';
 import { extractNonSecretErrorSignals } from '@cindy/maker-shared/error-redaction';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { AppServerHost, CodexNativeInitializationStoppedError, type ThreadEventHandlers, type ThreadSubscription } from './app-server/host.js';
 import { AppServerRequestTimeoutError, type RequestProgressDeadline } from './app-server/client.js';
 import { useCodexHistoryHome, type CodexExternalAuth } from './app-server/external-auth.js';
@@ -3733,7 +3734,7 @@ assertRouteCurrent();
       ? snapshotManagedSkillGrants(opts.botRuntimeProfile?.skillPolicy) : undefined;
     let refreshedBotSkillConfig: Record<string, unknown> | undefined;
     if (reviewMode && opts.remoteHostId) {
-      throw new Error('Cindy Review currently supports local Codex sessions only');
+      throw new Error(`${BRAND_NAME} Review currently supports local Codex sessions only`);
     }
 
     log.info('startSession', {
@@ -5032,12 +5033,12 @@ assertRouteCurrent();
       try {
         if (process.platform === 'win32') {
           if ([opts.workingDir, ...(opts.reviewReadPaths ?? [])].some((candidate) => !isWindowsReviewLocalPath(candidate, opts.workingDir))) {
-            throw new Error('Windows Cindy Review requires local drive paths; UNC shares, device paths and alternate data streams are not supported. Use a local copy before retrying Review.');
+            throw new Error(`Windows ${BRAND_NAME} Review requires local drive paths; UNC shares, device paths and alternate data streams are not supported. Use a local copy before retrying Review.`);
           }
         }
         reviewReadGrants = await buildReviewReadGrants(opts.workingDir, opts.reviewReadPaths ?? []);
         if (process.platform === 'win32' && reviewReadGrants.some((grant) => !isWindowsReviewLocalPath(grant.realPath, opts.workingDir))) {
-          throw new Error('Windows Cindy Review requires evidence paths that resolve to a local drive. Use a local copy before retrying Review.');
+          throw new Error(`Windows ${BRAND_NAME} Review requires evidence paths that resolve to a local drive. Use a local copy before retrying Review.`);
         }
       } catch (error) {
         // Codex app-server has not been contacted before review grants are validated.
@@ -5449,7 +5450,7 @@ assertRouteCurrent();
     if (reviewMode && !capabilityRoutingProtocolSupported) {
       releaseHostBindingLeaseIfNeeded();
       throw new Error(
-        `Cindy Review requires Codex app-server 0.145.0 or newer for plugin and Skill isolation (current: ${initResp.userAgent ?? 'unknown'})`,
+        `${BRAND_NAME} Review requires Codex app-server 0.145.0 or newer for plugin and Skill isolation (current: ${initResp.userAgent ?? 'unknown'})`,
       );
     }
     if (requiresCodexCapabilitySkillDiscovery(capabilityRoutingPolicy)) {
@@ -5515,7 +5516,7 @@ assertRouteCurrent();
         releaseHostBindingLeaseIfNeeded();
         if (error instanceof CodexRouteSelectionChangedError) throw error;
         throw new Error(
-          `Cannot start Codex safely because Cindy could not inspect restricted Codex Skills: ${error instanceof Error ? error.message : String(error)}`,
+          `Cannot start Codex safely because ${BRAND_NAME} could not inspect restricted Codex Skills: ${error instanceof Error ? error.message : String(error)}`,
         );
       }
     }
@@ -5794,7 +5795,7 @@ assertRouteCurrent();
     ) {
       releaseHostBindingLeaseIfNeeded();
       throw new Error(
-        `Cindy capability routing requires Codex app-server 0.145.0 or newer (current: ${initResp.userAgent ?? 'unknown'})`,
+        `${BRAND_NAME} capability routing requires Codex app-server 0.145.0 or newer (current: ${initResp.userAgent ?? 'unknown'})`,
       );
     }
     // Only the official OpenAI OAuth route uses Codex Guardian. Third-party,
@@ -5825,13 +5826,13 @@ assertRouteCurrent();
     if (reviewMode && process.platform === 'win32' && !codexUserAgentAtLeast(initResp.userAgent, [0, 156, 0])) {
       releaseHostBindingLeaseIfNeeded();
       throw new Error(
-        `Windows Cindy Review requires Codex app-server 0.156.0 or newer to enforce scoped reads (current: ${initResp.userAgent ?? 'unknown'})`,
+        `Windows ${BRAND_NAME} Review requires Codex app-server 0.156.0 or newer to enforce scoped reads (current: ${initResp.userAgent ?? 'unknown'})`,
       );
     }
     if (reviewMode && !readonlyReferenceDirsSupported) {
       releaseHostBindingLeaseIfNeeded();
       throw new Error(
-        `Cindy Review requires Codex permission profiles from app-server 0.144.6 or newer (current: ${initResp.userAgent ?? 'unknown'})`,
+        `${BRAND_NAME} Review requires Codex permission profiles from app-server 0.144.6 or newer (current: ${initResp.userAgent ?? 'unknown'})`,
       );
     }
     if (mutableExtraDirs.length > 0 && !readonlyReferenceDirsSupported) {
@@ -5994,7 +5995,7 @@ assertRouteCurrent();
           releaseHostBindingLeaseIfNeeded();
           await this.retireHostKey(
             currentHostKey,
-            'Cindy Review could not disable Codex memory',
+            `${BRAND_NAME} Review could not disable Codex memory`,
             {
               failIfActive: false,
               logPrefix: 'codex review memory isolation',
@@ -6006,7 +6007,7 @@ assertRouteCurrent();
               error: retireError instanceof Error ? retireError.message : String(retireError),
             });
           });
-          throw new Error('Cindy Review could not disable Codex memory; review was not started');
+          throw new Error(`${BRAND_NAME} Review could not disable Codex memory; review was not started`);
         }
         log.warn('ensureMemoryOverridePushed failed, continuing without memory override', {
           error: e instanceof Error ? e.message : String(e),

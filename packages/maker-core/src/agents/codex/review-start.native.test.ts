@@ -1,4 +1,5 @@
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createServer } from 'node:http';
@@ -227,7 +228,7 @@ describe.skipIf(!binaryPath || process.platform !== 'win32')('Windows Codex Revi
         makerMemoryEnabled: false,
       });
       if (!compatible) {
-        await expect(started).rejects.toThrow('Windows Cindy Review requires Codex app-server 0.156.0');
+        await expect(started).rejects.toThrow(`Windows ${BRAND_NAME} Review requires Codex app-server 0.156.0`);
         expect(requests).toHaveLength(0);
         return;
       }

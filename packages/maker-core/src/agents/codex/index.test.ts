@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import path from 'node:path';
 import os from 'node:os';
 import { promises as fs } from 'node:fs';
@@ -2491,7 +2492,7 @@ describe('CodexAgent permissions', () => {
     const host = installFakeHost(agent, undefined, { userAgent: 'mock-codex/0.145.0' });
     await expect(agent.startSession({
       sessionId: 'review-old-windows', model: 'gpt-5.5', workingDir, reviewMode: true,
-    })).rejects.toThrow('Windows Cindy Review requires Codex app-server 0.156.0');
+    })).rejects.toThrow(`Windows ${BRAND_NAME} Review requires Codex app-server 0.156.0`);
     expect(host.request.mock.calls.some(([method]) => method === Method.ThreadStart)).toBe(false);
   });
 
@@ -3310,7 +3311,7 @@ describe('CodexAgent capability routing', () => {
       model: 'gpt-5.4',
       workingDir: '/repo',
     })).rejects.toThrow(
-      'Cannot start Codex safely because Cindy could not inspect restricted Codex Skills: skills/list unavailable',
+      `Cannot start Codex safely because ${BRAND_NAME} could not inspect restricted Codex Skills: skills/list unavailable`,
     );
   });
 
