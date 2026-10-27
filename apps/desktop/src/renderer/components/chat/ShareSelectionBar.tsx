@@ -39,7 +39,7 @@ import {
 import { toast } from '@/lib/toast';
 import { cn } from '@/lib/utils';
 import { useBrandLogo } from '@/hooks/useBrandLogo';
-import shareCharacterSrc from '@/assets/cindy-share-character.jpg';
+import { COUNTERSIGN_BRAND_ASSETS } from '@/lib/countersignBrandAssets';
 import { shareSelectionStore, useShareSelectionCount } from './shareSelectionStore';
 
 const log = createLogger('ShareSelectionBar');
@@ -121,7 +121,7 @@ export function ShareSelectionBar({
       orderedSelectedIds,
       contentWidth: getContentWidth() || 880,
       logoSrc,
-      characterSrc: shareCharacterSrc,
+      characterSrc: COUNTERSIGN_BRAND_ASSETS.teammateAvatar,
     });
   }, [getContentWidth, logoSrc, sessionId]);
 

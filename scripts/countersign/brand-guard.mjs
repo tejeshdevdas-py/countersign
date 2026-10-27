@@ -40,7 +40,7 @@ const TITLE_LITERAL = /\btitle\s*[:=]\s*\{?\s*(['"`])(.*?)\1/g;
 const LABEL_LITERAL = /(?:\bname|\balt|\baria-label)\s*[:=]\s*\{?\s*(['"`])(.*?)\1/g;
 // Upstream's Cindy artwork: wordmarks, the lockup head image and the default teammate portrait.
 const CINDY_ARTWORK_IMPORT =
-  /\bfrom\s+['"][^'"]*(?:cindy-logo-[a-z]+\.png|\/logo-(?:light|dark)\.png|head-image-[a-z]+\.png|bot-presets\/cindy\.png|cindy-avatar-[a-z]+\.png)['"]/;
+  /\bfrom\s+['"][^'"]*(?:\/cindy-[^'"/]*\.(?:png|jpe?g)|\/logo-(?:light|dark)\.png|head-image-[a-z]+\.png|bot-presets\/cindy\.png)(?:\?[^'"]*)?['"]/;
 
 function normalize(p) {
   return p.replace(/\x5c/g, '/');

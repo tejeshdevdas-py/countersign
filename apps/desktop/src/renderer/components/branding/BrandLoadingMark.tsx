@@ -18,7 +18,7 @@ import { useTranslation } from 'react-i18next';
 import { useBrandLogo } from '@/hooks/useBrandLogo';
 
 interface BrandLoadingMarkProps {
-  /** wordmark 显示宽度(px)。高度按 logo 资产原始宽高比(2048:699)自适应。 */
+  /** wordmark 显示宽度(px)。高度按 logo 资产原始宽高比(1024:350)自适应。 */
   width?: number;
 }
 
@@ -39,7 +39,7 @@ export function BrandLoadingMark({ width = 120 }: BrandLoadingMarkProps) {
   return (
     <span
       className="brand-loading-mark relative inline-block"
-      style={{ width, aspectRatio: '2048 / 699' }}
+      style={{ width, aspectRatio: '1024 / 350' }}
       role="status"
       aria-live="polite"
       aria-label={loadingLabel}

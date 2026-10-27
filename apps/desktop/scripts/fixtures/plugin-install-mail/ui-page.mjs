@@ -38,7 +38,7 @@ export default {
       const imageData = name => 'data:image/png;base64,' + readFileSync(new URL('../../../resources/' + name, import.meta.url)).toString('base64');
       const hash = createHash('sha256').update('alex@example.test').digest('hex');
       const images = {
-        'https://lh3.googleusercontent.com/fixture-contact': imageData('companion-preset-avatars/cindy.png'),
+        'https://lh3.googleusercontent.com/fixture-contact': imageData('companion-preset-avatars/countersign-teammate.png'),
         [`https://gravatar.com/avatar/${hash}?s=64&d=404&r=g`]: imageData('legacy-teammate-avatars/lizi.png'),
         'https://icons.duckduckgo.com/ip3/company.example.com.ico': imageData('icon.png'),
       };

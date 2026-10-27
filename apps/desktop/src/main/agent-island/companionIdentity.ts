@@ -29,8 +29,8 @@ const COMPANION_SPEAKING_ROLES = ['canonical', 'history', 'thread', 'group', 'ch
  * files shipped as resources (the renderer bundle inlines its asset).
  */
 const PRESET_AVATAR_FILES: Readonly<Record<string, string>> = {
-  // Countersign: byte copy of src/renderer/assets/countersign/teammate-avatar.svg.
-  'cindy://avatar/preset/cindy': 'companion-preset-avatars/countersign-teammate.svg',
+  // Countersign: byte copy of src/renderer/assets/countersign/teammate-avatar.png.
+  'cindy://avatar/preset/cindy': 'companion-preset-avatars/countersign-teammate.png',
   'cindy://avatar/preset/dash': 'legacy-teammate-avatars/dash.png',
   'cindy://avatar/preset/lizi': 'legacy-teammate-avatars/lizi.png',
 };

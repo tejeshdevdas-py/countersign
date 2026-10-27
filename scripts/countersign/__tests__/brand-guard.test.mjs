@@ -109,11 +109,13 @@ test('flags imports of the Cindy artwork in renderer source', () => {
     "import head from '@/assets/head-image-dark.png';",
     "import portrait from '@/assets/bot-presets/cindy.png';",
     "import cindyLogoDark from '../../assets/cindy-logo-dark.png';",
-    "import mark from '@/assets/countersign/mark-light.svg';",
+    "import mark from '@/assets/countersign/lockup-avatar.png';",
+    "import share from '@/assets/cindy-share-character.jpg';",
+    "import account from '@/assets/cindy-avatar-account.png?url';",
   ].join('\n');
   const leaks = findBrandLeaks([{ path: 'apps/desktop/src/renderer/hooks/x.ts', text }]);
   assert.deepEqual(
     leaks.map((leak) => leak.line),
-    [1, 2, 3, 4],
+    [1, 2, 3, 4, 6, 7],
   );
 });

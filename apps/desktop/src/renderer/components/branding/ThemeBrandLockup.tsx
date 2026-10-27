@@ -85,9 +85,7 @@ export interface ThemeBrandLockupProps {
 
 export function ThemeBrandLockup({ theme, className, testId }: ThemeBrandLockupProps) {
   const dark = isDarkTheme(theme);
-  const defaultIcon: ThemeBrandAsset = {
-    src: dark ? COUNTERSIGN_BRAND_ASSETS.markDark : COUNTERSIGN_BRAND_ASSETS.markLight,
-  };
+  const defaultIcon: ThemeBrandAsset = { src: COUNTERSIGN_BRAND_ASSETS.lockupAvatar };
   const defaultLogo: ThemeBrandAsset = { src: dark ? logoDark : logoLight };
   const customIcon = theme?.brand?.icon;
   const customLogo = theme?.brand?.logo;

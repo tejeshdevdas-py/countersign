@@ -1,33 +1,30 @@
 /**
  * Countersign brand artwork: the single place the renderer takes it from.
  *
- * The files in `src/renderer/assets/countersign/` are neutral placeholders
- * (text and a monogram, no Cindy artwork). To ship the real artwork, drop
- * files in with the same names and change the extensions below if they are
- * PNG. All files need a transparent background.
+ * Source: the owner's countersign-brand folder (outside this repo; AI-generated for Countersign,
+ * see FORK-CHANGES.md), scaled with a Lanczos filter, alpha kept. Files in
+ * `src/renderer/assets/countersign/` (all transparent PNG):
  *
- * - `wordmark-light.*` / `wordmark-dark.*`: the horizontal wordmark, dark ink
- *   for light themes and light ink for dark themes. Shown at 110 x 37.5 px on
- *   the new-chat screen and as the loading mark (aspect ratio 2048:699), so
- *   ship 2048 x 699 px PNG or an SVG with that viewBox.
- * - `mark-light.*` / `mark-dark.*`: the round icon left of the wordmark,
- *   cropped to a 50 px circle. Ship 200 x 200 px or larger (square).
- * - `teammate-avatar.*`: the default teammate's avatar, shown round at up to
- *   about 128 px. Ship 256 x 256 px (square). Desktop notifications read a
- *   copy at `resources/companion-preset-avatars/countersign-teammate.*`
- *   (see `PRESET_AVATAR_FILES` in `src/main/agent-island/companionIdentity.ts`),
- *   which must stay byte-identical.
+ * - `wordmark-light.png` / `wordmark-dark.png` (1024 x 350): the wordmark for
+ *   light / dark backgrounds. Shown at 110 x 37.5 px on the new-chat screen and
+ *   as the loading mark.
+ * - `lockup-avatar.png` (200 x 200): the round icon left of the wordmark,
+ *   cropped to a 50 px circle; both themes.
+ * - `teammate-avatar.png` (256 x 256): the default teammate's avatar. Desktop
+ *   notifications read a byte-identical copy at
+ *   `resources/companion-preset-avatars/countersign-teammate.png`
+ *   (`PRESET_AVATAR_FILES` in `src/main/agent-island/companionIdentity.ts`).
+ * - `login-wordmark-{light,dark}.png` (423 x 145) and `@2x` (846 x 290): the
+ *   login screen wordmark, imported by `LoginBrandStage.tsx`.
  */
-import markDark from '@/assets/countersign/mark-dark.svg';
-import markLight from '@/assets/countersign/mark-light.svg';
-import teammateAvatar from '@/assets/countersign/teammate-avatar.svg';
-import wordmarkDark from '@/assets/countersign/wordmark-dark.svg';
-import wordmarkLight from '@/assets/countersign/wordmark-light.svg';
+import lockupAvatar from '@/assets/countersign/lockup-avatar.png';
+import teammateAvatar from '@/assets/countersign/teammate-avatar.png';
+import wordmarkDark from '@/assets/countersign/wordmark-dark.png';
+import wordmarkLight from '@/assets/countersign/wordmark-light.png';
 
 export const COUNTERSIGN_BRAND_ASSETS = {
   wordmarkLight,
   wordmarkDark,
-  markLight,
-  markDark,
+  lockupAvatar,
   teammateAvatar,
 } as const;
