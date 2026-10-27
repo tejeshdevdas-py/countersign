@@ -24,6 +24,7 @@ import { useExperimentalFlag } from '@/hooks/useExperimentalFeatures';
 import { useAutoUpdateSettings } from '@/hooks/useAutoUpdateSettings';
 import { useAnalyticsSettings } from '@/hooks/useAnalyticsSettings';
 import { useLogUploadSettings } from '@/hooks/useLogUploadSettings';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import { OpenLogsRow, UploadLogsRow } from '@/components/log-support/LogSupportActions';
 import { PiKernelVersionRow } from './PiKernelVersionRow';
 import { HARNESS_MENU_ITEM_CLASS, HarnessMenuFootnote, HarnessVersionMenuItem, HarnessVersionMenuRow } from './HarnessVersionMenuRow';
@@ -337,10 +338,14 @@ export function AboutSection() {
             <Divider />
           </>
         )}
-        <AutoUpdateToggleRow />
-        <Divider />
-        <AnalyticsToggleRow />
-        <Divider />
+        {!LOCAL_ONLY && (
+          <>
+            <AutoUpdateToggleRow />
+            <Divider />
+            <AnalyticsToggleRow />
+            <Divider />
+          </>
+        )}
         <AgentVersionsRows />
         <DebugLogToggleRow />
         <Divider />
@@ -348,12 +353,16 @@ export function AboutSection() {
           <OpenLogsRow />
         </div>
         <Divider />
-        <CrashAutoUploadToggleRow />
-        <Divider />
-        <div id="settings-search-settings-about-logUpload-uploadLabel">
-          <UploadLogsRow />
-        </div>
-        <Divider />
+        {!LOCAL_ONLY && (
+          <>
+            <CrashAutoUploadToggleRow />
+            <Divider />
+            <div id="settings-search-settings-about-logUpload-uploadLabel">
+              <UploadLogsRow />
+            </div>
+            <Divider />
+          </>
+        )}
         <LegalLinksRows />
       </div>
 

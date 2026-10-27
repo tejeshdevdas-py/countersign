@@ -8,7 +8,17 @@ export type UpstreamService =
   | 'updater'
   | 'agentBinaryUpdate';
 
-/** True when the service must not start. Countersign is local-only: all of them. */
-export function isServiceDisabled(_name: UpstreamService): boolean {
-  return LOCAL_ONLY;
+const ALL_UPSTREAM_SERVICES: readonly UpstreamService[] = [
+  'analytics',
+  'heartbeat',
+  'logUpload',
+  'updater',
+  'agentBinaryUpdate',
+];
+
+/** Services that must not start. Countersign is local-only: all of them. */
+const DISABLED: ReadonlySet<UpstreamService> = new Set(LOCAL_ONLY ? ALL_UPSTREAM_SERVICES : []);
+
+export function isServiceDisabled(name: UpstreamService): boolean {
+  return DISABLED.has(name);
 }

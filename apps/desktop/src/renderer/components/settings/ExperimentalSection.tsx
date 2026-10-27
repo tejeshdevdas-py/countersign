@@ -19,6 +19,7 @@ import {
   useExperimentalFlag,
   type ExperimentalFeatureMeta,
 } from '@/hooks/useExperimentalFeatures';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import { LspBetaCell } from './LspBetaCell';
 import { SETTINGS_CARD_CLASS, SETTINGS_ROW_DIVIDER_CLASS } from './settingsRowClasses';
 import { BetaChannelCell } from './BetaChannelCell';
@@ -29,7 +30,7 @@ export function ExperimentalSection() {
     window.electronAPI?.supportsBetaUpdateChannel ?? window.electronAPI?.platform !== 'linux';
   const rows: { key: string; node: ReactNode }[] = [
     { key: 'lsp', node: <LspBetaCell /> },
-    ...(betaChannelSupported ? [{ key: 'beta-channel', node: <BetaChannelCell /> }] : []),
+    ...(betaChannelSupported && !LOCAL_ONLY ? [{ key: 'beta-channel', node: <BetaChannelCell /> }] : []),
     ...EXPERIMENTAL_FEATURES.map((feature) => ({
       key: feature.key,
       node: <ExperimentalFeatureRow feature={feature} />,

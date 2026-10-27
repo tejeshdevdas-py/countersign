@@ -29,6 +29,12 @@ const mocks = vi.hoisted(() => ({
   getLogUploadSettings: vi.fn(),
   writeText: vi.fn(),
 }));
+// Countersign: these upstream cases exercise the upstream UI, so LOCAL_ONLY is mocked off.
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
+
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => mocks.auth }));
 vi.mock('@/contexts/AppShellCoverContext', () => ({ useAppShellCover: () => mocks.db }));
 vi.mock('@/contexts/EnvCheckContext', () => ({ useEnvCheck: () => mocks.env }));

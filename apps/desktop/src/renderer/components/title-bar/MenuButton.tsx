@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { cn } from '@/lib/utils';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import { checkForUpdateWithToast } from '@/lib/checkForUpdateWithToast';
 import { createLogger } from '@/lib/logger';
 
@@ -104,11 +105,13 @@ export function MenuButton({ onExitFullscreen }: { onExitFullscreen?: () => void
         >
           {t('titleBar.menuItems.issues')}
         </DropdownMenuItem>
-        <DropdownMenuItem
-          onSelect={() => { void checkForUpdateWithToast(t); }}
-        >
-          {t('titleBar.menuItems.checkForUpdates')}
-        </DropdownMenuItem>
+        {!LOCAL_ONLY && (
+          <DropdownMenuItem
+            onSelect={() => { void checkForUpdateWithToast(t); }}
+          >
+            {t('titleBar.menuItems.checkForUpdates')}
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
     <SharedTaskEndedNotice onReturnToTasks={() => navigate('/')} />

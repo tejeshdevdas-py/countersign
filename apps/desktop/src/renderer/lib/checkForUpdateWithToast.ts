@@ -1,9 +1,21 @@
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import { toast } from '@/lib/toast';
 
 type Translate = (key: string) => string;
 
 export async function checkForUpdateWithToast(t: Translate): Promise<void> {
-  const { result } = await window.electronAPI.checkForUpdate();
+  // Countersign has no update service: there is nothing to check, and no handler to call.
+  if (LOCAL_ONLY) {
+    toast.warning(t('titleBar.updateCheckToast.manifestFailed'));
+    return;
+  }
+  let result: Awaited<ReturnType<typeof window.electronAPI.checkForUpdate>>['result'];
+  try {
+    ({ result } = await window.electronAPI.checkForUpdate());
+  } catch {
+    toast.error(t('titleBar.updateCheckToast.manifestFailed'));
+    return;
+  }
   switch (result) {
     case 'idle':
       toast.success(t('titleBar.updateCheckToast.alreadyLatest'));

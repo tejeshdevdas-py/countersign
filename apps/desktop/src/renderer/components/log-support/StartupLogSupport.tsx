@@ -1,3 +1,4 @@
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -71,7 +72,7 @@ export function StartupLogSupport() {
         content={
           open ? (
             <div className="flex flex-col gap-5">
-              <UploadLogsActionRow presentation="dialog" upload={upload} />
+              {!LOCAL_ONLY && <UploadLogsActionRow presentation="dialog" upload={upload} />}
               <OpenLogsRow presentation="dialog" />
             </div>
           ) : undefined
