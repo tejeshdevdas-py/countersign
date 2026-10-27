@@ -89,7 +89,7 @@ describe('Agent plugin discovery and installation', () => {
   });
 
   it.each([
-    ['PLUGIN_NAMESPACE_CLIENT_REQUIRED', 'update Cindy'],
+    ['PLUGIN_NAMESPACE_CLIENT_REQUIRED', 'update Countersign'],
     ['PLUGIN_ORGANIZATION_CONTEXT_UNAVAILABLE', 'Retry later'],
     ['PLUGIN_LIST_CHANGED', 'Retry later'],
     ['PLUGIN_NAMESPACE_CONFIG_REQUIRED', 'Do not retry repeatedly'],

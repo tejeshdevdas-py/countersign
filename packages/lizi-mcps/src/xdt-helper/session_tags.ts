@@ -22,7 +22,7 @@ export function registerSessionTagTools(
   const tagIds = stringArrayParam(z.array(id).min(1).max(32));
   const invoke = async (request: TaskTagRequest) => {
     const caller = deps.getSessionContext().sessionId;
-    if (!caller) throw new Error('[NO_SESSION_CONTEXT] No current Cindy task');
+    if (!caller) throw new Error('[NO_SESSION_CONTEXT] No current Countersign task');
     return deps.execute(caller, request);
   };
   const register = (
@@ -42,7 +42,7 @@ export function registerSessionTagTools(
       handler: async (args) => {
         try {
           if (!deps.getSessionContext().sessionId)
-            return errorPayload('NO_SESSION_CONTEXT', 'No current Cindy task');
+            return errorPayload('NO_SESSION_CONTEXT', 'No current Countersign task');
           return okPayload({ ...(await handler(args)) });
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);

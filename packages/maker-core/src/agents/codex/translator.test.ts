@@ -1682,7 +1682,7 @@ describe('translateItemNotification commandExecution output normalization', () =
     const full = events.find((event) => event.type === 'tool_result_full');
     const fullText = (full?.data as { fullText?: string }).fullText ?? '';
     expect(fullText).toContain('Failed RTM_NEWADDR');
-    expect(fullText).toContain('[Cindy] The Codex command sandbox (bubblewrap) failed to initialize');
+    expect(fullText).toContain('[Countersign] The Codex command sandbox (bubblewrap) failed to initialize');
     expect(full?.data).toMatchObject({ isError: true });
   });
 

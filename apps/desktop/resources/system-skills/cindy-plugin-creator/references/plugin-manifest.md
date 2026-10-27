@@ -15,7 +15,7 @@
     "ko": "locales/ko.json"
   },
   "version": "1.0.0",
-  "minCindyVersion": "1.2.3", // 示例；v3 必填:本插件实际依赖的首个 Cindy 正式版本(SemVer)
+  "minCindyVersion": "1.2.3", // 示例；v3 必填:本插件实际依赖的首个 Countersign 正式版本(SemVer)
   "entry": "main.js",          // 电子脑入口(kind 字段已无需填写:插件只有芯片一种形态,缺省即 chip;写了也只认 "chip")
   "launch": "on-demand",       // 可选:电子脑启动模式。on-demand(缺省)=被需要才拉起;resident=唤醒即常驻(详情页会如实标注"常驻运行",绝大多数插件不需要,仅订阅型/需秒响应的场景用)
   "command": "画图",            // 推荐:用户 $画图 显式点名(与已装插件查重,冲突拒装)。
@@ -27,7 +27,7 @@
   "cindy": { "image": ["generate", "edit"] },   // 直接声明能力及详单,见下
   // 类目按需申请:image / video 的动作是 "generate" | "edit";media 只有
   // "deposit"(把你手里的媒体字节寄存进总仓换指纹,见 §4.0.1);
-  // text 只有 "oneshot";search 只有 "web"(Cindy 托管公网搜索)。每条都会
+  // text 只有 "oneshot";search 只有 "web"(Countersign 托管公网搜索)。每条都会
   // 在插件详情的能力清单里单独列给用户看。
   "panel": { "title": "面板标题", "html": "panel.html", "position": "left",
              "minWidth": 240, "defaultFraction": 0.24,
@@ -54,8 +54,8 @@
 }
 ```
 
-`schemaVersion: 3` 必须填写 `minCindyVersion`。它写本插件实际依赖的首个 Cindy
-正式版本；Manifest schema 本身没有统一的 Cindy 版本下限。不要为了使用某项既有能力随意抬高版本。
+`schemaVersion: 3` 必须填写 `minCindyVersion`。它写本插件实际依赖的首个 Countersign
+正式版本；Manifest schema 本身没有统一的 Countersign 版本下限。不要为了使用某项既有能力随意抬高版本。
 官方市场会优先向旧客户端投影最近的兼容历史版本，没有兼容版本时不展示该插件。
 Desktop 信任来源已经完成的版本选择，不再按 `minCindyVersion` 追加筛选或确认弹窗；
 用户主动导入的本地包、以及用户添加的自定义市场也遵循同一安装策略。这个字段仍必须
@@ -91,7 +91,7 @@ Desktop 信任来源已经完成的版本选择，不再按 `minCindyVersion` �
 
 ### 2.1 本地化资源(locales)
 
-插件语言**只跟随 Cindy 宿主当前语言**。不要读取 `navigator.language`、操作系统语言或
+插件语言**只跟随 Countersign 宿主当前语言**。不要读取 `navigator.language`、操作系统语言或
 浏览器偏好，也不要在插件内保存另一份语言选择。宿主当前支持
 `zh-CN / en / ja / ko`；插件没提供宿主当前语言时固定使用英文，因此只要声明
 `locales` 就必须提供 `en`。
@@ -160,7 +160,7 @@ v3 直接用顶层字段声明插件贡献项与自主 Host 能力，不再有 `
 `skill`；布尔能力写成字面量 `true`：`notify`、`badge`、`confirm`、`fs`、
 `library`、`deviceSync`、`sessionContext`、`pick`、`workspace`。不用的字段直接省略。
 `deviceSync` 的声明与调用约定见 [§4.10.2 同账号电脑间的插件资料同步](plugin-files-and-library.md#4102-同账号电脑间的插件资料同步)。
-邮件插件声明 `mail: true`，调用 Cindy 内置 `cindyMail.register(adapter)`
+邮件插件声明 `mail: true`，调用 Countersign 内置 `cindyMail.register(adapter)`
 （version 1），不生成卡片 HTML、不打包公共流程；纯邮件插件不需要 `card`。
 阅读邮件可声明 `mailReader:{tool,hosts}`，工具接收 `{url}` 并返回 MailMessage，默认只读。
 可选 `participantPhotos:[{email,url}]` 最多 64 项，按小写邮箱精确匹配；照片 URL 仅 HTTPS，
@@ -173,7 +173,7 @@ v3 直接用顶层字段声明插件贡献项与自主 Host 能力，不再有 `
 仅用户主动打开时传入，AI 读取和邻近预加载不传。成功读取后只标记当前邮件，不标记整个会话或草稿。
 Host 派发器会移除普通工具参数中的此标记，仅可信阅读器打开请求可注入；其它明确授权的已读操作工具不受影响。
 用户主动打开链接时，Host 还可注入 `openDraft:true`（普通工具参数不能自行设置）。识别为草稿后，插件解析服务商稳定的草稿 ID，复用已有公共草稿读取/展示流程，并在邮件结果中返回 `draftId`。Host 仅在核实当前任务、插件、邮箱账号与草稿一致后，给客户端返回 `draftCallId`，打开现有编辑器。插件不能自报卡片 ID；后台读取保持只读。旧 Host 不注入此标记，旧插件忽略它，继续支持只读展示。
-标记失败仍返回正文和 `markReadFailed:true`，由 Cindy 显示提示；新增 OAuth scope 不阻断已有授权的操作。
+标记失败仍返回正文和 `markReadFailed:true`，由 Countersign 显示提示；新增 OAuth scope 不阻断已有授权的操作。
 适配器提供 providerName、draftStorage（server/local）、selectAccount、readDraft、writeDraft。
 通过 present 展示读回草稿，beforeTool 统一 get/send/update/delete，resolveDraft 获取最新位置。
 Host 负责样式、编辑同步、发送和任务续接；同一任务同一封邮件只显示最新卡片，旧快照保留但不重复展示。插件保留凭据、MIME 和服务商请求。
@@ -182,13 +182,13 @@ Host 负责样式、编辑同步、发送和任务续接；同一任务同一封
 工具说明应要求默认展示草稿卡等用户确认；只有用户已明确确认该邮件，或有效的用户/任务指令明确授权该范围内直接发送，才不再询问。写信/回复请求、编辑及自动审批本身不代表确认。
 UI 和 Agent 发送都先进入 10 秒倒计时，卡片可撤销或立即发送；beforeTool(send) 等待最终回执。
 撤销后保留草稿且不得自动重试。所有发送先创建并展示草稿，再走 beforeTool(send)，不得保留直发旁路。
-缺少 SDK 时只读可用，编辑/发送需更新 Cindy；不要绕开公共流程直接发送已展示草稿。
+缺少 SDK 时只读可用，编辑/发送需更新 Countersign；不要绕开公共流程直接发送已展示草稿。
 
 不能写 `false`。`card: {}` 与 `agent: {}` 分别表示基础聊天卡片能力和用户点击后
 发起 Agent 回合；其它对象型能力必须包含该能力真正需要的详单。
 
-v3 未识别的顶层字段会原样保留，但旧版 Cindy 不展示、不给这个未知 Host 能力、也不因此阻止安装。
-当未来 Cindy 识别该字段后，它才会进入正常的能力展示与运行时守门。插件若依赖新能力，
+v3 未识别的顶层字段会原样保留，但旧版 Countersign 不展示、不给这个未知 Host 能力、也不因此阻止安装。
+当未来 Countersign 识别该字段后，它才会进入正常的能力展示与运行时守门。插件若依赖新能力，
 应同时把 `minCindyVersion` 提高到首个支持版本；仅由插件包自己完成的逻辑不要发明
 Host 能力字段。v2 的 `slots` 只用于存量包兼容，新插件不得再写。
 当前 Agent tool-call 内，插件工具是否执行由外层 `ghost_call` 的 Agent 授权决定；
@@ -234,7 +234,7 @@ Host 能力字段。v2 的 `slots` 只用于存量包兼容，新插件不得再
 ```
 
 node 详单**不接受** `command` / `args` / `shell` / `env` 或其它自造字段；
-入口固定使用 Cindy 随包运行时启动，用户不需要另装 Node、CLI 或 MCP。
+入口固定使用 Countersign 随包运行时启动，用户不需要另装 Node、CLI 或 MCP。
 **不要在 worker 里用 `process.execPath` / `child_process.fork` 再生 Node 子进程**
 ——正式包关闭了 RunAsNode,那样生出来的不是 Node;要多进程就把入口申报进
 `entries`,由主机代开。
@@ -271,14 +271,14 @@ node 详单**不接受** `command` / `args` / `shell` / `env` 或其它自造字
 }
 ```
 
-**cindy 能力详单**:声明插件要基于哪些 Cindy Core 能力提供上层能力--只有类目和
+**cindy 能力详单**:声明插件要基于哪些 Countersign Core 能力提供上层能力--只有类目和
 动作,**没有任何具体模型/供应商信息**。image / video 声明同时决定该插件能否在
 自己的设置页或面板读取对应类型的模型目录；生成请求仍由当前 Agent 发起。
 类目与动作:`image`(`generate`=出图 / `edit`=改图)、`video`(`generate`=
 文生视频 / `edit`=图生视频,参考图怎么用由 `refMode` 决定:首尾帧 1–2 张,
 或多张参考图,详见 §4 的 cindy-request 视频段)、`media`(`deposit`=把手里的
 媒体字节存进媒体库,§4.0.1)、`text`(`oneshot`=快问快答,§4.0.2)、
-`embed`(`text`=文本转向量,§4.0.3)、`search`(`web`=Cindy 托管
+`embed`(`text`=文本转向量,§4.0.3)、`search`(`web`=Countersign 托管
 公网搜索,见 §4 的 `search_web` 段)。
 详单里没申请的动作,运行时点单直接被拒。`search.web` 只能由真实 tool-call
 触发,还必须同时声明至少一个 `tools` 条目。旧 v2 包的 model slot/字段仍兼容，
@@ -319,7 +319,7 @@ node 详单**不接受** `command` / `args` / `shell` / `env` 或其它自造字
       "extraAuthorizeParams": { "access_type": "offline", "prompt": "consent" },  // 可选 ≤8 条:服务商特有授权参数(协议保留参数禁写)
       "identity": { "url": "https://api.example.com/userinfo", "labelPath": "email", "displayTemplate": "{team} · {user}", "avatarPath": "data.avatar_thumb" },  // 可选:授权后拉一次身份端点给账号打标签(设置页"已连接为 xxx";url 域名须命中 hosts)。labelPath 应指向**唯一且稳定**字段(如邮箱 / user_id)——它是重复授权时的同身份合并判定键,选 name 这类可重名可改名字段会误合并。displayTemplate 可选:人类可读展示名模板,`{点分路径}` 占位符从同一份身份响应取值(至少一个占位符,≤200 字符),任一占位符取不到值整体降级为空、回落显示 labelPath 的值——labelPath 的稳定字段不可读(如 Slack 的 user_id)时声明它,设置页与账号工具展示的就是渲染后的名字(邮箱这类本身可读的服务商不需要)。avatarPath 可选:头像 URL 在身份响应里的点分路径(如飞书的 "data.avatar_thumb")——主机取 https 地址后**不带凭证**下载小图(仅 png/jpeg/webp/gif、≤256KB)转 data URL 存库,`/oauth` 回查里以 account.avatarDataUrl 给你的 settingsHtml 展示(<img> 直接用)。**下载仅对第一方官方插件生效**(头像地址不受 hosts 白名单约束,第三方声明合法但恒降级 null)——所以页面必须能没头像也好看(如回落姓名首字圆片)
       "redirectPort": 53682,                        // 可选:loopback 回调固定端口(1024–65535);声明 tokenBroker 时必填。服务商要求回调 URI 与注册值精确匹配(如 Atlassian)时声明,回调恒为 http://127.0.0.1:<端口>/callback;非 broker 模式缺省 = 随机端口(Google 等允许任意 loopback 端口的服务商不用声明)
-      "tokenBroker": "jira",                        // 可选:三路资格:随包官方种子或受信任公开市场的官方插件(名称本身不构成资格);当前组织的服务端 organization market 包满足来源/组织/namespace/整包 sha256 绑定;或企业作者用 ghost_forge_install 明确安装到当前组织 namespace。后两路只给 Broker 与 oidc-token,不给宿主原语;手动导入与个人身份不放行。声明时必须同时声明 redirectPort;code/refresh 交换经 Cindy 服务端 broker 完成(client secret 在服务端,不随包分发),与 clientSecret 互斥;设置页不再支持自填 client
+      "tokenBroker": "jira",                        // 可选:三路资格:随包官方种子或受信任公开市场的官方插件(名称本身不构成资格);当前组织的服务端 organization market 包满足来源/组织/namespace/整包 sha256 绑定;或企业作者用 ghost_forge_install 明确安装到当前组织 namespace。后两路只给 Broker 与 oidc-token,不给宿主原语;手动导入与个人身份不放行。声明时必须同时声明 redirectPort;code/refresh 交换经 Countersign 服务端 broker 完成(client secret 在服务端,不随包分发),与 clientSecret 互斥;设置页不再支持自填 client
       "brokerBounce": { "path": "/example/bounce", "callbackPath": "/example/callback" }  // 可选:双地址弹跳回调(服务商后台只收 https redirect、不收 http loopback 时用)。必须与 tokenBroker、redirectPort 同时声明;报给服务商的 redirect_uri = broker 服务基地址 + path(主机运行时拼,清单不落域名),浏览器授权后由弹跳路由 302 回 http://127.0.0.1:<redirectPort><callbackPath>
     }
   }],

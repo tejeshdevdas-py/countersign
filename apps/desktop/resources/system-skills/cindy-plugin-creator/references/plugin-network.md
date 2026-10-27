@@ -110,7 +110,7 @@ PAT。支持宿主管理连接入口时还返回可选的 `hostManagedSetup:true
 此来源的注入形态固定为 `api.github.com` 的
 `Authorization: Bearer {value}`,不允许 exchange,也不要放进 `setup.requires`。
 
-**Cindy 企业身份断言(source:"oidc-token",可选)**:适用于接入 Cindy Connection
+**Countersign 企业身份断言(source:"oidc-token",可选)**:适用于接入 Countersign Connection
 Auth 的企业服务。主机只在当前登录账号属于组织 Membership，且满足以下任一安装基座时
 按需向 auth-server 换取短时 Connection JWT：①当前组织的 Plugin Market organization
 安装记录(source 必须是服务端 `market`)，且 namespace 属于当前组织、已批准整包 sha256 与记录一致；②企业作者
@@ -128,7 +128,7 @@ organization 记录（含 installed:false）时必须仍走 digest，不得借�
 会从已批准的安装事实读取这些声明,目标请求必须精确命中声明域名才会签发并注入。
 它没有用户输入、`url`、`exchange` 或 `oauth` 详单,也不要放进 `setup.requires`;没有企业
 身份时 cindy.fetch 会 fail-closed 并返回结构化错误。企业服务应使用 Connection JWT
-中的 `sub`、`email` 或 `identities` 等声明自行选择业务身份,不要要求 Cindy 客户端先把
+中的 `sub`、`email` 或 `identities` 等声明自行选择业务身份,不要要求 Countersign 客户端先把
 令牌交给插件代码。上游返回 401 时,Host 只对 GET / HEAD / OPTIONS 自动换令牌重试一次；
 POST / PUT / PATCH / DELETE 和上传请求只作废令牌缓存、不自动重放,避免重复业务写入。
 
@@ -214,8 +214,8 @@ identity.displayTemplate 时,`/oauth` 回查与连接结果里 account.label 给
   存量待迁移安装仍使用本组织已登记前缀核对。是否已有同 id 市场记录不影响这条自测路径。
   后两路不接受个人身份或别的组织身份；Forge 只给 Broker 与 oidc-token，不给宿主原语，
   可信 XD 企业市场安装的宿主能力另按可信组织身份核验，不依赖名称前缀。手动导入不属于 Forge 路径。
-  code/refresh 交换改经 Cindy 服务端 broker 完成,client secret 由服务端持有、不随包
-  分发,且要求用户已登录 Cindy。声明它时必须同时声明 redirectPort,并与 clientSecret
+  code/refresh 交换改经 Countersign 服务端 broker 完成,client secret 由服务端持有、不随包
+  分发,且要求用户已登录 Countersign。声明它时必须同时声明 redirectPort,并与 clientSecret
   互斥;PKCE 缺省开(verifier
   经 broker exchange 透传服务端),不吃 PKCE 的服务商显式 `"pkce": false`;
   设置页的 `/oauth/<key>/client` 自填通道返回 405(settingsHtml 不要再画

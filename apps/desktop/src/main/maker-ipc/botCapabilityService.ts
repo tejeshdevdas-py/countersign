@@ -155,7 +155,7 @@ async function catalog(input: Input, ctx: Pick<Awaited<ReturnType<typeof context
     }));
     items.push(...harness.map((entry) => ({
       id: entry.name, name: entry.name,
-      description: 'Engine-provided connectors; not Cindy tasks, routines or plugins.',
+      description: 'Engine-provided connectors; not Countersign tasks, routines or plugins.',
       available: entry.available !== false,
     })));
   } else {

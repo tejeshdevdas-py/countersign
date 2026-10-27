@@ -536,8 +536,10 @@ export function subagentSpawnResultIndicatesRunning(
   // Claude's asynchronous Agent tool returns a textual launch receipt while the
   // child is still running. Treat it like the structured Codex V1 receipt so a
   // paired stale `running` update does not close the task prematurely.
+  // Countersign renamed the Pi receipt; history written before the rename keeps the old text.
   if (toolName === PI_SUBAGENT_TOOL_NAME
-    && trimmed === 'Cindy subagent launched. The agent is working in the background.') {
+    && (trimmed === 'Countersign subagent launched. The agent is working in the background.'
+      || trimmed === 'Cindy subagent launched. The agent is working in the background.')) {
     return true;
   }
   // Claude Code 2.1.280 appends a notice to the first line (`Async agent

@@ -231,8 +231,8 @@ function providerImageGuide(
       ],
     },
     instructions: edit
-      ? '必填 prompt 和 image。image 可传一条 Cindy 本地媒体引用或引用数组。尺寸与质量参数见 inputSchema；不要丢弃用户的明确要求。'
-      : '必填 prompt。尺寸与质量参数见 inputSchema；不指定时由上游决定。model 与凭证由 Cindy 注入。',
+      ? '必填 prompt 和 image。image 可传一条 Countersign 本地媒体引用或引用数组。尺寸与质量参数见 inputSchema；不要丢弃用户的明确要求。'
+      : '必填 prompt。尺寸与质量参数见 inputSchema；不指定时由上游决定。model 与凭证由 Countersign 注入。',
     exampleBody: {
       prompt: edit ? '描述希望如何修改图片' : '描述希望生成的图片',
       ...(edit ? { image: 'cindy-media://blobs/<hash>.png' } : {}),

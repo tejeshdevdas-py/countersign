@@ -156,7 +156,7 @@ export function registerBotWorkbenchTools(
     registry.register({
       name: 'set_workbench_task_responsibility',
       category: 'bots',
-      description: 'Explicitly take or release responsibility for one Cindy task on this computer. Taking needs the owner\'s request in this turn; you may release on your own. Tasks you start yourself are recorded by the host. Release only changes your responsibility; it does not stop, move, archive or delete the task, and does not affect Todo. Taking responsibility alone does not start execution; the host then wakes you when the task gets stuck, waits, errors or finishes.',
+      description: 'Explicitly take or release responsibility for one Countersign task on this computer. Taking needs the owner\'s request in this turn; you may release on your own. Tasks you start yourself are recorded by the host. Release only changes your responsibility; it does not stop, move, archive or delete the task, and does not affect Todo. Taking responsibility alone does not start execution; the host then wakes you when the task gets stuck, waits, errors or finishes.',
       inputShape: { task_id: z.string().min(1).max(256), responsible: z.boolean() },
       handler: async ({ task_id, responsible }) => {
         const id = callerSessionId();

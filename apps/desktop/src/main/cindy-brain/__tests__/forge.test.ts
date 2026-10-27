@@ -1833,7 +1833,7 @@ describe('FORGE_GUIDE', () => {
     );
     expect(manualSection).toContain('Manual-only');
     expect(manualSection).toContain('不需要声明虚假工具');
-    expect(manualSection).toContain('首个支持 Manual-only 发现与读取的 Cindy 正式版本');
+    expect(manualSection).toContain('首个支持 Manual-only 发现与读取的 Countersign 正式版本');
     expect(FORGE_GUIDE).not.toContain('cindy_ios_simulator');
   });
 
@@ -1847,7 +1847,7 @@ describe('FORGE_GUIDE', () => {
       FORGE_GUIDE.indexOf('## 4. main.js 电子脑'),
     );
     const orderedRequirements = [
-      'Cindy 先发布',
+      'Countersign 先发布',
       '确认首个支持它的**正式版本号**',
       '`minCindyVersion` 设为不低于\n该正式版本',
       '移除\n`skill.items` 的迁移版本也必须设置上述 `minCindyVersion`',
@@ -2119,7 +2119,7 @@ describe('FORGE_GUIDE', () => {
       'ghost_forge_install',
       'cindy-signatures.json',
       '发布者签名',
-      'Cindy 审核签名',
+      'Countersign 审核签名',
       '不要让 Agent 读取、生成或回显正式私钥',
       '/preview/',
       'settingsHtml',
@@ -2256,7 +2256,7 @@ describe('FORGE_GUIDE', () => {
       '使用默认图标（跳过）',
       '聊天模型解耦',
       '不要因为用户正在使用 GLM',
-      'Create a polished square app icon for a Cindy plugin named "{{name}}"',
+      'Create a polished square app icon for a Countersign plugin named "{{name}}"',
       'Purpose: {{one-sentence purpose}}',
       'No text, letters, numbers',
       'Output a 1024×1024 PNG',

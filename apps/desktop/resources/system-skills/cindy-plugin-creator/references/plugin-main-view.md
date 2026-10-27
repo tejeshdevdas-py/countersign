@@ -1,6 +1,6 @@
 ## 4.20 一级主视图(mainView 能力)
 
-插件需要一个从 Cindy 左侧导航进入的完整页面时，直接声明 `mainView`：
+插件需要一个从 Countersign 左侧导航进入的完整页面时，直接声明 `mainView`：
 
 ```json
 {
@@ -18,7 +18,7 @@
   回退插件 `name`。声明过基础 title 后，locale 文件可用
   `"mainView": { "title": "Workspace" }` 翻译；没有基础 title 时不要声明该翻译；
 - `mainView.icon` 可省略，省略时使用 `puzzle`。它只控制主视图的左侧导航入口，不会
-  替代或修改根级 `icon` 品牌图片。可用值与 Cindy 系统图标名完全一致：
+  替代或修改根级 `icon` 品牌图片。可用值与 Countersign 系统图标名完全一致：
   `puzzle`、`globe`、`code`、`folder`、`database`、`chart-column`、
   `image`、`message-circle`、`calendar-days`；不接受别名、任意图标名或图片路径；
 - `mainView.open` 可省略(缺省 `page`:左侧导航入口点开后撑满内容区)。`sidebar` =

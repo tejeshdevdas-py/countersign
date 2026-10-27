@@ -613,7 +613,7 @@ function formatReference(reference: AgentInputReference): string {
   if (reference.kind === 'bot') {
     const snapshot = reference.hostSnapshot;
     return [
-      '[Referenced Cindy Bot]',
+      '[Referenced Countersign Bot]',
       `Name: ${quotedMetadata(oneLine(reference.name))}`,
       `Bot ID: ${quotedMetadata(reference.botId)}`,
       'Intent: the user explicitly selected this Bot as a collaboration target.',
@@ -628,7 +628,7 @@ function formatReference(reference: AgentInputReference): string {
           ]),
       "Action: infer intent from the surrounding request. Answer status questions from Host status without sending a new message. To contact this teammate, call send_to_agent once with this Bot ID. For independently tracked work or deliverables, use start_session_task instead; it does not target a Bot.",
       "Boundary: Do not blindly forward the surrounding user text. A teammate message only confirms delivery and must never stand in for a tracked task.",
-      '[/Referenced Cindy Bot]',
+      '[/Referenced Countersign Bot]',
     ].join('\n');
   }
   if (reference.kind === 'todo') {

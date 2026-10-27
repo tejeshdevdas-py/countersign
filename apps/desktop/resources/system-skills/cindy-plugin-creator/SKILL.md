@@ -1,27 +1,27 @@
 ---
 name: cindy-plugin-creator
-description: Create, edit, debug, package, or publish Cindy plugins (.cindy packages with ghost.json). Use for plugin authoring and host API questions; not for creating standalone Skills or simply using an installed plugin.
+description: Create, edit, debug, package, or publish Countersign plugins (.cindy packages with ghost.json). Use for plugin authoring and host API questions; not for creating standalone Skills or simply using an installed plugin.
 metadata:
-  short-description: Create or update a Cindy plugin
+  short-description: Create or update a Countersign plugin
 ---
 
-# Cindy Plugin Creator
+# Countersign Plugin Creator
 
-Build a Cindy plugin from the user's request, or update an existing plugin. This Skill and its references are the authoring documentation shipped with the current Cindy host. Use these contracts instead of guessing APIs from a different release. Keep the user's language for discussion.
+Build a Countersign plugin from the user's request, or update an existing plugin. This Skill and its references are the authoring documentation shipped with the current Countersign host. Use these contracts instead of guessing APIs from a different release. Keep the user's language for discussion.
 
 ## Workflow
 
 1. Read the [authoring overview](references/plugin-overview.md), [design alignment](references/plugin-design.md), [structure](references/plugin-structure.md), and [manifest and capabilities](references/plugin-manifest.md). For an existing plugin, inspect its ghost.json and source first. Ask only about decisions the request leaves open; use option cards when available. Summarize the intended behavior, UI, permissions and acceptance criteria before implementation, following the design reference.
 2. Before writing code, read the [sandbox boundaries](references/plugin-sandbox.md) and [packaging workflow](references/plugin-packaging.md). Read the capability references below as needed; do not load the whole manual at once.
-3. For a new plugin, prefer ghost_forge_scaffold with the appropriate plain, agent-action, node-json-rpc or node-mcp template, then edit the generated files. For an existing plugin, preserve its identity, data and compatible behavior. Use schemaVersion: 3 for new manifests and declare the first stable Cindy version actually required.
+3. For a new plugin, prefer ghost_forge_scaffold with the appropriate plain, agent-action, node-json-rpc or node-mcp template, then edit the generated files. For an existing plugin, preserve its identity, data and compatible behavior. Use schemaVersion: 3 for new manifests and declare the first stable Countersign version actually required.
 4. Implement and validate the requested behavior, including Light and Dark modes for any UI. Separate current Agent tool-call operations from autonomous plugin capabilities, as described in the manifest and Agent-call references. Use [tool discovery](references/plugin-tool-discovery.md) and [manuals](references/plugin-manual.md) for authoring the plugin's own discovery and workflow documentation.
 5. Call ghost_forge_pack to validate and produce the .cindy artifact. Report what was tested and what remains unverified. Packaging does not install or publish: use ghost_forge_install only when installation is requested, and follow [publishing](references/plugin-publishing.md) when publication is requested.
 
-Cindy supplies the Forge tools. If they are unavailable in the current environment, explain the missing capability and continue any local source work that is possible; do not claim to have packaged, installed or published. The legacy ghost_forge_guide tool serves these same references by section number or title when needed. It is a compatibility entry point, not a second source of documentation.
+Countersign supplies the Forge tools. If they are unavailable in the current environment, explain the missing capability and continue any local source work that is possible; do not claim to have packaged, installed or published. The legacy ghost_forge_guide tool serves these same references by section number or title when needed. It is a compatibility entry point, not a second source of documentation.
 
 ## Reference index
 
-These references describe Cindy plugin contracts and host APIs available to plugins. Read only the topics needed for the plugin being built. Existing section numbers are preserved for ghost_forge_guide callers and cross-references; files are named by plugin capability rather than reading order.
+These references describe Countersign plugin contracts and host APIs available to plugins. Read only the topics needed for the plugin being built. Existing section numbers are preserved for ghost_forge_guide callers and cross-references; files are named by plugin capability rather than reading order.
 
 ### 插件基础与工具设计
 

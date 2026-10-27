@@ -117,11 +117,11 @@ export function createCodexHarnessHooks(isCurrent: (threadId: string, turnId: st
       if (event === 'preToolUse') return result.action === 'block' ? {
         hookSpecificOutput: {
           hookEventName: 'PreToolUse', permissionDecision: 'deny',
-          permissionDecisionReason: 'Blocked by an approved Cindy plugin hook.',
+          permissionDecisionReason: 'Blocked by an approved Countersign plugin hook.',
         },
       } : {};
       return result.action === 'block'
-        ? { continue: false, stopReason: 'Blocked by an approved Cindy plugin hook.' }
+        ? { continue: false, stopReason: 'Blocked by an approved Countersign plugin hook.' }
         : { continue: true };
     },
     invalidate() {

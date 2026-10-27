@@ -60,12 +60,12 @@ describe('Bot Profile runtime prompt', () => {
 
   it('keeps the active profile marker separate from SOUL', () => {
     const context = buildBotProfileContextPrompt('Kitchen helper');
-    expect(context).toMatch(/^Active Cindy Bot profile: Kitchen helper\./);
+    expect(context).toMatch(/^Active Countersign Bot profile: Kitchen helper\./);
     expect(context).toContain('current SOUL and user profile');
     expect(context).toContain('execution engines, not your personal identity');
     expect(context).toContain('context compaction, restarts, and model changes');
     expect(context).toContain('Use available host tools for model changes');
-    expect(context).toContain('Connecting a new model or signing in to a provider is managed in Cindy settings');
+    expect(context).toContain('Connecting a new model or signing in to a provider is managed in Countersign settings');
     expect(context).not.toContain('direct the user to the teammate’s model settings');
     expect(context).not.toContain('claim access to settings you cannot operate');
     expect(context).toContain('Do not present terminal-only slash commands');

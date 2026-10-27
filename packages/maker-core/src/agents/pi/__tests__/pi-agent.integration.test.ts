@@ -2253,7 +2253,7 @@ describe.skipIf(!piAvailable)('PiAgent integration (real pi binary + fake gatewa
         expect(resolverTools).toEqual(['grep']);
         const followUp = seenRequests.slice(reqBefore).map((request) => request.body).join('\n');
         expect(followUp).not.toContain('SELECTOR_SECRET=must-not-leak');
-        expect(followUp).toContain('User denied this tool call via Cindy.');
+        expect(followUp).toContain('User denied this tool call via Countersign.');
 
         scriptedResponses.push(
           anthropicToolUseBody('grep', { pattern: 'NETRC_SECRET', path: 'src', glob: '.n?trc' }),
@@ -2269,7 +2269,7 @@ describe.skipIf(!piAvailable)('PiAgent integration (real pi binary + fake gatewa
         expect(netrcTurn.resolverTools).toEqual(['grep']);
         const netrcFollowUp = seenRequests.slice(netrcReqBefore).map((request) => request.body).join('\n');
         expect(netrcFollowUp).not.toContain('NETRC_SECRET=must-not-leak');
-        expect(netrcFollowUp).toContain('User denied this tool call via Cindy.');
+        expect(netrcFollowUp).toContain('User denied this tool call via Countersign.');
 
         scriptedResponses.push(
           anthropicToolUseBody('grep', { pattern: 'SSH_CONFIG_SECRET', path: '.', glob: '.s?h/config' }),
@@ -2285,7 +2285,7 @@ describe.skipIf(!piAvailable)('PiAgent integration (real pi binary + fake gatewa
         expect(sshTurn.resolverTools).toEqual(['grep']);
         const sshFollowUp = seenRequests.slice(sshReqBefore).map((request) => request.body).join('\n');
         expect(sshFollowUp).not.toContain('SSH_CONFIG_SECRET=must-not-leak');
-        expect(sshFollowUp).toContain('User denied this tool call via Cindy.');
+        expect(sshFollowUp).toContain('User denied this tool call via Countersign.');
 
         scriptedResponses.push(
           anthropicToolUseBody('grep', { pattern: 'CONFIG_SECRET', path: '.', glob: '.config/g?-*/**' }),
@@ -2301,7 +2301,7 @@ describe.skipIf(!piAvailable)('PiAgent integration (real pi binary + fake gatewa
         expect(configTurn.resolverTools).toEqual(['grep']);
         const configFollowUp = seenRequests.slice(configReqBefore).map((request) => request.body).join('\n');
         expect(configFollowUp).not.toContain('CONFIG_SECRET=must-not-leak');
-        expect(configFollowUp).toContain('User denied this tool call via Cindy.');
+        expect(configFollowUp).toContain('User denied this tool call via Countersign.');
 
         scriptedResponses.push(
           anthropicToolUseBody('grep', { pattern: 'KEY_SECRET', path: 'src', glob: '?.key' }),
@@ -2570,7 +2570,7 @@ describe.skipIf(!piAvailable)('PiAgent integration (real pi binary + fake gatewa
         expect(resolverTools).toEqual(['bash']);
         // deny 真的拦下了:回给模型的 tool_result 带 bridge 的拒绝理由
         const followUp = seenRequests.slice(reqBefore).map((r) => r.body);
-        expect(followUp.some((b) => b.includes('User denied this tool call via Cindy.'))).toBe(true);
+        expect(followUp.some((b) => b.includes('User denied this tool call via Countersign.'))).toBe(true);
       } finally {
         rmSync(workingDir, { recursive: true, force: true });
         scriptedResponses.length = 0;
@@ -2606,9 +2606,9 @@ describe.skipIf(!piAvailable)('PiAgent integration (real pi binary + fake gatewa
         expect(resolverTools).toEqual([]);
         expect(existsSync(marker)).toBe(false);
         const followUp = seenRequests.slice(reqBefore).map((request) => request.body);
-        expect(followUp.some((body) => body.includes('Cindy Auto-review denied this tool call.')))
+        expect(followUp.some((body) => body.includes('Countersign Auto-review denied this tool call.')))
           .toBe(true);
-        expect(followUp.some((body) => body.includes('User denied this tool call via Cindy.')))
+        expect(followUp.some((body) => body.includes('User denied this tool call via Countersign.')))
           .toBe(false);
       } finally {
         rmSync(tempRoot, { recursive: true, force: true });
@@ -2638,7 +2638,7 @@ describe.skipIf(!piAvailable)('PiAgent integration (real pi binary + fake gatewa
         // 只读工具不再无条件直通:凭证路径升级弹窗,deny 真拦截
         expect(resolverTools).toEqual(['read']);
         const followUp = seenRequests.slice(reqBefore).map((r) => r.body);
-        expect(followUp.some((b) => b.includes('User denied this tool call via Cindy.'))).toBe(true);
+        expect(followUp.some((b) => b.includes('User denied this tool call via Countersign.'))).toBe(true);
       } finally {
         rmSync(workingDir, { recursive: true, force: true });
         scriptedResponses.length = 0;
@@ -2669,7 +2669,7 @@ describe.skipIf(!piAvailable)('PiAgent integration (real pi binary + fake gatewa
         expect(resolverTools).toEqual(['read']);
         const followUp = seenRequests.slice(reqBefore).map((r) => r.body);
         expect(followUp.some((b) => b.includes('FAKE_DOTENV_SECRET'))).toBe(false);
-        expect(followUp.some((b) => b.includes('User denied this tool call via Cindy.'))).toBe(true);
+        expect(followUp.some((b) => b.includes('User denied this tool call via Countersign.'))).toBe(true);
       } finally {
         rmSync(workingDir, { recursive: true, force: true });
         scriptedResponses.length = 0;
@@ -2766,7 +2766,7 @@ describe.skipIf(!piAvailable)('PiAgent integration (real pi binary + fake gatewa
         expect(resolverTools).toEqual(['read']);
         const followUp = seenRequests.slice(reqBefore).map((r) => r.body);
         expect(followUp.some((b) => b.includes('FAKE SYMLINK PRIVATE KEY'))).toBe(false);
-        expect(followUp.some((b) => b.includes('User denied this tool call via Cindy.'))).toBe(true);
+        expect(followUp.some((b) => b.includes('User denied this tool call via Countersign.'))).toBe(true);
       } finally {
         rmSync(workingDir, { recursive: true, force: true });
         scriptedResponses.length = 0;
@@ -2843,7 +2843,7 @@ describe.skipIf(!piAvailable)('PiAgent integration (real pi binary + fake gatewa
           const followUp = seenRequests.slice(reqBefore).map((r) => r.body);
           expect(resolverTools, `${command}\n${followUp.join('\n')}`).toEqual(['bash']);
           expect(followUp.some((b) => b.includes('FAKE_REDIRECT_DOTENV_SECRET')), command).toBe(false);
-          expect(followUp.some((b) => b.includes('User denied this tool call via Cindy.')), command).toBe(true);
+          expect(followUp.some((b) => b.includes('User denied this tool call via Countersign.')), command).toBe(true);
         }
 
         for (const [sessionId, command] of [
@@ -2927,7 +2927,7 @@ describe.skipIf(!piAvailable)('PiAgent integration (real pi binary + fake gatewa
         expect(autoTurn.resolverTools).toEqual(['bash']);
         const autoFollowUp = seenRequests.slice(autoReqBefore).map((request) => request.body);
         expect(autoFollowUp.some((body) => body.includes('FAKE_DOTGLOB_SECRET'))).toBe(false);
-        expect(autoFollowUp.some((body) => body.includes('User denied this tool call via Cindy.'))).toBe(true);
+        expect(autoFollowUp.some((body) => body.includes('User denied this tool call via Countersign.'))).toBe(true);
 
         scriptedResponses.length = 0;
         scriptedResponses.push(
@@ -2970,7 +2970,7 @@ describe.skipIf(!piAvailable)('PiAgent integration (real pi binary + fake gatewa
           expect(runtimeTurn.resolverTools, command).toEqual(['bash']);
           const runtimeFollowUp = seenRequests.slice(runtimeReqBefore).map((request) => request.body);
           expect(runtimeFollowUp.some((body) => body.includes('FAKE_DOTGLOB_SECRET')), command).toBe(false);
-          expect(runtimeFollowUp.some((body) => body.includes('User denied this tool call via Cindy.')), command)
+          expect(runtimeFollowUp.some((body) => body.includes('User denied this tool call via Countersign.')), command)
             .toBe(true);
         }
 
@@ -3062,7 +3062,7 @@ describe.skipIf(!piAvailable)('PiAgent integration (real pi binary + fake gatewa
           expect(resolverTools, command).toEqual(['bash']);
           expect(followUp.some((body) => body.includes('FAKE_CDPATH_DOTENV_SECRET')), command)
             .toBe(false);
-          expect(followUp.some((body) => body.includes('User denied this tool call via Cindy.')), command)
+          expect(followUp.some((body) => body.includes('User denied this tool call via Countersign.')), command)
             .toBe(true);
         }
 

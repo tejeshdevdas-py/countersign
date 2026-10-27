@@ -301,7 +301,7 @@ function loadBashPackageHomeHelper(): {
 function powerShellOverlayEnabled(platform: NodeJS.Platform, factory: unknown, guest = false): boolean {
   const source = CINDY_BRIDGE_EXTENSION_SOURCE;
   const start = source.indexOf('const createPowerShellTool =');
-  const end = source.indexOf('// Cindy owns a separate Pi extension store.', start);
+  const end = source.indexOf('// Countersign owns a separate Pi extension store.', start);
   if (start < 0 || end <= start) throw new Error('PowerShell overlay was not found');
   const condition = /^\s*if \((.*createPowerShellTool.*)\) \{$/m.exec(source.slice(start, end))?.[1];
   if (!condition) throw new Error('PowerShell overlay condition was not found');
@@ -483,7 +483,7 @@ function loadPackageTool(): { execute: (...args: any[]) => Promise<any> } {
   const source = CINDY_BRIDGE_EXTENSION_SOURCE;
   const projectionStart = source.indexOf('const projectPiPackageCommandDiagnostic =');
   const projectionEnd = source.indexOf('// Pi 的模型鉴权', projectionStart);
-  const start = source.indexOf('// Cindy owns a separate Pi extension store.');
+  const start = source.indexOf('// Countersign owns a separate Pi extension store.');
   const end = source.indexOf('// ── 原生会话树桥', start);
   const compiled = ts.transpileModule(source.slice(projectionStart, projectionEnd) + source.slice(start, end), {
     compilerOptions: { module: ts.ModuleKind.None, target: ts.ScriptTarget.ES2022 },
@@ -1459,22 +1459,22 @@ describe('cindy-bridge extension source', () => {
     expect(source).toContain('await ctx.ui.input(');
     expect(source).toContain("const PERMISSION_USER_DENY = 'user-deny'");
     expect(source).toContain("const PERMISSION_AUTO_REVIEW_DENY = 'auto-review-deny'");
-    expect(source).toContain('User denied this tool call via Cindy');
-    expect(source).toContain('Cindy Auto-review denied this tool call');
-    expect(source).toContain('Cindy could not approve this tool call');
+    expect(source).toContain('User denied this tool call via Countersign');
+    expect(source).toContain('Countersign Auto-review denied this tool call');
+    expect(source).toContain('Countersign could not approve this tool call');
   });
 
   it('returns the bounded Auto reason to Pi while retaining legacy denial decoding', () => {
     const source = CINDY_BRIDGE_EXTENSION_SOURCE;
     const fragment = source.slice(source.indexOf('const PERMISSION_ALLOW'), source.indexOf('const READONLY_BUILTINS'));
     const decode = runInNewContext(ts.transpile(fragment + '\npermissionDenialReason;', { target: ts.ScriptTarget.ES2022 })) as (value?: string) => string;
-    expect(decode('auto-review-deny:Only inspect; do not deploy.')).toBe('Cindy Auto-review denied this tool call: Only inspect; do not deploy.');
-    expect(decode('auto-review-deny')).toBe('Cindy Auto-review denied this tool call.');
-    expect(decode('user-deny')).toBe('User denied this tool call via Cindy.');
-    expect(decode('user-deny:Do not publish.')).toBe('User denied this tool call via Cindy: Do not publish.');
-    expect(decode('system-deny:session_closed')).toBe('Cindy could not approve this tool call: session_closed');
-    expect(decode(undefined)).toBe('Cindy could not approve this tool call.');
-    expect(decode('auto-review-deny:' + 'x'.repeat(500))).toBe('Cindy Auto-review denied this tool call: ' + 'x'.repeat(240));
+    expect(decode('auto-review-deny:Only inspect; do not deploy.')).toBe('Countersign Auto-review denied this tool call: Only inspect; do not deploy.');
+    expect(decode('auto-review-deny')).toBe('Countersign Auto-review denied this tool call.');
+    expect(decode('user-deny')).toBe('User denied this tool call via Countersign.');
+    expect(decode('user-deny:Do not publish.')).toBe('User denied this tool call via Countersign: Do not publish.');
+    expect(decode('system-deny:session_closed')).toBe('Countersign could not approve this tool call: session_closed');
+    expect(decode(undefined)).toBe('Countersign could not approve this tool call.');
+    expect(decode('auto-review-deny:' + 'x'.repeat(500))).toBe('Countersign Auto-review denied this tool call: ' + 'x'.repeat(240));
   });
 
   it('normalizes bash timeout at the execute boundary without a host-side timer', () => {
@@ -1901,7 +1901,7 @@ describe('cindy-bridge extension source', () => {
     expect(source).toContain('resolvedWritableRoots: CINDY_HOSTED');
     expect(source).toContain(': resolveWritableRootsForHost(permission.writableRoots)');
     expect(source).toContain('event.input.path = writeTargetResolved');
-    expect(source).toContain('Cindy could not verify the real file-write target.');
+    expect(source).toContain('Countersign could not verify the real file-write target.');
   });
 
   it('resolves existing and not-yet-created write targets through an authorized-root link', () => {
@@ -1967,7 +1967,7 @@ describe('cindy-bridge extension source', () => {
     expect(reviewGate).toBeGreaterThan(-1);
     expect(ordinaryWriteHandling).toBeGreaterThan(reviewGate);
     expect(source).toContain(
-      "reason: 'Cindy Review only permits read-only access to this task and its explicit artifacts.'",
+      "reason: 'Countersign Review only permits read-only access to this task and its explicit artifacts.'",
     );
     expect(source).toContain('normalizeReviewReadInput(');
     expect(source).toContain('collectReviewPathFields(input)');

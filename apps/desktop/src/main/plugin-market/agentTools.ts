@@ -145,7 +145,7 @@ export function createPluginMarketAgentTools(deps: PluginMarketAgentDeps) {
 function agentMarketAccessMessage(code: PluginMarketPassthroughErrorCode): string {
   switch (code) {
     case 'PLUGIN_NAMESPACE_CLIENT_REQUIRED':
-      return 'The user must update Cindy before this organization plugin can be installed. Do not retry.';
+      return 'The user must update Countersign before this organization plugin can be installed. Do not retry.';
     case 'PLUGIN_ORGANIZATION_CONTEXT_UNAVAILABLE':
     case 'PLUGIN_LIST_CHANGED':
       return 'Organization plugin access is temporarily unavailable. Retry later. Do not claim the plugin is absent.';

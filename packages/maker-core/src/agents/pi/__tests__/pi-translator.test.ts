@@ -199,7 +199,7 @@ describe('pi translator', () => {
         result: {
           content: [{
             type: 'text',
-            text: 'Cindy subagent launched. The agent is working in the background.',
+            text: 'Countersign subagent launched. The agent is working in the background.',
           }],
         },
         isError: false,

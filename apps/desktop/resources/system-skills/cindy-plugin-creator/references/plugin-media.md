@@ -1,9 +1,9 @@
 ## 4.0.4 媒体模型配置与调用边界
 
-媒体上层能力由插件定义，Cindy Core 只提供两项低级能力：
+媒体上层能力由插件定义，Countersign Core 只提供两项低级能力：
 
 1. 插件设置页 / panel 按类型读取当前可用模型，用来保存插件自己的模型选择；
-2. 当前 Agent 执行插件能力时，使用永久注册的 Cindy Core `media` 工具发起调用。
+2. 当前 Agent 执行插件能力时，使用永久注册的 Countersign Core `media` 工具发起调用。
 
 设置页 / panel 没有 preload 桥，直接走同源只读端点。插件必须声明 `cindy` 顶层字段，
 并在 `cindy.image` 或 `cindy.video` 中声明至少一个动作：
@@ -38,7 +38,7 @@ const result = await (await fetch('/media-models?type=image')).json();
 
 1. Agent 用 `ghost_call` 调用插件的业务工具；
 2. 插件通过普通 `tool-result` JSON 返回业务参数、面板里保存的模型选择或其它上下文；
-3. 同一个 Agent 读取结果后，自行调用 Cindy Core `media` 工具；
+3. 同一个 Agent 读取结果后，自行调用 Countersign Core `media` 工具；
 4. 如果插件需要最终媒体，Agent 再调用插件的普通接收工具，并通过顶层
    `ghost_call.attachments` 显式交接；Host 复用通用 attachments 授权链，把授权后的
    指纹注入 `args.attachments`，避免把本地绝对路径暴露给插件。插件自行保存业务状态

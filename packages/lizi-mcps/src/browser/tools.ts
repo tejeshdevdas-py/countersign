@@ -138,7 +138,7 @@ function getRuntime(deps: BrowserMcpDeps, onDispatch?: () => void): BrowserContr
           ok: false,
           action: request.action,
           errorCode: 'BROWSER_RUNTIME_INVALID_REQUEST',
-          message: 'The owner just entered a password on this page through Cindy. Script evaluation, network and console reads are paused here until the tab leaves this page. Use snapshot or screenshot, or navigate on.',
+          message: 'The owner just entered a password on this page through Countersign. Script evaluation, network and console reads are paused here until the tab leaves this page. Use snapshot or screenshot, or navigate on.',
           data: { reason: 'secret_entered' },
         };
       }

@@ -3689,7 +3689,7 @@ describe('Bot canonical Session lifecycle', () => {
       .get('bot-1');
 
     expect(identity).toContain('You are Release Bot');
-    expect(identity).toContain('intelligent AI assistant running as a Cindy Bot');
+    expect(identity).toContain('intelligent AI assistant running as a Countersign Bot');
   });
 
   it.each([

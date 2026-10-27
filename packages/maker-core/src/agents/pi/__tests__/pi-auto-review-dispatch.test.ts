@@ -1040,7 +1040,7 @@ describe('pi auto-review dispatch & spawn config (mocked pi process)', () => {
       if (origin === 'desktop') {
         await handle.send({ type: 'user', content: 'pi list' }, desktopCommandOptions('pi list'));
         const message = String(captured.requests.find(request => request.type === 'prompt')?.message ?? '');
-        receipt = JSON.parse(message.split('\n')[0].replace('[Cindy Pi command receipt] ', ''));
+        receipt = JSON.parse(message.split('\n')[0].replace('[Countersign Pi command receipt] ', ''));
       } else {
         captured.onEvent?.({ type: 'extension_ui_request', id: 'long-list', method: 'input',
           title: 'cindy:pi-package', placeholder: JSON.stringify({ args: ['list'], token: captured.env.CINDY_PI_PACKAGE_MANAGEMENT }) });
@@ -1447,7 +1447,7 @@ describe('pi auto-review dispatch & spawn config (mocked pi process)', () => {
       handle.setInteractionResolver?.(deny as never);
       fireManagedPackageRequest('pkg-denied', 'install', 'npm:denied');
       expect(JSON.parse(String((await waitForResponse('pkg-denied')).value))).toEqual({
-        ok: false, error: 'User denied this tool call via Cindy.',
+        ok: false, error: 'User denied this tool call via Countersign.',
       });
 
       const fail = vi.fn(async () => {
@@ -1456,7 +1456,7 @@ describe('pi auto-review dispatch & spawn config (mocked pi process)', () => {
       handle.setInteractionResolver?.(fail as never);
       fireManagedPackageRequest('pkg-failed', 'update', 'npm:failed');
       expect(JSON.parse(String((await waitForResponse('pkg-failed')).value))).toEqual({
-        ok: false, error: 'Cindy could not approve this tool call: Approval was cancelled or could not be completed.',
+        ok: false, error: 'Countersign could not approve this tool call: Approval was cancelled or could not be completed.',
       });
 
       expect(deny).toHaveBeenCalledOnce();
@@ -2118,7 +2118,7 @@ describe('pi auto-review dispatch & spawn config (mocked pi process)', () => {
         authorization: 'local-desktop-command',
       });
       const prompt = captured.requests.find((request) => request.type === 'prompt');
-      expect(prompt?.message).toContain('[Cindy internal Pi extension operation receipt]');
+      expect(prompt?.message).toContain('[Countersign internal Pi extension operation receipt]');
       expect(prompt?.message).toContain('"compatibility":"partial"');
       expect(prompt?.message).toContain('"status-display"');
       expect(prompt?.message).toContain('installed and enabled');
@@ -2209,11 +2209,11 @@ describe('pi auto-review dispatch & spawn config (mocked pi process)', () => {
       if (nativeCommandSucceeded) {
         expect(prompt).toContain('"nativeCommandSucceeded":true');
         expect(prompt).toContain('The native Pi installation succeeded. Report installation success.');
-        expect(prompt).toContain('Cindy cannot currently confirm the enabled state');
-        expect(prompt).not.toContain('Cindy could not leave the extension installed and enabled');
+        expect(prompt).toContain('Countersign cannot currently confirm the enabled state');
+        expect(prompt).not.toContain('Countersign could not leave the extension installed and enabled');
       } else {
         expect(prompt).not.toContain('The native Pi installation succeeded.');
-        expect(prompt).toContain('Cindy could not leave the extension installed and enabled');
+        expect(prompt).toContain('Countersign could not leave the extension installed and enabled');
       }
     } finally {
       await handle.close();
@@ -2251,7 +2251,7 @@ describe('pi auto-review dispatch & spawn config (mocked pi process)', () => {
       expect(prompt).toContain('"ok":true');
       expect(prompt).toContain('Active work, including this reply, continues');
       expect(prompt).toContain('If runtimeConvergence is partial,');
-      expect(prompt).toContain('restart Cindy to finish refreshing Pi packages');
+      expect(prompt).toContain('restart Countersign to finish refreshing Pi packages');
       await vi.waitFor(() => expect(events.some((event) => (
         event.type === 'text'
         && String((event.data as { text?: string }).text).includes('"runtimeConvergence":"partial"')
@@ -3065,7 +3065,7 @@ describe('pi auto-review dispatch & spawn config (mocked pi process)', () => {
       finishMutation?.();
       await expect(sending).resolves.toBeUndefined();
       expect(captured.requests.find((request) => request.type === 'prompt')?.message).toContain(
-        '[Cindy internal Pi extension operation receipt]',
+        '[Countersign internal Pi extension operation receipt]',
       );
     } finally {
       await handle.close();
@@ -3243,7 +3243,7 @@ describe('pi auto-review dispatch & spawn config (mocked pi process)', () => {
       expect(await waitForResponse('review-pkg')).toEqual({
         type: 'extension_ui_response',
         id: 'review-pkg',
-        value: JSON.stringify({ ok: false, error: 'Cindy could not approve this tool call: Approval was cancelled or could not be completed.' }),
+        value: JSON.stringify({ ok: false, error: 'Countersign could not approve this tool call: Approval was cancelled or could not be completed.' }),
       });
       expect(deps.mutatePiManagedPackage).not.toHaveBeenCalled();
     } finally {
@@ -4335,7 +4335,7 @@ describe('pi auto-review dispatch & spawn config (mocked pi process)', () => {
     expect(resolver).toHaveBeenCalledTimes(verdict === 'ask' ? 1 : 0);
     expect(mutate).toHaveBeenCalledTimes(verdict === 'allow' ? 1 : 0);
     if (verdict !== 'allow') expect(JSON.parse(String(response.value))).toEqual({
-      ok: false, error: verdict === 'block' ? 'Cindy Auto-review denied this tool call.' : 'User denied this tool call via Cindy.',
+      ok: false, error: verdict === 'block' ? 'Countersign Auto-review denied this tool call.' : 'User denied this tool call via Countersign.',
     });
     await handle.close();
   });
@@ -4771,7 +4771,7 @@ describe('pi auto-review dispatch & spawn config (mocked pi process)', () => {
    * 桥接 MCP 工具走 host 审批策略,不进 Auto-review 灰区(与 Claude Code / Codex 同一份
    * 真源)。回归的真实缺陷:Pi 没接这条策略时,`start_team` 落进灰区交模型判,模型按
    * 「有更安全替代方案就 block」判成"这点小事不必开团队"→ block 对用户静默 → bridge
-   * 报 "User denied this tool call via Cindy",协同团队永远建不起来且没有任何弹窗。
+   * 报 "User denied this tool call via Countersign",协同团队永远建不起来且没有任何弹窗。
    */
   it('auto-approves trusted first-party MCP tools via host policy without consulting the reviewer', async () => {
     const review = vi.fn(async () => ({

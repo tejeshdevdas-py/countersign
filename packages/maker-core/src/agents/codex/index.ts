@@ -10241,7 +10241,7 @@ assertRouteCurrent();
     ): Promise<DynamicToolCallResponse> => {
       if (reviewMode && process.platform !== 'win32') {
         return {
-          contentItems: [{ type: 'inputText', text: 'Cindy Review does not allow dynamic tools.' }],
+          contentItems: [{ type: 'inputText', text: 'Countersign Review does not allow dynamic tools.' }],
           success: false,
         };
       }

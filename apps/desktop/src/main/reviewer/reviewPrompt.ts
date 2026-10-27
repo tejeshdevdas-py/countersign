@@ -463,7 +463,7 @@ export function buildReviewPrompt(input: BuildReviewPromptInput): BuiltReviewPro
       ].join('\n')
     : changeEvidenceSection(input);
 
-  const prompt = `你是 Cindy 的独立成果审查员。你在一个全新、无开发历史记忆的只读任务中工作。
+  const prompt = `你是 Countersign 的独立成果审查员。你在一个全新、无开发历史记忆的只读任务中工作。
 
 ## 硬性边界
 

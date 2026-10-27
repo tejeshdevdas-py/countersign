@@ -9,12 +9,12 @@
 启动一个独立 Node 进程；同一插件的多个会话复用它，不同插件绝不共用进程。通信链固定为：
 
 ```
-Node worker ↔ JSON-RPC stdio ↔ 你的 main.js ↔ Cindy 主机能力
+Node worker ↔ JSON-RPC stdio ↔ 你的 main.js ↔ Countersign 主机能力
 ```
 
 Node 不能直接拿到 `cindy`、Electron IPC 或 Agent 会话。它向主机发反向 JSON-RPC
-请求时，主机会固定返回 `-32601`；需要 Cindy 能力时，Node 先把数据回给 `main.js`，
-再由 `main.js` 调 Cindy 通道。插件自主调用继续按 manifest 验权；当前
+请求时，主机会固定返回 `-32601`；需要 Countersign 能力时，Node 先把数据回给 `main.js`，
+再由 `main.js` 调 Countersign 通道。插件自主调用继续按 manifest 验权；当前
 Agent tool-call 内的网络与 workdir 操作按 §4.2 复用 Agent 授权。
 
 ### 4.12.1 自定义 Node 服务(JSON-RPC stdio)
@@ -196,7 +196,7 @@ Worker 与它启动的 CLI 是受信任的原生代码，会接触短期令牌�
 每次调用使用独立子进程环境，不修改全局 `process.env`。令牌失效后的写操作不能自动重放。
 
 把 `protocol` 改成 `"mcp-stdio"`，worker 实现标准的逐行 JSON-RPC MCP server。
-Cindy 会统一完成 `initialize` + `notifications/initialized`，你的 main.js 不要重复初始化，
+Countersign 会统一完成 `initialize` + `notifications/initialized`，你的 main.js 不要重复初始化，
 直接调用标准方法：
 
 ```js
@@ -208,32 +208,32 @@ const called = await cindy.node.request({
 ```
 
 MCP server 的 sampling / elicitation / roots 等 server→client 反向请求第一版不开放；需要
-这类能力时仍按“结果回 main.js，再由 main.js 申请 Cindy 能力”的链路设计。
+这类能力时仍按“结果回 main.js，再由 main.js 申请 Countersign 能力”的链路设计。
 
 ### 4.12.3 打包和生命周期红线
 
-- 用户不需要安装 Node、npm、CLI 或 MCP。运行时由 Cindy 随包提供；你必须在制作阶段
+- 用户不需要安装 Node、npm、CLI 或 MCP。运行时由 Countersign 随包提供；你必须在制作阶段
   把依赖打成单个 worker 文件或连同静态资源放进目录；**禁止**在安装/首次运行时执行
   `npm install`、`npx`、`postinstall` 或从网络下载可执行代码；
 - Forge 会跳过 `node_modules`，推荐用 esbuild/rollup 预打包成 `worker.cjs`。Node 包
   最多 2048 个文件、解压后 256MB、.cindy 128MB；超限直接拒绝；
 - `on-demand` 首次 `cindy.node.request` 才启动，缺省空闲 120 秒关闭；停用、更新、
-  卸载、退出 Cindy 都立即关闭。`resident` 会随插件启用一直运行，详情页单独显示；
+  卸载、退出 Countersign 都立即关闭。`resident` 会随插件启用一直运行，详情页单独显示；
 - 每个插件最多 32 条在途请求；单次 params 256KB、单行 stdout 1MB。单次请求缺省
   30 秒、上限 120 秒;长任务用 maxTotalMs 开启"有动静就续期",绝对上限 15 分钟
   (见 §4.12.1)。进程崩溃只影响
   自己，所有在途请求收到结构化失败，下次请求可重新启动；
 - **最重要的安全事实**：Node 进程不是浏览器沙箱，它拥有当前登录系统账号能拿到的
-  本机权限，能读写文件、联网、起别的进程。Cindy 会在插件详情中显著展示这项能力，
+  本机权限，能读写文件、联网、起别的进程。Countersign 会在插件详情中显著展示这项能力，
   但安装不会追加确认弹窗；不需要本机能力的插件不要声明 node，用户也只应安装可信来源。
-- macOS 的 Node 工作进程及宿主代启的 Node 子进程保留 Cindy 的系统权限责任归属，
-  可在系统允许范围内使用 Cindy 已获得的系统授权。尚未取得的权限仍由系统决定是否需要
-  授权；原生子进程的签名与用途声明也会影响结果。这不额外开放 Cindy IPC 或托管凭证。
+- macOS 的 Node 工作进程及宿主代启的 Node 子进程保留 Countersign 的系统权限责任归属，
+  可在系统允许范围内使用 Countersign 已获得的系统授权。尚未取得的权限仍由系统决定是否需要
+  授权；原生子进程的签名与用途声明也会影响结果。这不额外开放 Countersign IPC 或托管凭证。
 
 ### 4.12.4 宿主代启子进程(childSpawn)
 
 有些库(如 `@taptap/maker`)会在肚子里自己 `spawn(process.execPath, [脚本, 参数])`
-——在 Cindy 的 worker 里这条路是死路(正式包关 RunAsNode,生出来的不是 Node)。
+——在 Countersign 的 worker 里这条路是死路(正式包关 RunAsNode,生出来的不是 Node)。
 声明 `"childSpawn": true` 后,worker 里多一个全局窄接口,可以请宿主**代启**一个
 已申报入口的原样 stdio 子进程:
 

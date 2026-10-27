@@ -10,7 +10,7 @@ export function getHarnessMcpCatalog(context: { agentKind: McpProviderContext['a
   return [{
     name: CODEX_APPS_SERVER_NAME,
     title: 'Codex Apps',
-    description: 'External service connectors supplied by Codex; availability and tools come from the current thread. These are not Cindy tasks, routines or plugins.',
+    description: 'External service connectors supplied by Codex; availability and tools come from the current thread. These are not Countersign tasks, routines or plugins.',
     source: 'harness' as const,
     available: !context.remoteHostId,
     generation: 'codex-apps:1',

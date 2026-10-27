@@ -1,6 +1,6 @@
 ---
 name: cindy-skill-creator
-description: Create or edit a Cindy Skill, search the SkillHub public marketplace or your organization's Skills, upload your own Skill, or publish a new version of a Skill you authored.
+description: Create or edit a Countersign Skill, search the SkillHub public marketplace or your organization's Skills, upload your own Skill, or publish a new version of a Skill you authored.
 metadata:
   short-description: Create or update a skill
 ---
@@ -100,7 +100,7 @@ policy:
   allow_implicit_invocation: false
 ```
 
-This keeps the Skill available when explicitly invoked in Cindy as `/skill-name` without adding it to the model context automatically. Preserve unrelated existing UI, policy, and dependency fields when updating `agents/openai.yaml`.
+This keeps the Skill available when explicitly invoked in Countersign as `/skill-name` without adding it to the model context automatically. Preserve unrelated existing UI, policy, and dependency fields when updating `agents/openai.yaml`.
 
 The initializer creates this file automatically. Choose a Python 3 launcher for the current platform: use `python3` on macOS/Linux; on Windows use `py -3`, or `python` only after confirming it runs Python 3. For new or interface-only metadata, generate it with:
 
@@ -155,7 +155,7 @@ Adapt the work to the request. Creating a complex new skill may involve understa
 
 If this Skill is invoked without a concrete creation, edit, search, or upload request, ask what the user wants to do with a Skill and do not create files yet.
 
-Ask clarifying questions only when the missing information matters and cannot be reasonably inferred. Respect a user-specified location. When the user explicitly asks for a project-specific Skill, create it under `<current-workdir>/.agents/skills`; otherwise create it under `~/.agents/skills`. These shared roots make the Skill available to Cindy's local Claude Code, Codex, and Pi Agents. A newly created or updated Skill is picked up by new or restarted Agent sessions.
+Ask clarifying questions only when the missing information matters and cannot be reasonably inferred. Respect a user-specified location. When the user explicitly asks for a project-specific Skill, create it under `<current-workdir>/.agents/skills`; otherwise create it under `~/.agents/skills`. These shared roots make the Skill available to Countersign's local Claude Code, Codex, and Pi Agents. A newly created or updated Skill is picked up by new or restarted Agent sessions.
 
 Keep automatic skill selection enabled unless the user explicitly requests an explicit-only skill. When the intended invocation mode is genuinely unclear and matters to the requested workflow, ask whether the user wants normal automatic discovery or explicit-only invocation; otherwise preserve the default. Do not infer explicit-only invocation from sensitive operations or required approvals: keep the skill discoverable and require authorization immediately before the actual mutation. Preserve an existing skill's invocation policy unless the user asks to change it.
 

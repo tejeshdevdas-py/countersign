@@ -9,7 +9,7 @@ export const CINDY_BUILT_IN_SKILL_NAMES = [
 ] as const;
 
 export const CINDY_LEARN_SOURCE_DESCRIPTION =
-  "Distill a reusable Cindy Skill from the current task, a described workflow, or a SkillHub skill through Cindy's review flow when the user directly invokes /learn or /skill:learn in Pi.";
+  "Distill a reusable Countersign Skill from the current task, a described workflow, or a SkillHub skill through Countersign's review flow when the user directly invokes /learn or /skill:learn in Pi.";
 
 const CINDY_BUILT_IN_NAMES = new Set<string>(CINDY_BUILT_IN_SKILL_NAMES);
 

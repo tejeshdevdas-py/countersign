@@ -973,7 +973,7 @@ export function createComputerMcpServer(
       {
         ok: false,
         errorCode: 'REPLAY_BUDGET_EXCEEDED',
-        data: { message: 'Trajectory replay exceeded Cindy\'s bounded execution budget.' },
+        data: { message: 'Trajectory replay exceeded Countersign\'s bounded execution budget.' },
       },
       true,
     );
@@ -1032,7 +1032,7 @@ export function createComputerMcpServer(
     if (typeof directory !== 'string' || !workingDir) {
       return {
         error: trajectoryValidationFailedResult(
-          'Cindy could not safely resolve the trajectory directory.',
+          'Countersign could not safely resolve the trajectory directory.',
         ),
       };
     }
@@ -1089,7 +1089,7 @@ export function createComputerMcpServer(
       });
       return {
         error: trajectoryValidationFailedResult(
-          'Cindy could not read the trajectory directory before replay.',
+          'Countersign could not read the trajectory directory before replay.',
         ),
       };
     }
@@ -1156,7 +1156,7 @@ export function createComputerMcpServer(
           if (currentStat.dev !== stat.dev || currentStat.ino !== stat.ino) {
             return {
               error: trajectoryValidationFailedResult(
-                'The recorded action changed while Cindy was opening it.',
+                'The recorded action changed while Countersign was opening it.',
                 turn,
               ),
             };
@@ -1199,7 +1199,7 @@ export function createComputerMcpServer(
         if (!definition) {
           return {
             error: trajectoryValidationFailedResult(
-              `Recorded tool ${tool} is not exposed by this Cindy version.`,
+              `Recorded tool ${tool} is not exposed by this Countersign version.`,
               turn,
             ),
           };
@@ -1227,7 +1227,7 @@ export function createComputerMcpServer(
         if (!parsed.success) {
           return {
             error: trajectoryValidationFailedResult(
-              `Recorded tool ${tool} does not match the current Cindy schema.`,
+              `Recorded tool ${tool} does not match the current Countersign schema.`,
               turn,
             ),
           };
@@ -1246,7 +1246,7 @@ export function createComputerMcpServer(
         });
         return {
           error: trajectoryValidationFailedResult(
-            'Cindy could not safely validate this recorded action.',
+            'Countersign could not safely validate this recorded action.',
             turn,
           ),
         };
@@ -1590,7 +1590,7 @@ export function createComputerMcpServer(
         errorCode: 'SECURE_FIELD',
         data: {
           tool: name,
-          message: 'This element is a password field. Cindy does not let the agent type into password fields.',
+          message: 'This element is a password field. Countersign does not let the agent type into password fields.',
           hint: 'Call request_input_handoff with this pid and window so the owner fills it from their phone or another computer; leave the window as it is until it ends.',
         },
       },

@@ -2157,7 +2157,7 @@ export class ClaudeCodeAgent extends BaseAgent {
           hookEventName: 'PreToolUse',
           permissionDecision: 'deny',
           permissionDecisionReason:
-            'Cindy Review only permits read-only access to this task and its explicit artifacts.',
+            'Countersign Review only permits read-only access to this task and its explicit artifacts.',
         },
       };
     };
@@ -2228,11 +2228,11 @@ export class ClaudeCodeAgent extends BaseAgent {
       const mcpPolicy = isMcp ? classifyMcpApprovalPolicy(toolName, pre.tool_input) : null;
       // Requester authority (owner / group guest) and forceConfirmToolCall are only known to
       // Cindy, and a channel policy outranks trusted-MCP approval: route every call to canUseTool.
-      if (activeTurnPermissionPolicy) return decide('ask', 'Cindy reviews tool calls in channel turns.');
+      if (activeTurnPermissionPolicy) return decide('ask', 'Countersign reviews tool calls in channel turns.');
       // Trusted MCP still goes through canUseTool: the Host shortcut allows it without a model call,
       // but a plugin-delegated task must be re-checked against its live delegation scope first.
-      if (mcpPolicy === 'auto-approve') return decide('ask', 'Trusted Cindy tool: Host shortcut and delegation check.');
-      if (mcpPolicy === 'prompt-each-time') return decide('ask', 'This tool requires Cindy confirmation.');
+      if (mcpPolicy === 'auto-approve') return decide('ask', 'Trusted Countersign tool: Host shortcut and delegation check.');
+      if (mcpPolicy === 'prompt-each-time') return decide('ask', 'This tool requires Countersign confirmation.');
       return { continue: true };
     };
     const harnessHookBridge = createHarnessHookBridge();
@@ -2594,7 +2594,7 @@ export class ClaudeCodeAgent extends BaseAgent {
         return {
           behavior: 'deny',
           message: capabilityRoute.replacement
-            ? `This downstream source was not selected. Use Cindy capability ${capabilityRoute.replacement.id}.`
+            ? `This downstream source was not selected. Use Countersign capability ${capabilityRoute.replacement.id}.`
             : 'This downstream source was not selected.',
         };
       }
@@ -4075,7 +4075,7 @@ export class ClaudeCodeAgent extends BaseAgent {
                 kind: 'permission',
                 behavior: 'deny',
                 reason: capabilityRoute.replacement
-                  ? `This downstream source was not selected. Use Cindy capability ${capabilityRoute.replacement.id}.`
+                  ? `This downstream source was not selected. Use Countersign capability ${capabilityRoute.replacement.id}.`
                   : 'This downstream source was not selected.',
               };
             }

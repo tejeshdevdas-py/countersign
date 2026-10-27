@@ -2916,7 +2916,7 @@ describe('PiAgent.startSession failure cleanup (mocked pi process)', () => {
       workingDir: cwd,
       model: 'm',
     })).rejects.toThrow(
-      'Package state is unavailable. Restart Cindy and try again.',
+      'Package state is unavailable. Restart Countersign and try again.',
     );
     expect(resolvePiNativePackagePaths).toHaveBeenCalledOnce();
     expect(knobs.spawnedArgs).toEqual([]);

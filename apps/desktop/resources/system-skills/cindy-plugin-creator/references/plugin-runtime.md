@@ -75,7 +75,7 @@ cindy.send({ type: 'tool-result', callId: msg.callId, ok: true,
 //   时附,自动附带的观察结果给路径即可。
 // - 图片只交给模型和本次工具步骤展示,不入媒体库、不进产物账本、不会自动发到
 //   IM;要交付给用户的产物仍走上面的 xdt_image_urls 等媒体字段。
-// - 旧版 Cindy 不认这个字段,会直接忽略:result 里仍要给出够用的文字或路径。
+// - 旧版 Countersign 不认这个字段,会直接忽略:result 里仍要给出够用的文字或路径。
 
 // 长任务续命(超时窗口默认 330s,从派发起算绝对上限 30 分钟):
 // - 经 cindy-request 请主机代办且带 callId 的署名单(出图/视频)在途时,
@@ -88,8 +88,8 @@ cindy.send({ type: 'tool-result', callId: msg.callId, ok: true,
 
 // 以下 gen_image / edit_image / gen_video / edit_video 是存量插件兼容接口。
 // 新插件不要从沙箱或面板直接发媒体生成请求；按 §4.0.4 让当前 Agent 使用
-// Cindy Core media 工具。非媒体的 cindy-request 能力继续按各自章节使用。
-// 存量 Cindy 代办(需声明 cindy 顶层字段 + 能力详单;主机出图、落仓、记账):
+// Countersign Core media 工具。非媒体的 cindy-request 能力继续按各自章节使用。
+// 存量 Countersign 代办(需声明 cindy 顶层字段 + 能力详单;主机出图、落仓、记账):
 // 由 tool-call 触发的代办**务必带上收到的 callId**(归因号:让用户在日志/账单里
 // 对上"哪次调用花的钱");面板交互等自发代办可不带。
 const r = await cindy.send({ type: 'cindy-request', kind: 'gen_image', prompt: '一只猫', callId: msg.callId });
@@ -107,13 +107,13 @@ const r = await cindy.send({ type: 'cindy-request', kind: 'gen_image', prompt: '
 //   改图不传 = 跟随源图画幅);视频画幅是另一个参数 ratio,值域不同,带错会被拒。
 //   用户没提横竖要求时别自作主张,不传让后端自定。
 //
-// Cindy 托管 Web Search(需声明 cindy.search:["web"]):
+// Countersign 托管 Web Search(需声明 cindy.search:["web"]):
 // provider 固定为 cindy,主机固定 Anthropic Messages 搜索模型与上游凭证;
 // 不接受 api_base/header/key/model/tool。
 const search = await cindy.send({
   type: 'cindy-request',
   kind: 'search_web',
-  query: 'Cindy 最新版本',
+  query: 'Countersign 最新版本',
   limit: 5,                       // 可选,1–10,缺省 5
   provider: 'cindy',
   callId: msg.callId,             // 搜索只由 tool-call 触发,必须透传
@@ -243,7 +243,7 @@ await cindy.send({ type: 'cindy-request', kind: 'release_media', hash: r.hash })
 媒体库」并写明上限——这是唯一一条"不花钱就能写用户媒体库"的能力,所以要用户
 单独点头。别为了省事把它当默认能力申请:不做面板素材加工的插件不要声明。
 
-### 4.0.2 快问快答:向 Cindy 的快速通道要一段文字(oneshot_text)
+### 4.0.2 快问快答:向 Countersign 的快速通道要一段文字(oneshot_text)
 
 需要"问一句、拿一段文字答案"(总结、分类、改写、抽取)而不需要 Agent 动用
 任何工具时,不要发起 Agent 回合——用快问快答,几秒到几十秒出结果,便宜得多:
@@ -284,7 +284,7 @@ const r = await cindy.send({
   `errorCode:'BAD_MODEL_OUTPUT'`(message 带原始输出开头供排查)。字段结构
   在 prompt 里自己描述,主机不做逐字段 schema 校验;
 - prompt ≤32768 字符;同步返回,没有异步单;每插件在途上限与媒体代办共用
-  (用户可配);详情页会单列一行「可向 Cindy 的快速通道提问」。
+  (用户可配);详情页会单列一行「可向 Countersign 的快速通道提问」。
 
 ### 4.0.3 文本转向量:把文字算成向量做语义检索(embed_text)
 

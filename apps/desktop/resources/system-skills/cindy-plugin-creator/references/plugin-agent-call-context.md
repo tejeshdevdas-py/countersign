@@ -2,7 +2,7 @@
 
 当 `onHostMessage` 收到 `tool-call` 时，主机下发的 `msg.callId` 是本次
 Agent 调用的严格在途凭证。它已绑定真实插件和当前会话，外层
-`ghost_call` 由 Cindy 现有 Agent 授权系统处理。因此本次调用里的普通
+`ghost_call` 由 Countersign 现有 Agent 授权系统处理。因此本次调用里的普通
 HTTPS 和 workdir 写入不需要再声明 `network` 或 `fs`。
 
 对应 tool 的 `description` 必须写清实际会执行的命令类别、联网目标／用途和

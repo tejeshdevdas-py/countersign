@@ -30,7 +30,7 @@ export interface InputHandoffCallbacks {
 const DESCRIPTION =
   'Ask the owner to type what only they can into fields on this computer\'s screen: '
   + 'a sign-in name, password, verification code, or other text you cannot know. '
-  + 'Cindy shows the owner just those fields on their phone or another computer, types the answer in and confirms with the page\'s own main button; '
+  + 'Countersign shows the owner just those fields on their phone or another computer, types the answer in and confirms with the page\'s own main button; '
   + 'it follows the flow across windows and browsers while fields keep appearing. '
   + 'A sign-in QR code on screen is handed to the owner to scan, and the task continues once they are signed in. '
   + 'Buttons, options and consent pages are yours to handle: a screen with neither a field to type nor a sign-in QR code ends at once with failure nothing_to_fill. '
@@ -63,13 +63,13 @@ export function registerInputHandoffTool(
         window_closed: z.boolean().optional(),
         text_appears: STRING(200).optional(),
         url_contains: STRING(500).optional(),
-      }).strict().optional().describe('Optional signs that the step is done. Cindy also detects completion itself.'),
+      }).strict().optional().describe('Optional signs that the step is done. Countersign also detects completion itself.'),
       timeout_minutes: z.number().int().min(1).max(60).optional(),
     },
     handler: async ({ purpose, note, target, complete_when, timeout_minutes }) => {
       const context = getContext();
       if (!context.sessionId || !context.sessionInstanceId)
-        return errorPayload('NO_SESSION_CONTEXT', 'No current Cindy task for this handoff.');
+        return errorPayload('NO_SESSION_CONTEXT', 'No current Countersign task for this handoff.');
       if (context.remoteHostId)
         return errorPayload('CAPABILITY_NOT_AVAILABLE', 'Input handoff only works for windows on this computer.');
       if (context.mcpCallerKind === 'descendant')
@@ -95,7 +95,7 @@ export function registerInputHandoffTool(
       try {
         result = await callbacks.start(context, request);
       } catch {
-        return errorPayload('HANDOFF_UNAVAILABLE', 'Cindy could not start the input handoff. Tell the owner what is needed instead.');
+        return errorPayload('HANDOFF_UNAVAILABLE', 'Countersign could not start the input handoff. Tell the owner what is needed instead.');
       }
       if (!result.ok) return errorPayload(result.errorCode, result.message);
       return okPayload({

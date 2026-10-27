@@ -507,7 +507,7 @@ export function buildMemberTurnPrompt(input: {
   previousTurnInterrupted?: boolean;
 }): string {
   const lines = [
-    `[Cindy group chat "${input.groupName.replace(/["\\\r\n]/g, ' ')}"]`,
+    `[Countersign group chat "${input.groupName.replace(/["\\\r\n]/g, ' ')}"]`,
     `You are ${input.botName}, one participant in this group chat with the user (your owner)${
       input.peerNames.length > 0 ? ` and your teammates ${input.peerNames.join(', ')}` : ''
     }.`,

@@ -35,7 +35,7 @@ describe('Codex native MCP Hook ingress', () => {
     expect(dispatch).not.toHaveBeenCalled();
     expect(await hooks.run(input, metadata)).toEqual({ hookSpecificOutput: {
       hookEventName: 'PreToolUse', permissionDecision: 'deny',
-      permissionDecisionReason: 'Blocked by an approved Cindy plugin hook.',
+      permissionDecisionReason: 'Blocked by an approved Countersign plugin hook.',
     } });
     expect(dispatch).toHaveBeenCalledExactlyOnceWith({ name: 'tool.before', toolName: 'exec_command', input: { cmd: 'pwd' } });
     hooks.close();

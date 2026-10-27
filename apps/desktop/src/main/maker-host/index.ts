@@ -1075,7 +1075,7 @@ export function getMaker(): Maker {
         return { ...result, permission: session.stablePermissionModeState,
           hostCapabilities: Object.fromEntries(Object.entries(session.capabilities)
             .filter(([, value]) => value && typeof value === 'object' && 'supported' in value)),
-          hostCapabilitiesNote: '宿主支持的交互能力，不等于有同名 Agent 工具。安装 Cindy 更新须调用 install_app_update，由宿主向用户确认后经内置更新器完成；check_app_update 仅检查更新。' };
+          hostCapabilitiesNote: '宿主支持的交互能力，不等于有同名 Agent 工具。安装 Countersign 更新须调用 install_app_update，由宿主向用户确认后经内置更新器完成；check_app_update 仅检查更新。' };
       },
       botCapabilities: createDesktopBotCapabilityService(),
       createMediaDownloadContext: (sessionId: string, sessionInstanceId: string) => {

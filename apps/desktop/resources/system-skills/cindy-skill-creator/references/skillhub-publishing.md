@@ -4,9 +4,9 @@ Use the relevant workflow when the user asks to find a Skill in SkillHub, upload
 
 ## Discover the host tools
 
-Use the available `cindy_helper` MCP server: call `list_tools` with `category: "skills"`, then invoke the returned tools through `call_tool`. This category includes `search_skills`, `list_my_published_skills`, `publish_skill`, and `get_skill_publish_status`. Use their returned schemas. The host reuses Cindy's signed-in identity, catalog search, packaging, upload, registry and review services; no API key or separate CLI setup is needed.
+Use the available `cindy_helper` MCP server: call `list_tools` with `category: "skills"`, then invoke the returned tools through `call_tool`. This category includes `search_skills`, `list_my_published_skills`, `publish_skill`, and `get_skill_publish_status`. Use their returned schemas. The host reuses Countersign's signed-in identity, catalog search, packaging, upload, registry and review services; no API key or separate CLI setup is needed.
 
-These tools run on the Cindy desktop hosting the current task. Phone/device-link conversations controlling that task use the same tools. SSH tasks cannot upload remote paths through the local host: make the Skill available on the Cindy host and publish from a local task. If the tools are unavailable, explain that limitation and direct the user to the Skills page; do not invent endpoints or read Cindy's credential files.
+These tools run on the Countersign desktop hosting the current task. Phone/device-link conversations controlling that task use the same tools. SSH tasks cannot upload remote paths through the local host: make the Skill available on the Countersign host and publish from a local task. If the tools are unavailable, explain that limitation and direct the user to the Skills page; do not invent endpoints or read Countersign's credential files.
 
 ## Search the public marketplace or organization
 
