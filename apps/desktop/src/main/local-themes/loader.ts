@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { nativeImage } from 'electron';
-import { brandHomeStateName } from '@cindy/maker-shared/brand-identity';
+import { BRAND_IDENTITY, brandHomeStateName } from '@cindy/maker-shared/brand-identity';
 
 import {
   LOCAL_THEME_SUFFIX,
@@ -76,6 +76,9 @@ export function resetLocalThemesMigrationForTest(): void {
 function migrateLegacyThemesDirOnce(): void {
   if (themesMigrationDone) return;
   themesMigrationDone = true;
+  // Countersign: an identity without legacy data names imports no legacy data, so
+  // ~/.xdmaker/themes stays with the installed app that owns it.
+  if (BRAND_IDENTITY.legacyUserDataDirNames.length === 0) return;
   const oldDir = getLegacyLocalThemesDir();
   // 不走 getLocalThemesDir()（它会回调本函数），直接拼新路径。
   const newDir = themesDirForIdentity();

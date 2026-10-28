@@ -13,6 +13,22 @@ vi.mock('node:os', async (importOriginal) => {
   };
 });
 
+// Countersign: the upstream migration case runs with an identity that keeps legacy
+// data names; every other case runs under the real BRAND_IDENTITY, which has none.
+const identityMock = vi.hoisted(() => ({ withLegacyData: false }));
+
+vi.mock('@cindy/maker-shared/brand-identity', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@cindy/maker-shared/brand-identity')>();
+  return {
+    ...actual,
+    get BRAND_IDENTITY() {
+      return identityMock.withLegacyData
+        ? { ...actual.BRAND_IDENTITY, legacyUserDataDirNames: ['xdt-maker'] }
+        : actual.BRAND_IDENTITY;
+    },
+  };
+});
+
 vi.mock('../logger.js', () => ({
   createLogger: () => ({
     debug: vi.fn(),
@@ -46,6 +62,7 @@ describe('local themes legacy dir migration (~/.xdmaker/themes -> ~/.<brand>/the
   beforeEach(() => {
     home = realpathSync(mkdtempSync(path.join(tmpdir(), 'themes-home-')));
     osMock.homedir = home;
+    identityMock.withLegacyData = false;
     resetLocalThemesMigrationForTest();
   });
 
@@ -54,6 +71,7 @@ describe('local themes legacy dir migration (~/.xdmaker/themes -> ~/.<brand>/the
   });
 
   it('老目录存在且新目录不存在时整体搬迁，主题可被加载', () => {
+    identityMock.withLegacyData = true;
     const oldDir = path.join(home, '.xdmaker', 'themes');
     fs.mkdirSync(oldDir, { recursive: true });
     fs.writeFileSync(path.join(oldDir, 'my-theme.json'), THEME_JSON, 'utf8');
@@ -64,6 +82,19 @@ describe('local themes legacy dir migration (~/.xdmaker/themes -> ~/.<brand>/the
     expect(result.themes.map((t) => t.id)).toEqual(['my-theme-local']);
     expect(fs.existsSync(path.join(home, HOME_STATE_DIR, 'themes', 'my-theme.json'))).toBe(true);
     expect(fs.existsSync(path.join(home, '.xdmaker'))).toBe(false);
+  });
+
+  it('Countersign: leaves ~/.xdmaker/themes with the app that owns it', () => {
+    const oldDir = path.join(home, '.xdmaker', 'themes');
+    fs.mkdirSync(oldDir, { recursive: true });
+    fs.writeFileSync(path.join(oldDir, 'my-theme.json'), THEME_JSON, 'utf8');
+
+    const result = loadLocalThemesSync();
+
+    expect(result.success).toBe(true);
+    expect(result.themes).toEqual([]);
+    expect(fs.existsSync(path.join(oldDir, 'my-theme.json'))).toBe(true);
+    expect(fs.readdirSync(path.join(home, HOME_STATE_DIR, 'themes'))).toEqual([]);
   });
 
   it('新目录已存在时不动老目录', () => {
