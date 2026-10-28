@@ -38,23 +38,54 @@ export type { LocalePreference, SupportedLocale } from '../../shared/locale';
 /** The part of a locale's common.json that the LOCAL_ONLY overlay reads. */
 type RemoteErrorOverlaySource = {
   chat: { remoteError: Record<string, string> };
-  countersignLocalOnly: { remoteError: Record<string, string> };
+  countersignLocalOnly: { remoteError: Record<string, string>; neutral: Record<string, string> };
 };
+
+/**
+ * Countersign: returns a copy of `tree` with the string at each dotted key path replaced.
+ * A path that does not lead to a string is skipped (the localOnly test reports it).
+ */
+function withReplacedStrings<T>(tree: T, replacements: Record<string, string>): T {
+  const root = { ...(tree as Record<string, unknown>) };
+  for (const [path, text] of Object.entries(replacements)) {
+    const parts = path.split('.');
+    let node: Record<string, unknown> = root;
+    let found = true;
+    for (const part of parts.slice(0, -1)) {
+      const child = node[part];
+      if (!child || typeof child !== 'object') {
+        found = false;
+        break;
+      }
+      const copy = { ...(child as Record<string, unknown>) };
+      node[part] = copy;
+      node = copy;
+    }
+    const leaf = parts[parts.length - 1];
+    if (found && typeof node[leaf] === 'string') {
+      node[leaf] = text;
+    }
+  }
+  return root as T;
+}
 
 /**
  * Countersign: under LOCAL_ONLY the remote-task errors that offered the hosted "<app> AI"
  * gateway are replaced by `countersignLocalOnly.remoteError`, which names only options
  * that exist. Every renderer path that shows `chat.remoteError.<code>` gets the local text.
+ * Every other string that names the hosted "<app> AI" service or "<app> account services"
+ * is replaced by its neutral text in `countersignLocalOnly.neutral` (dotted key paths).
  */
 function countersignCommon<T extends RemoteErrorOverlaySource>(common: T): T {
   if (!LOCAL_ONLY) return common;
-  return {
+  const withRemoteErrors = {
     ...common,
     chat: {
       ...common.chat,
       remoteError: { ...common.chat.remoteError, ...common.countersignLocalOnly.remoteError },
     },
   } as T;
+  return withReplacedStrings(withRemoteErrors, common.countersignLocalOnly.neutral);
 }
 
 // 凭证写入逃生口必须在五语里共用同一条安全命令；集中覆盖防止某个 locale 又退回
