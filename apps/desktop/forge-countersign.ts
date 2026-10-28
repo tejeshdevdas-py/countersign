@@ -121,3 +121,31 @@ export function stageAgentBinaries(options: {
     console.log(`[forge:prePackage] ${entry.binDir} ${platformKey} -> ${destDir}`);
   }
 }
+
+// ── Bundled binaries kept in Git LFS ─────────────────────────────────────────
+
+const LFS_POINTER_SPEC = 'git-lfs.github.com/spec/v1';
+/** A real bundled binary is far larger; an LFS pointer is about 130 bytes. */
+const MIN_BUNDLED_BINARY_BYTES = 4096;
+
+/**
+ * Throws unless `filePath` holds the real binary: present, a file, at least
+ * 4 KB and not a Git LFS pointer. A checkout without `git lfs pull` has the
+ * pointer in its place, which would otherwise be packaged as the binary.
+ */
+export function assertRealLfsBinary(filePath: string, what: string): void {
+  const stat = fs.statSync(filePath, { throwIfNoEntry: false });
+  if (!stat || !stat.isFile()) {
+    throw new Error(`[forge] ${what} missing at ${filePath}; run "git lfs pull"`);
+  }
+  if (stat.size >= MIN_BUNDLED_BINARY_BYTES) return;
+  const prefix = fs.readFileSync(filePath).subarray(0, 128).toString('utf8');
+  if (prefix.includes(LFS_POINTER_SPEC)) {
+    throw new Error(
+      `[forge] ${what} is a Git LFS pointer, not the binary; run "git lfs pull": ${filePath}`,
+    );
+  }
+  throw new Error(
+    `[forge] ${what} is unexpectedly small (${stat.size} bytes); run "git lfs pull": ${filePath}`,
+  );
+}

@@ -33,4 +33,14 @@ describe('forge.config.ts Countersign packaging wiring', () => {
     expect(occurrences('ensure: spawnEnsureAgentBinaries(')).toBe(1);
     expect(occurrences('const COUNTERSIGN_AGENT_BINARIES')).toBe(0);
   });
+
+  it('M-B6: vec0 is checked for a missing, tiny or LFS-pointer file before it is copied', () => {
+    const start = forge.indexOf('function copySqliteVecBinary(');
+    const body = forge.slice(start, forge.indexOf('\nfunction ', start + 1));
+    const check = body.indexOf('assertRealLfsBinary(src, ');
+    expect(check).toBeGreaterThan(-1);
+    expect(check).toBeLessThan(body.indexOf('fs.copyFileSync(src, '));
+    // Only non-Windows targets keep upstream's skip when the file is absent.
+    expect(body).toContain("if (!fs.existsSync(src) && targetPlatform !== 'win32') {");
+  });
 });

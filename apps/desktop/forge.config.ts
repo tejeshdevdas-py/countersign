@@ -21,7 +21,11 @@ import {
   brandExecutableName,
   resolveCindyRegion,
 } from '@cindy/maker-shared/brand-identity';
-import { spawnEnsureAgentBinaries, stageAgentBinaries } from './forge-countersign';
+import {
+  assertRealLfsBinary,
+  spawnEnsureAgentBinaries,
+  stageAgentBinaries,
+} from './forge-countersign';
 import { preparePackagedNodePty } from './forge-node-pty';
 import { prunePackagedRuntime, prunePackagedMigrationSnapshots } from './forge-prune-runtime';
 import { copyRuntimeDependencyTrees as copyRuntimeTrees } from './forge-runtime-deps';
@@ -343,10 +347,13 @@ function copySqliteVecBinary(buildPath: string, targetPlatform: string, targetAr
     targetPlatform === 'win32' ? 'vec0.dll' : targetPlatform === 'linux' ? 'vec0.so' : 'vec0.dylib';
   const platformDir = `${targetPlatform}-${targetArch}`;
   const src = path.join(__dirname, 'native', 'sqlite-vec', platformDir, ext);
-  if (!fs.existsSync(src)) {
+  if (!fs.existsSync(src) && targetPlatform !== 'win32') {
     console.warn(`[forge:afterCopy] sqlite-vec binary not found at ${src}, skipping`);
     return;
   }
+  // Countersign: vec0 is a Git LFS file. Windows (the M1 target) must ship it,
+  // and no platform may ship the LFS pointer in its place.
+  assertRealLfsBinary(src, `sqlite-vec ${platformDir}/${ext}`);
   const dst = path.join(buildPath, 'native', 'sqlite-vec', platformDir);
   fs.mkdirSync(dst, { recursive: true });
   fs.copyFileSync(src, path.join(dst, ext));
