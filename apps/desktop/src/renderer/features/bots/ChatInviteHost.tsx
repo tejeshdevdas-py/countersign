@@ -1,5 +1,8 @@
 import { useSyncExternalStore } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
+import { localOnlyMessage } from '@/lib/countersignLocalOnly';
+import { toast } from '@/lib/toast';
 import { DEEP_LINK_URL_PREFIX } from '../../../shared/deepLinkSchemes';
 import { ChatInviteDialog } from './ChatInviteDialog';
 
@@ -23,12 +26,19 @@ function enqueue(entry: string): void {
 }
 
 export function requestChatInvite(token: string): void {
+  if (LOCAL_ONLY) return reportCloudChatUnavailable();
   if (/^[A-Za-z0-9_-]{43}$/.test(token)) enqueue(token);
 }
 
 /** A clicked invitation link was truncated or altered: say so instead of ignoring the click. */
 export function reportMalformedChatInvite(): void {
+  if (LOCAL_ONLY) return reportCloudChatUnavailable();
   enqueue(MALFORMED);
+}
+
+/** Countersign: cloud chat needs the hosted chat service, which LOCAL_ONLY switches off. */
+function reportCloudChatUnavailable(): void {
+  toast.info(localOnlyMessage('Cloud chat'));
 }
 
 function dismiss(token: string): void {

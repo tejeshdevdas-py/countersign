@@ -3,6 +3,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Bot, Link2, Plus, Store, Users } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import { BotRosterView } from './BotRosterView';
 import { BotGroupCreateDialog } from './BotGroupCreateDialog';
 import { BotMarketDialog } from './BotMarketDialog';
@@ -63,12 +64,17 @@ export function BotCreateMenu({ variant, label }: {
               {t('bots.groupChat.create.title')}
             </DropdownMenuItem>
             {/* Clicking an invitation opens it directly; this is the fallback when the link
-                arrived as plain text that the sending app did not make clickable. */}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => setDialog('join')}>
-              <Link2 size={14} className="mr-2" />
-              {t('bots.list.joinWithLink')}
-            </DropdownMenuItem>
+                arrived as plain text that the sending app did not make clickable.
+                Countersign: no cloud chat under LOCAL_ONLY, so no invitation link to enter. */}
+            {LOCAL_ONLY ? null : (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => setDialog('join')}>
+                  <Link2 size={14} className="mr-2" />
+                  {t('bots.list.joinWithLink')}
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       )}

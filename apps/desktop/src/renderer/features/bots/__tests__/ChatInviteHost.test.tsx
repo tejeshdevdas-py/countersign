@@ -6,6 +6,13 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { ChatInviteHost, reportMalformedChatInvite, requestChatInvite } from '../ChatInviteHost';
 import { setDataOwnerGeneration } from '@/contexts/dataOwnerGeneration';
 
+// Countersign: these cases cover upstream's cloud chat invitations, which LOCAL_ONLY
+// switches off (see chatInvite.localOnly.test.tsx).
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
+
 const api = vi.hoisted(() => ({ previewInvite: vi.fn(), acceptInvite: vi.fn() }));
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('../botGroupStore', () => ({ refreshBotGroups: vi.fn() }));

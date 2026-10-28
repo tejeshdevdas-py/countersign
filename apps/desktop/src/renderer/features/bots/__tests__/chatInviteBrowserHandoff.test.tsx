@@ -10,6 +10,12 @@ import { ChatInviteHost, reportMalformedChatInvite, requestChatInvite } from '..
 import { handleIncomingDeepLink, setDeepLinkMainWindow, takePendingDeepLink } from '../../../../main/deepLink';
 
 vi.mock('electron', () => ({ app: { focus: vi.fn() }, BrowserWindow: class {} }));
+// Countersign: these cases cover upstream's cloud chat invitations, which LOCAL_ONLY
+// switches off (see chatInvite.localOnly.test.tsx).
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
 vi.mock('../../../../main/logger', () => ({ createLogger: () => ({ info: vi.fn(), warn: vi.fn(), debug: vi.fn() }) }));
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('../botGroupStore', () => ({ refreshBotGroups: vi.fn() }));
