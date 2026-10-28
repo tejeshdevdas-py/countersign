@@ -43,4 +43,14 @@ describe('forge.config.ts Countersign packaging wiring', () => {
     // Only non-Windows targets keep upstream's skip when the file is absent.
     expect(body).toContain("if (!fs.existsSync(src) && targetPlatform !== 'win32') {");
   });
+
+  it('M-B1: the Windows native rebuild runs with the build folder trimmed from the addon', () => {
+    const start = forge.indexOf('async function rebuildNativeDepsInPackage(');
+    const body = forge.slice(start, forge.indexOf('\nconst isDev', start));
+    expect(body).toMatch(
+      /platform === 'win32' && process\.platform === 'win32' \? msvcPathFreeBuildEnv\(buildPath\) : \{\}/,
+    );
+    expect(body).toMatch(/await withEnv\(rebuildEnv, \(\) =>\s*electronRebuild\(\{/);
+    expect(body.split('electronRebuild(').length - 1).toBe(1);
+  });
 });

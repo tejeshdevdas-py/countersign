@@ -149,3 +149,56 @@ export function assertRealLfsBinary(filePath: string, what: string): void {
     `[forge] ${what} is unexpectedly small (${stat.size} bytes); run "git lfs pull": ${filePath}`,
   );
 }
+
+// ── Build folder kept out of the rebuilt native addon ────────────────────────
+
+/** link.exe expands %_PDB% itself to the PDB file name, without its folder. */
+const PDB_FILE_NAME_ONLY = '/PDBALTPATH:%_PDB%';
+
+function withoutTrailingSeparator(folder: string): string {
+  return folder.replace(/[\/]+$/, '');
+}
+
+/**
+ * Extra MSVC options for a node-gyp rebuild inside `buildPath`. cl.exe and
+ * link.exe read them from the _CL_ and _LINK_ environment variables:
+ * - `/d1trimfile:<folder>` trims the build folder from __FILE__, which Node's
+ *   module registration records in the addon;
+ * - `/PDBALTPATH:%_PDB%` writes only the PDB file name into the debug
+ *   directory instead of its full path.
+ * Forge builds under the packager's temporary folder in the user profile, so
+ * both paths would otherwise carry the builder's user name. MSBuild may use
+ * the long form of a short (8.3) folder name, so both forms are trimmed.
+ */
+export function msvcPathFreeBuildEnv(
+  buildPath: string,
+  env: Record<string, string | undefined> = process.env,
+  realpath: (folder: string) => string = (folder) => fs.realpathSync.native(folder),
+): { _CL_: string; _LINK_: string } {
+  const given = withoutTrailingSeparator(path.resolve(buildPath));
+  let resolved = given;
+  try {
+    resolved = withoutTrailingSeparator(realpath(given));
+  } catch {
+    // Not resolvable: trim the folder as given.
+  }
+  const trims = [...new Set([given, resolved])].map((folder) => `"/d1trimfile:${folder}"`);
+  return {
+    _CL_: [env._CL_, ...trims].filter(Boolean).join(' '),
+    _LINK_: [env._LINK_, PDB_FILE_NAME_ONLY].filter(Boolean).join(' '),
+  };
+}
+
+/** Runs `run` with `vars` set in process.env (child processes inherit them), then restores it. */
+export async function withEnv<T>(vars: Record<string, string>, run: () => Promise<T>): Promise<T> {
+  const saved = Object.keys(vars).map((name) => [name, process.env[name]] as const);
+  Object.assign(process.env, vars);
+  try {
+    return await run();
+  } finally {
+    for (const [name, value] of saved) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
+  }
+}

@@ -23,8 +23,10 @@ import {
 } from '@cindy/maker-shared/brand-identity';
 import {
   assertRealLfsBinary,
+  msvcPathFreeBuildEnv,
   spawnEnsureAgentBinaries,
   stageAgentBinaries,
+  withEnv,
 } from './forge-countersign';
 import { preparePackagedNodePty } from './forge-node-pty';
 import { prunePackagedRuntime, prunePackagedMigrationSnapshots } from './forge-prune-runtime';
@@ -413,13 +415,19 @@ async function rebuildNativeDepsInPackage(
   console.log(
     `[forge:afterCopy] rebuilding native modules (${modules.join(', ')}) for Electron ${electronVersion} (${arch})...`,
   );
-  await electronRebuild({
-    buildPath,
-    electronVersion,
-    arch,
-    force: true,
-    onlyModules: modules,
-  });
+  // Countersign: an MSVC rebuild records the build folder (in the user
+  // profile) in the addon; these options keep it out (forge-countersign.ts).
+  const rebuildEnv =
+    platform === 'win32' && process.platform === 'win32' ? msvcPathFreeBuildEnv(buildPath) : {};
+  await withEnv(rebuildEnv, () =>
+    electronRebuild({
+      buildPath,
+      electronVersion,
+      arch,
+      force: true,
+      onlyModules: modules,
+    }),
+  );
   const sqliteNative = path.join(
     buildPath,
     'node_modules',
