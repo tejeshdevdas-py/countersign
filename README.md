@@ -32,22 +32,29 @@ These need Cindy's servers, so they are removed or switched off:
 - TapDB analytics, the usage heartbeat and log upload;
 - the app updater (the update service and the updater program) and the engines' self-update;
 - endpoint manifests;
-- Cindy's hosted model service;
-- the plugin market and Skill Hub;
-- provider sharing and the phone link (the relay never starts), and the mobile app download;
-- cloud chat, cloud file upload and cloud app connections (OAuth broker);
+- Cindy's hosted model service (Settings > Providers does not offer it);
+- the plugin market and Skill Hub: the Skills page shows only local skills, and agents get no Skill Hub or plugin-market tools;
+- provider sharing (no Remote & Sharing row or page) and the phone link (the relay never starts), and the mobile app download;
+- task sharing: there is no Share Task item or Shared tasks tab, and a shared-task invitation link says task sharing is not available;
+- cloud chat (there is no "Enter Invite Link", and a chat invitation link says cloud chat is not available), cloud file upload and cloud app connections (OAuth broker);
 - cloud voice (voice input with your own provider still works);
 - the "Recognize my voice" speaker filter for voice input, whose models download only from Cindy's server;
 - the Telegram, X and Slack bridges;
 - in-app issue reporting, both through Cindy's service and to Cindy's GitHub tracker;
-- the beta channel, and moving tasks between computers;
+- the beta channel, and moving or copying tasks to another computer: the Move menu lists only local projects, and the agents' history tools read only this computer;
 - the build-time fallback to Cindy's download server.
 
 Also off:
 
-- Chat-app bots (Telegram, Discord and the like) are hidden and never connect. Local bots that use your own bot token are planned for later.
+- Chat-app bots (Telegram, Discord and the like) are hidden and never connect. Settings > Tools does not list the Feishu bot, personal WeChat or Slack tools, and a teammate imported with a chat-app connection comes without it. Local bots that use your own bot token are planned for later.
 - The `.cindy` file association is not registered on Windows.
-- The Cindy-character wallpapers are removed, and Cindy's logos and artwork are replaced.
+- Artwork: Countersign's own artwork replaces Cindy's in the app icon, the wordmarks, the default teammate's avatar and the startup splash, which draws the Countersign avatar and wordmark. Cindy's logo files, the account and share-card character images and the eight Cindy-character wallpapers are removed. Still in the repository but imported by nothing: the upstream splash portrait and slogan images and the source images of the sign-in result page's characters (`apps/desktop/src/renderer/assets/login/`). Still in the installer but not shown on Windows in local mode: a macOS-only agent-island image of Cindy, the sign-in result page's character images (that page follows a browser sign-in, which local mode refuses), and the upstream company's mark, used only for the hosted model service.
+
+Also changed:
+
+- The built-in wallpapers ship with the app (eight images, about 3.4 MB) and are never downloaded.
+- The Explorer right-click entry on folders reads "Open with Countersign", in English for every language.
+- If the app cannot open its local session at start, it shows "Local data cannot be opened yet" with a "Reopen Local Data" button.
 
 Local Android automation over adb stays; only the cloud phone link is off.
 
