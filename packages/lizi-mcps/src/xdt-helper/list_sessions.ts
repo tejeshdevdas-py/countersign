@@ -19,7 +19,7 @@ import type { SessionQueueDeps } from './list_session_queue.js';
 import { okPayload, errorPayload } from './_payload.js';
 import { encodeCursor, decodeCursor } from './_history_cursor.js';
 import { resolveHistoryScope } from './_history_scope.js';
-import { historyDeviceShape, HISTORY_DEVICE_DESCRIPTION, queryHistoryDevices } from './_history_devices.js';
+import { historyDeviceOf, historyDeviceShape, HISTORY_DEVICE_DESCRIPTION, queryHistoryDevices } from './_history_devices.js';
 
 const DESCRIPTION = [
   HISTORY_DEVICE_DESCRIPTION,
@@ -93,7 +93,8 @@ export function registerListSessionsTool(
         .describe('按 time_field 排序，desc = 最新在前（默认）。'),
     },
     handler: async (args) => {
-      if (args.device !== 'local') return queryHistoryDevices(registry, deps, 'list_sessions', args);
+      const device = historyDeviceOf(args);
+      if (device !== 'local') return queryHistoryDevices(registry, deps, 'list_sessions', { ...args, device });
       const { workdir, from, to, agent_kind, include_deleted, limit, cursor, order, teammate_id, source, time_field } = args;
       const scope = await resolveHistoryScope(deps.history, deps.getSessionContext, null);
       if (!scope.ok) return errorPayload(scope.errorCode, scope.message);

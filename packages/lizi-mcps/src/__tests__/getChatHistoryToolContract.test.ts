@@ -1,4 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+// Countersign: this case checks upstream's capability text, the six-tool chat-history entry;
+// the LOCAL_ONLY text is checked in capabilities.localOnly.test.ts.
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
 
 import { XdtHelperToolRegistry } from '../lizi_xdtHelperToolRegistry.js';
 import { CAPABILITIES } from '../xdt-helper/capabilities.js';

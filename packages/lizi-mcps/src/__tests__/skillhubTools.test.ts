@@ -1,5 +1,12 @@
 import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
+
+// Countersign: these cases cover upstream's Skill Hub tools, which LOCAL_ONLY does not
+// register (see xdtHelperTools.localOnly.test.ts).
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
 import { XdtHelperToolRegistry } from '../lizi_xdtHelperToolRegistry.js';
 import { registerSkillhubTools } from '../xdt-helper/skillhub.js';
 import { createXdtHelperMcpServer } from '../lizi_xdtHelperMcpServer.js';

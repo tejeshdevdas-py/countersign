@@ -30,6 +30,7 @@ import { registerSessionTagTools, type SessionTagsCallback } from './xdt-helper/
  */
 
 import { BRAND_NAME } from '@cindy/maker-shared/branding';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { ListToolsRequestSchema, type Tool } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
@@ -963,7 +964,8 @@ export function createXdtHelperMcpServer(
       history: deps.history,
       getSessionContext: () => resolveLiziMcpSessionContext(sessionCtx),
     };
-    registerHistoryDevicesTool(registry, historyDeps);
+    // Countersign: no other computers under LOCAL_ONLY (the device link is off).
+    if (!LOCAL_ONLY) registerHistoryDevicesTool(registry, historyDeps);
     registerListWorkdirsTool(registry, historyDeps);
     registerListSessionsTool(registry, {
       ...historyDeps,
@@ -1014,7 +1016,9 @@ export function createXdtHelperMcpServer(
       startSkillLearning: deps.skillLearning,
     });
   }
-  if (deps.skillhub) {
+  // Countersign: every Skill Hub tool (market search, published list, publish, status) needs
+  // the hosted Skill Hub, which LOCAL_ONLY switches off; local skills need no tool here.
+  if (deps.skillhub && !LOCAL_ONLY) {
     registerSkillhubTools(registry, {
       getSessionContext: () => resolveLiziMcpSessionContext(sessionCtx),
       execute: deps.skillhub,

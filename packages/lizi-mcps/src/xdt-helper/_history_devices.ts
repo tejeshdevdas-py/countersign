@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { LOCAL_ONLY } from "@cindy/maker-shared/local-only";
 import type {
   XdtHelperToolRegistry,
   XdtHelperToolResult,
@@ -26,7 +27,7 @@ export interface HistoryRemoteDeps {
   ): Promise<Record<string, unknown>>;
 }
 
-export const historyDeviceShape = {
+const UPSTREAM_HISTORY_DEVICE_SHAPE = {
   device: z
     .string()
     .min(1)
@@ -36,8 +37,25 @@ export const historyDeviceShape = {
       "local (default), all (local + online authorized computers), or exact deviceId from list_history_devices. Cross-device results are grouped by device; limit applies per device. Continue each group with its deviceId and nextCursor.",
     ),
 };
-export const HISTORY_DEVICE_DESCRIPTION =
+/**
+ * Countersign: under LOCAL_ONLY there are no other computers (the device link is off), so
+ * the history tools take no `device` parameter and read this computer only; a stray
+ * `device` argument is dropped by the schema. See historyDeviceOf.
+ */
+export const historyDeviceShape = (
+  LOCAL_ONLY ? {} : UPSTREAM_HISTORY_DEVICE_SHAPE
+) as typeof UPSTREAM_HISTORY_DEVICE_SHAPE;
+
+/** The device a history call targets: "local" when the tool takes no device parameter. */
+export function historyDeviceOf(args: { device?: string }): string {
+  return args.device ?? "local";
+}
+
+const UPSTREAM_HISTORY_DEVICE_DESCRIPTION =
   'Use device="all" to discover/query local and online authorized computers, or list_history_devices then device=<exact id>. Results are grouped per device, with independent nextCursor values; paginate each device separately. Unavailable devices and partial coverage are explicit. Remote session IDs can be passed directly to get_chat_history. Local-only remains the default.';
+export const HISTORY_DEVICE_DESCRIPTION = LOCAL_ONLY
+  ? "Reads this computer's history only."
+  : UPSTREAM_HISTORY_DEVICE_DESCRIPTION;
 
 export function historyPayload(
   result: XdtHelperToolResult,

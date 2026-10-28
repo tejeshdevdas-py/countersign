@@ -31,7 +31,7 @@ import type { XdtHelperHistoryDeps, HistoryRole } from './_history_types.js';
 import { okPayload, errorPayload } from './_payload.js';
 import { stringArrayParam } from './_array-param.js';
 import { resolveHistoryScope } from './_history_scope.js';
-import { historyDeviceShape, HISTORY_DEVICE_DESCRIPTION, queryHistoryDevices } from './_history_devices.js';
+import { historyDeviceOf, historyDeviceShape, HISTORY_DEVICE_DESCRIPTION, queryHistoryDevices } from './_history_devices.js';
 
 const ROLE_VALUES = [
   'user',
@@ -119,7 +119,8 @@ export function registerSearchChatHistoryTool(
       cursor: z.string().optional().describe('上次响应的 nextCursor; 不传 = 第一页。坏 cursor 自动回第一页。'),
     },
     handler: async (args) => {
-      if (args.device !== 'local') return queryHistoryDevices(registry, deps, 'search_chat_history', args);
+      const device = historyDeviceOf(args);
+      if (device !== 'local') return queryHistoryDevices(registry, deps, 'search_chat_history', { ...args, device });
       if (args.session_ids?.some((id) => id.includes('::'))) return errorPayload('INVALID_ARGS', '远程 session_ids 必须指定对应 device，不能作为本机 ID 查询。');
       const {
         query,
