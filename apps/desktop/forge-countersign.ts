@@ -242,6 +242,17 @@ export const BUILD_INTERMEDIATE_FILE =
   /\.(?:obj|iobj|pdb|ipdb|lib|exp|tlog|sln|ilk|idb|pch|res|lastbuildstate|recipe|forge-meta)$|\.vcxproj(?:\.[^\\/]+)?$|^config\.gypi$/i;
 /** Compiler output folders. */
 export const BUILD_INTERMEDIATE_DIR = /^obj(?:\.target)?$/i;
+/**
+ * A short (8.3) profile folder: a drive, then `Users` (or `Documents and
+ * Settings`), then up to six characters, a tilde and a number, the form Windows
+ * gives a longer profile folder name. It holds only the first letters of the
+ * name, so it is found by its shape, whatever the name is. Lower-case input.
+ */
+const SHORT_PROFILE =
+  /(?:^|[^a-z0-9])[a-z](?::[\\/]+|[\\/]+)(?:users|documents and settings)[\\/]+[a-z0-9_$%'@!#&(){}^-]{1,6}~\d{1,6}(?![a-z0-9_.-])/;
+/** The same as a folder in a packaged file path (relative, `/`-separated, lower case). */
+const SHORT_PROFILE_FOLDER =
+  /(?:^|\/)(?:users|documents and settings)\/[a-z0-9_$%'@!#&(){}^-]{1,6}~\d{1,6}(?:\/|$)/;
 const USER_NAME_MASK = '<user name>';
 const REPORT_LIMIT = 20;
 
@@ -264,7 +275,10 @@ export function publicGithubIdentity(appIds: readonly string[]): string[] {
 export interface PackagedLeakFindings {
   /** Build intermediates, as `app.asar/<path>` or `app.asar.unpacked/<path>`. */
   intermediates: string[];
-  /** Files whose name or content holds the user name in a profile path outside the public identity (name masked). */
+  /**
+   * Files whose name or content holds the user name in a profile path outside the
+   * public identity, or a short (8.3) profile folder (name masked).
+   */
   userName: string[];
   filesChecked: number;
 }
@@ -392,6 +406,20 @@ function pathHoldsName(shownPath: string, matcher: NameMatcher): boolean {
   return matcher.profileFolder.test(shownPath.toLowerCase());
 }
 
+/** True when the content holds a short (8.3) profile folder, in UTF-8 or UTF-16LE. */
+function holdsShortProfile(content: Buffer): boolean {
+  if (!content.includes(0x7e)) return false;
+  const lower = asciiLower(content);
+  if (SHORT_PROFILE.test(lower.toString('latin1'))) return true;
+  return [0, 1].some((alignment) =>
+    SHORT_PROFILE.test(lower.subarray(alignment).toString('utf16le').toLowerCase()),
+  );
+}
+
+function pathHoldsShortProfile(shownPath: string): boolean {
+  return SHORT_PROFILE_FOLDER.test(shownPath.toLowerCase());
+}
+
 function maskName(shownPath: string, matcher: NameMatcher | null): string {
   if (!matcher) return shownPath;
   let out = shownPath;
@@ -434,8 +462,10 @@ export function findPackagedBuildLeaks(
     if (pattern.test(name)) findings.intermediates.push(maskName(shown, matcher));
     if (!read) return;
     findings.filesChecked++;
-    if (!matcher) return;
-    if (pathHoldsName(shown, matcher) || holdsName(read(), matcher)) {
+    const content = read();
+    const named =
+      matcher !== null && (pathHoldsName(shown, matcher) || holdsName(content, matcher));
+    if (named || pathHoldsShortProfile(shown) || holdsShortProfile(content)) {
       findings.userName.push(maskName(shown, matcher));
     }
   };
@@ -512,7 +542,8 @@ export function assertPackagedOutputClean(
   if (findings.userName.length > 0) {
     problems.push(
       `${findings.userName.length} files that hold this machine's user name ` +
-        `(shown as ${USER_NAME_MASK}), usually in a build path:${listed(findings.userName)}`,
+        `(shown as ${USER_NAME_MASK}) or a short (8.3) profile folder, usually in a build path:` +
+        listed(findings.userName),
     );
   }
   if (problems.length > 0) {

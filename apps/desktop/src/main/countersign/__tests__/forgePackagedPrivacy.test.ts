@@ -269,4 +269,57 @@ describe('Countersign packaged output check', () => {
       ]),
     );
   });
+
+  // Residual round, build-3: a short (8.3) profile folder holds only the first letters of
+  // the name, so it is found by its shape, whatever the user name is.
+  it.each([
+    winPath('C:', 'Users', 'FIXTUR~1', 'AppData', 'Local', 'Temp'),
+    winPath('c:', 'users', 'ab~2'),
+    ['', 'c', 'Users', 'FIXTUR~1', 'src'].join('/'),
+    winPath('D:', 'Documents and Settings', 'FIXT~12', 'x'),
+  ])('fails a short (8.3) profile folder in %s', async (profilePath) => {
+    const resources = await packaged({
+      ...CLEAN,
+      '.vite/build/main.js': `const p = ${JSON.stringify(profilePath)};`,
+      'node_modules/addon/build/Release/addon.node': Buffer.concat([
+        Buffer.alloc(16),
+        Buffer.from(profilePath, 'utf16le'),
+      ]),
+    });
+    const findings = findPackagedBuildLeaks(resources, {
+      userName: 'unrelated',
+      publicIdentity: PUBLIC,
+    });
+    expect(findings.userName.sort()).toEqual([
+      'app.asar.unpacked/node_modules/addon/build/Release/addon.node',
+      'app.asar/.vite/build/main.js',
+    ]);
+  });
+
+  it('finds a short profile folder in a packaged file path, and no user name is needed', async () => {
+    const resources = await packaged({ ...CLEAN, 'Users/FIXTUR~1/x.txt': 'x' });
+    expect(
+      findPackagedBuildLeaks(resources, { userName: '', publicIdentity: PUBLIC }).userName,
+    ).toEqual(['app.asar/Users/FIXTUR~1/x.txt']);
+  });
+
+  it('does not count a tilde elsewhere in a path as a short profile folder', async () => {
+    const resources = await packaged({
+      ...CLEAN,
+      '.vite/build/main.js': `const a = ${JSON.stringify(winPath('C:', 'Users', 'Public', 'a~1'))}; const b = "~/.config"; const c = ${JSON.stringify(winPath('C:', 'Users', 'longername~1'))};`,
+    });
+    expect(
+      findPackagedBuildLeaks(resources, { userName: 'unrelated', publicIdentity: PUBLIC }).userName,
+    ).toEqual([]);
+  });
+
+  it('names the short profile folder in the failure message', async () => {
+    const resources = await packaged({
+      ...CLEAN,
+      '.vite/build/main.js': `const p = ${JSON.stringify(winPath('C:', 'Users', 'FIXTUR~1'))};`,
+    });
+    expect(() =>
+      assertPackagedOutputClean(resources, { userName: 'unrelated', publicIdentity: PUBLIC }),
+    ).toThrow(/short \(8\.3\) profile folder/);
+  });
 });

@@ -758,7 +758,9 @@ function assertCountersignPackagedOutputClean(buildPath: string, platform: Forge
     userName = user.username;
     profileName = path.basename(user.homedir);
   } catch {
-    console.warn('[forge:postPackage] no user name available; checking build intermediates only');
+    console.warn(
+      '[forge:postPackage] no user name available; checking build intermediates and short profile folders only',
+    );
   }
   const findings = assertPackagedOutputClean(packagedResourcesPath(buildPath, platform), {
     userName,
@@ -766,7 +768,7 @@ function assertCountersignPackagedOutputClean(buildPath: string, platform: Forge
     publicIdentity: publicGithubIdentity(Object.values(BRAND_IDENTITY.appIdByRegion)),
   });
   console.log(
-    `[forge:postPackage] ${findings.filesChecked} packaged files: no build intermediates, no user name in a profile path`,
+    `[forge:postPackage] ${findings.filesChecked} packaged files: no build intermediates, no user name or short (8.3) folder in a profile path`,
   );
 }
 
