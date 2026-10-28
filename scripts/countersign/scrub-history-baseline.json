@@ -105,6 +105,34 @@
       "rule": "local-path",
       "sha256": "ca2a2b2a031ca6a4480606586db64ef438e735d9b1e97a6fc8d8158782ef1562",
       "reason": "A code comment describing the Git Bash user-folder shape with a literal <name> placeholder. It names no person. The tree words it differently now. Accepted by the final-review controller ruling instead of rewriting this commit's content."
+    },
+    {
+      "commit": "Countersign: the packaged-output check matches the user name only in a Windows profile path (build-1, regression-2)",
+      "where": "apps/desktop/forge-countersign.ts:311",
+      "rule": "local-path",
+      "sha256": "ca2a2b2a031ca6a4480606586db64ef438e735d9b1e97a6fc8d8158782ef1562",
+      "reason": "A code comment describing the Windows profile-path shape with a literal <name> placeholder. It names no person. The next commit (\"Countersign: packaged-output check comments describe the profile path in words\") words it differently. Accepted under the final-review controller ruling for shape comments instead of rewriting this commit's content."
+    },
+    {
+      "commit": "Countersign: the packaged-output check matches the user name only in a Windows profile path (build-1, regression-2)",
+      "where": "apps/desktop/forge-countersign.ts:314",
+      "rule": "local-path",
+      "sha256": "b98d692c4574a80e508cf6fa38e6f27ae5348e616448edaa7fe675e363669fd2",
+      "reason": "A code comment describing the Windows profile-path shape with a literal <name> placeholder. It names no person. The next commit (\"Countersign: packaged-output check comments describe the profile path in words\") words it differently. Accepted under the final-review controller ruling for shape comments instead of rewriting this commit's content."
+    },
+    {
+      "commit": "Countersign: the packaged-output check matches the user name only in a Windows profile path (build-1, regression-2)",
+      "where": "apps/desktop/src/main/countersign/__tests__/forgePackagedPrivacy.test.ts:166",
+      "rule": "local-path",
+      "sha256": "af7ea99f2a7de2009fbe4e508e640ee2489d6ebfea3559bb8ff50f1ea0adc17d",
+      "reason": "A code comment describing the Windows profile-path shape with a literal <name> placeholder. It names no person. The next commit (\"Countersign: packaged-output check comments describe the profile path in words\") words it differently. Accepted under the final-review controller ruling for shape comments instead of rewriting this commit's content."
+    },
+    {
+      "commit": "Countersign: the packaged-output check matches the user name only in a Windows profile path (build-1, regression-2)",
+      "where": "apps/desktop/src/main/countersign/__tests__/forgePackagedPrivacy.test.ts:166",
+      "rule": "local-path",
+      "sha256": "ca2a2b2a031ca6a4480606586db64ef438e735d9b1e97a6fc8d8158782ef1562",
+      "reason": "A code comment describing the Windows profile-path shape with a literal <name> placeholder. It names no person. The next commit (\"Countersign: packaged-output check comments describe the profile path in words\") words it differently. Accepted under the final-review controller ruling for shape comments instead of rewriting this commit's content."
     }
   ]
 }
