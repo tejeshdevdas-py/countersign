@@ -117,6 +117,7 @@ These checks, the `better-sqlite3` prune and the two MSVC options have run only 
 - `github.com`: Electron and the `better-sqlite3` prebuilt binary for Node, which `pnpm install` downloads, and the NSIS installer tooling, which packaging downloads.
 - `release-assets.githubusercontent.com`: GitHub redirects release downloads to this host (seen on 2026-10-28), so every download from `github.com` above also reaches it.
 - `www.electronjs.org`: the Electron headers that packaging needs to compile `better-sqlite3` (cached in `%USERPROFILE%\.electron-gyp`).
+- `nodejs.org`: the Node headers that node-gyp downloads when the `better-sqlite3` prebuilt for Node cannot be used and it is compiled from source instead (by `pnpm install`, or by the dependency check that packaging runs first). This is node-gyp's default host; a download from it was not observed on the M1 build machine.
 - `dl.google.com`: Android platform-tools r32.0.0, checked against a pinned sha256.
 - `index.crates.io` and `static.crates.io`: the Rust crates for the helper programs (seen in the cargo registry of the M1 build machine).
 
