@@ -72,6 +72,7 @@ import { createBotProfile } from '../localDb/ipc/bots.js';
 import { submitGithubIssueForSession } from '../github-issue/index.js';
 import { issueReportingToolDeps } from '../countersign/issueReporting.js';
 import { appUpdateToolDeps } from '../countersign/appUpdateTools.js';
+import { pluginMarketToolDeps } from '../countersign/pluginMarketTools.js';
 import {
   listWorkdirsForHistory,
   listSessionsForHistory,
@@ -1347,7 +1348,8 @@ export function createDesktopMcpProviders(deps: DesktopMcpProvidersDeps): LiziMc
       name: 'cindy',
       instance: createCindyGhostsMcpServer(
         getCindyGhostsMcpDeps(ctx, {
-          pluginMarket: getPluginMarketService(),
+          // Countersign: no market agent tools while the plugin market is off (pluginMarketToolDeps).
+          ...pluginMarketToolDeps(() => getPluginMarketService()),
           getAppVersion: deps.getAppVersion,
           getLiveSessionGrantState: deps.getLiveSessionGrantState,
           requestHostPermission: deps.requestHostPermission,

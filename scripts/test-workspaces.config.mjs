@@ -301,6 +301,8 @@ const desktopGuardInclude = [
   'src/main/countersign/__tests__/bootstrapServiceGuards.contract.test.ts',
   // Countersign: the login brand stage (also the splash) imports no upstream portrait or slogan (I-10).
   'src/renderer/__tests__/countersignLoginBrandArt.contract.test.ts',
+  // Countersign: the ghost MCP deps get the plugin market only through pluginMarketToolDeps.
+  'src/main/countersign/__tests__/agentMarketTools.contract.test.ts',
 ];
 
 export function desktopUnitWorkerCount(
