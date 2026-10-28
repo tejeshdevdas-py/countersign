@@ -295,6 +295,8 @@ const desktopGuardInclude = [
   'src/renderer/__tests__/countersignIssueEntryWiring.contract.test.ts',
   // Countersign: no prompt or tool tells the model to use the switched-off app updater.
   'src/main/countersign/__tests__/modelUpdaterText.contract.test.ts',
+  // Countersign: main-entry points <model-viewer> decoders at a local path before rendering (I-1).
+  'src/renderer/__tests__/countersignModelViewerWiring.contract.test.ts',
 ];
 
 export function desktopUnitWorkerCount(

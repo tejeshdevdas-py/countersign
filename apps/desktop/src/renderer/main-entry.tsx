@@ -8,6 +8,10 @@ import 'harmonyos-sans-sc-webfont-splitted';
 // ModelLightbox to preview mivo-generated 3D models. Side-effect-only
 // import — the package self-registers when loaded.
 import '@google/model-viewer';
+// Countersign: under LOCAL_ONLY its decoders come from a local path, not a CDN
+// (configured below, before the first element is created).
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
+import { configureModelViewerOffline } from './lib/countersignModelViewerOffline';
 
 // 在任何 React 组件渲染前先 import 触发 i18next 同步 init —— 否则首屏 useTranslation
 // 拿到的会是 fallback 英文文案再瞬切到目标语言，造成可见闪烁。
@@ -52,6 +56,7 @@ import { themeService } from './themes/theme-service';
 import './styles/globals.css';
 import './styles/sortable.css';
 
+if (LOCAL_ONLY) configureModelViewerOffline(self);
 const disposeEarlyKeyDownCapture = installEarlyKeyDownCapture();
 installScrollbarAutoHide();
 const disposeForegroundRecoveryDiagnostics = installForegroundRecoveryDiagnostics();
