@@ -10,6 +10,13 @@ import { SessionTaskMenu } from '../SessionTaskMenu';
 import { setDataOwnerGeneration } from '@/contexts/dataOwnerGeneration';
 import { toast } from '@/lib/toast';
 
+// Countersign: these cases cover upstream's task sharing and copy to other computers, which
+// LOCAL_ONLY removes (see SessionTaskMenu.localOnly.test.tsx and TaskMoveSubmenu.localOnly.test.tsx).
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
+
 const state = vi.hoisted(() => ({
   host: vi.fn(),
   rowClick: vi.fn(),

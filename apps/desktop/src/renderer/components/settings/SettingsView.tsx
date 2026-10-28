@@ -3,6 +3,7 @@ import { Navigate, useNavigate, useOutletContext, useSearchParams } from 'react-
 import { useTranslation } from 'react-i18next';
 import { useSyncExternalStore } from 'react';
 import { ArrowLeft, ChevronRight } from 'lucide-react';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 
 import { cn } from '@/lib/utils';
 import { Tip } from '@/components/ui/tooltip';
@@ -119,6 +120,8 @@ export function SettingsView() {
     if (raw === 'billing' && !canAccessBilling) return 'general';
     if (raw === 'usage' && !canAccessUsage) return 'general';
     if (raw === 'agent-island' && !isMac) return 'general';
+    // Countersign: task sharing needs a cloud account, so no Shared tasks tab under LOCAL_ONLY.
+    if (raw === 'shared-tasks' && LOCAL_ONLY) return 'general';
     // legacy 深链:外观设置原在「通用」、回复动效原在「个性化」,旧 section 深链落到「外观」。
     if (isLegacyAppearanceDeepLink(raw, rawSection)) return 'appearance';
     return isSettingsTab(raw) ? raw : 'general';
@@ -244,7 +247,8 @@ export function SettingsView() {
           (isMac || tabId !== 'agent-island') &&
           (canAccessBilling || tabId !== 'billing') &&
           (canAccessUsage || tabId !== 'usage') &&
-          (canAccessImBot || tabId !== 'im-bot'),
+          (canAccessImBot || tabId !== 'im-bot') &&
+          (!LOCAL_ONLY || tabId !== 'shared-tasks'),
       ),
     [canAccessBilling, canAccessImBot, canAccessUsage, isMac],
   );

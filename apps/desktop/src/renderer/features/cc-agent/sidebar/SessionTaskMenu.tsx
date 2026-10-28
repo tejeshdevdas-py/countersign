@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import { ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -108,7 +109,8 @@ function ActiveSessionTaskMenu({
     };
   }, [dataOwnerId, ownerGeneration]);
   useEffect(() => {
-    if (!open || guest || session.status !== 'active') return;
+    // Countersign: task sharing needs a cloud account; nothing to load under LOCAL_ONLY.
+    if (LOCAL_ONLY || !open || guest || session.status !== 'active') return;
     let disposed = false;
     const owner = getDataOwnerGeneration();
     setSharing(null);
@@ -234,7 +236,9 @@ function ActiveSessionTaskMenu({
             {copy}
           </>
         )}
-        {session.status === 'active' &&
+        {/* Countersign: no Share Task or Manage sharing under LOCAL_ONLY. */}
+        {!LOCAL_ONLY &&
+          session.status === 'active' &&
           (hosted && !guest ? (
             <DropdownMenuSub>
               <DropdownMenuSubTrigger className={MENU_ROW_CLASS}>
