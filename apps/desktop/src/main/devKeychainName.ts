@@ -45,10 +45,36 @@ import { BRAND_IDENTITY } from '@cindy/maker-shared/brand-identity';
 
 /**
  * 沙箱 profile 内的钥匙串身份标记文件名(userData 根下,纯文本存条目身份名;
- * 词表 = 'CindyDev' | 默认身份名 'Cindy',其它内容一律视为身份不确定)。
+ * 词表 = BRAND_IDENTITY.executableNameByRegion.dev | 默认身份名
+ * BRAND_IDENTITY.executableName,其它内容一律视为身份不确定)。
  */
 export const KEYCHAIN_IDENTITY_MARKER_FILE = 'keychain-identity';
 export const ISOLATED_AUTH_LAUNCH_PROOF_FILE = '.isolated-auth-launch-proof.json';
+
+/**
+ * main 在身份不确定(abort 决策)时打印的处置说明(仅 dev;packaged 不走这里)。
+ * Countersign: the repair steps name the identities resolveDevKeychainDecision
+ * accepts, BRAND_IDENTITY.executableName and executableNameByRegion.dev.
+ */
+export function formatDevKeychainAbortMessage(input: {
+  reason: string;
+  markerPath: string;
+}): string {
+  const devName = BRAND_IDENTITY.executableNameByRegion.dev;
+  const defaultName = BRAND_IDENTITY.executableName;
+  return (
+    `[cindy] FATAL: 沙箱钥匙串身份不确定(${input.reason});` +
+    `为避免用错误主密钥覆盖沙箱既有密文,拒绝启动。\n` +
+    `  标记文件: ${input.markerPath}\n` +
+    `  处置: 若确认该沙箱从未用过 ${devName} 身份,删除该标记文件后重启` +
+    `(或将内容修复为 "${defaultName}",须以换行结尾);若沙箱曾以 ${devName} 运行,` +
+    `修复其内容为 "${devName}"(同样以换行结尾)。修复须在退出所有 ${defaultName} dev` +
+    `实例后进行,并用原子替换(先写临时文件再 mv 覆盖),不要原地截断重写。\n` +
+    `  警告: 不要把旧版本 checkout 显式指向 -dev2 沙箱目录` +
+    `(XDT_USER_DATA_DIR)——旧代码不认身份标记,会以默认身份写入并` +
+    `损坏该沙箱的密文(已知残余风险,见 PR #912 描述)。\n` // web-exempt: a PR number, not a colour
+  );
+}
 
 /** 该目录项是否属于身份标记机制自己的产物(最终标记 或 `<marker>.<pid>-<uuid>.tmp` 半成品)。 */
 export function isKeychainIdentityMarkerArtifact(entryName: string): boolean {
