@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { nativeImage } from 'electron';
+import { brandHomeStateName } from '@cindy/maker-shared/brand-identity';
 
 import {
   LOCAL_THEME_SUFFIX,
@@ -36,7 +37,12 @@ interface FileEntry {
 export function getLocalThemesDir(): string {
   // 所有消费方（loader / writer / open-dir IPC）都经这里拿路径，先确保一次性搬迁完成。
   migrateLegacyThemesDirOnce();
-  return path.join(os.homedir(), '.cindy', 'themes');
+  return themesDirForIdentity();
+}
+
+/** Countersign: ~/.<brand>/themes from BRAND_IDENTITY, never an installed Cindy's ~/.cindy/themes. */
+function themesDirForIdentity(): string {
+  return path.join(os.homedir(), `.${brandHomeStateName()}`, 'themes');
 }
 
 /** 品牌迁移前的旧主题目录（2026-07-20 起硬切为 ~/.cindy/themes），仅用于一次性搬迁。 */
@@ -72,7 +78,7 @@ function migrateLegacyThemesDirOnce(): void {
   themesMigrationDone = true;
   const oldDir = getLegacyLocalThemesDir();
   // 不走 getLocalThemesDir()（它会回调本函数），直接拼新路径。
-  const newDir = path.join(os.homedir(), '.cindy', 'themes');
+  const newDir = themesDirForIdentity();
   try {
     if (!fs.existsSync(oldDir) || !fs.statSync(oldDir).isDirectory()) return;
     if (fs.existsSync(newDir)) return;

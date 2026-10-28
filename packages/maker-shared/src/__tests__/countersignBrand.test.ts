@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BRAND_NAME } from '../branding.js';
-import { BRAND_IDENTITY, allDeepLinkSchemes } from '../brandIdentity.js';
+import { BRAND_IDENTITY, allDeepLinkSchemes, brandHomeStateName } from '../brandIdentity.js';
 
 describe('Countersign brand identity', () => {
   it('uses Countersign as the display name', () => {
@@ -30,6 +30,13 @@ describe('Countersign brand identity', () => {
       expect(name).toContain('Countersign');
       expect(name).not.toContain('Cindy');
     }
+  });
+
+  it('names app-owned state outside userData countersign, derived from the identity', () => {
+    expect(brandHomeStateName()).toBe('countersign');
+    expect(brandHomeStateName()).not.toMatch(/cindy/i);
+    // The same rule gives upstream's own name for upstream's identity.
+    expect(brandHomeStateName({ ...BRAND_IDENTITY, userDataDirName: 'Cindy' })).toBe('cindy');
   });
 
   it('registers only the countersign deep-link scheme', () => {

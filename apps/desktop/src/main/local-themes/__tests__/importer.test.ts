@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { mkdtempSync, realpathSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { brandHomeStateName } from '@cindy/maker-shared/brand-identity';
 
 const osMock = vi.hoisted(() => ({ homedir: '' }));
 
@@ -178,7 +179,7 @@ describe('外部主题导入（main 侧编排）', () => {
   // 回归:family 判重曾只看显式 family 字段,漏了「无 family 的旧主题各自成家族」
   // 那一类,导致新导入的家族与旧主题撞键、变体被静默隐藏。
   it('已有同名旧本地主题（无 family）时，导入的家族键让位，不与之合并', async () => {
-    const dir = path.join(home, '.cindy', 'themes');
+    const dir = path.join(home, `.${brandHomeStateName()}`, 'themes');
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(
       path.join(dir, 'minimal.json'),
@@ -203,7 +204,7 @@ describe('外部主题导入（main 侧编排）', () => {
   });
 
   it('单产物同样走家族判重（不与已有显式 family 撞键）', async () => {
-    const dir = path.join(home, '.cindy', 'themes');
+    const dir = path.join(home, `.${brandHomeStateName()}`, 'themes');
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(
       path.join(dir, 'other.json'),

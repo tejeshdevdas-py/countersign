@@ -22,12 +22,16 @@ vi.mock('../logger.js', () => ({
 }));
 
 import { realpathSync, mkdtempSync } from 'node:fs';
+import { brandHomeStateName } from '@cindy/maker-shared/brand-identity';
 import { tmpdir } from 'node:os';
 import {
   getLocalThemesDir,
   loadLocalThemesSync,
   resetLocalThemesMigrationForTest,
 } from '../local-themes/loader';
+
+// Countersign: the themes folder follows BRAND_IDENTITY (~/.countersign), not ~/.cindy.
+const HOME_STATE_DIR = `.${brandHomeStateName()}`;
 
 const THEME_JSON = JSON.stringify({
   id: 'my-theme',
@@ -36,7 +40,7 @@ const THEME_JSON = JSON.stringify({
   colors: { '--surface': '#111111' },
 });
 
-describe('local themes legacy dir migration (~/.xdmaker/themes -> ~/.cindy/themes)', () => {
+describe('local themes legacy dir migration (~/.xdmaker/themes -> ~/.<brand>/themes)', () => {
   let home: string;
 
   beforeEach(() => {
@@ -58,13 +62,13 @@ describe('local themes legacy dir migration (~/.xdmaker/themes -> ~/.cindy/theme
 
     expect(result.success).toBe(true);
     expect(result.themes.map((t) => t.id)).toEqual(['my-theme-local']);
-    expect(fs.existsSync(path.join(home, '.cindy', 'themes', 'my-theme.json'))).toBe(true);
+    expect(fs.existsSync(path.join(home, HOME_STATE_DIR, 'themes', 'my-theme.json'))).toBe(true);
     expect(fs.existsSync(path.join(home, '.xdmaker'))).toBe(false);
   });
 
   it('新目录已存在时不动老目录', () => {
     const oldDir = path.join(home, '.xdmaker', 'themes');
-    const newDir = path.join(home, '.cindy', 'themes');
+    const newDir = path.join(home, HOME_STATE_DIR, 'themes');
     fs.mkdirSync(oldDir, { recursive: true });
     fs.mkdirSync(newDir, { recursive: true });
     fs.writeFileSync(path.join(oldDir, 'legacy.json'), THEME_JSON, 'utf8');
@@ -84,12 +88,15 @@ describe('local themes legacy dir migration (~/.xdmaker/themes -> ~/.cindy/theme
     expect(fs.existsSync(getLocalThemesDir())).toBe(true);
   });
 
-  it('getLocalThemesDir 指向 ~/.cindy/themes', () => {
-    expect(getLocalThemesDir()).toBe(path.join(home, '.cindy', 'themes'));
+  it('Countersign: getLocalThemesDir points at ~/.countersign/themes and never at ~/.cindy', () => {
+    expect(getLocalThemesDir()).toBe(path.join(home, '.countersign', 'themes'));
+    expect(getLocalThemesDir()).toBe(path.join(home, HOME_STATE_DIR, 'themes'));
+    loadLocalThemesSync();
+    expect(fs.existsSync(path.join(home, '.cindy'))).toBe(false);
   });
 
   it('只读取 brand.icon / brand.logo', () => {
-    const dir = path.join(home, '.cindy', 'themes');
+    const dir = path.join(home, HOME_STATE_DIR, 'themes');
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(
       path.join(dir, 'brand.json'),
@@ -113,7 +120,7 @@ describe('local themes legacy dir migration (~/.xdmaker/themes -> ~/.cindy/theme
   });
 
   it('为存在的品牌图片附加随文件变化的运行时版本号', () => {
-    const dir = path.join(home, '.cindy', 'themes');
+    const dir = path.join(home, HOME_STATE_DIR, 'themes');
     const iconPath = path.join(home, 'icon.png');
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(iconPath, 'first', 'utf8');

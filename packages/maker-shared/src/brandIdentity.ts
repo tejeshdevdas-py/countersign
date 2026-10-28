@@ -216,6 +216,16 @@ export function brandUserDataDirName(
   return identity.userDataDirNameByRegion[region];
 }
 
+/**
+ * Countersign: lower-case name for this identity's own state outside userData:
+ * `~/.<name>/` (local themes, the shared skill-roots lock), `~/.ssh/<name>.conf`
+ * and the default SSH key `~/.ssh/<name>`. Derived from `userDataDirName`, so
+ * upstream's identity still gives `cindy` and two installed apps never share them.
+ */
+export function brandHomeStateName(identity: BrandIdentity = BRAND_IDENTITY): string {
+  return identity.userDataDirName.toLowerCase();
+}
+
 /** 深链需要注册/解析的全部 scheme(主 + 历史),顺序稳定:主 scheme 恒为首位。 */
 export function allDeepLinkSchemes(identity: BrandIdentity = BRAND_IDENTITY): readonly string[] {
   return [identity.primaryScheme, ...identity.legacySchemes];
