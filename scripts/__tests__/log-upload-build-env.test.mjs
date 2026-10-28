@@ -308,3 +308,31 @@ test('Countersign: packaging env treats a missing config as log upload off for e
     });
   }
 });
+
+test('Countersign: under LOCAL_ONLY packaging bakes no target even when the config exists', async () => {
+  const { packagingLogUploadBuildEnv } = await import('../shared/log-upload-build-env.mjs');
+  const { readLocalOnlySwitch } = await import('../countersign/local-only.mjs');
+  assert.equal(readLocalOnlySwitch(), true);
+  const configPath = writeConfig(VALID);
+  for (const authRegion of ['cn', 'global']) {
+    assert.deepEqual(packagingLogUploadBuildEnv({ authRegion, configPath }), {
+      XDT_LOG_UPLOAD_TARGET: '',
+    });
+  }
+  // Nothing is read from the config under LOCAL_ONLY, so a corrupt one does not fail.
+  assert.deepEqual(packagingLogUploadBuildEnv({ authRegion: 'cn', configPath: writeConfig('{bad') }), {
+    XDT_LOG_UPLOAD_TARGET: '',
+  });
+});
+
+test('Countersign: with the LOCAL_ONLY switch off, packaging bakes the region target as upstream', async () => {
+  const { packagingLogUploadBuildEnv } = await import('../shared/log-upload-build-env.mjs');
+  const repoRoot = makeTempDir('countersign-log-upload-switch-');
+  const switchFile = path.join(repoRoot, 'packages', 'maker-shared', 'src', 'localOnly.ts');
+  fs.mkdirSync(path.dirname(switchFile), { recursive: true });
+  fs.writeFileSync(switchFile, 'export const LOCAL_ONLY = false as const;\n');
+  fs.mkdirSync(path.join(repoRoot, 'config'));
+  fs.writeFileSync(path.join(repoRoot, 'config', 'log-upload.json'), JSON.stringify(VALID));
+  const env = packagingLogUploadBuildEnv({ authRegion: 'cn', repoRoot });
+  assert.equal(JSON.parse(env.XDT_LOG_UPLOAD_TARGET).project, 'cn-proj');
+});

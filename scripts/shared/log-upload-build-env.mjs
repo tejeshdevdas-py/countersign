@@ -20,6 +20,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { CLIENT_BUILD_REGIONS, resolveClientBuildRegion } from './client-endpoint-build-env.mjs';
+import { readLocalOnlySwitch } from '../countersign/local-only.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -212,10 +213,15 @@ export function mobileLogUploadBuildEnv(options = {}) {
 }
 
 /**
- * Countersign packaging: log upload is off, so a missing `config/log-upload.json` means
- * "off" for every region (empty target), never a hard failure. A present but corrupt
- * file still fails.
+ * Countersign packaging: log upload is off. Under LOCAL_ONLY (read from
+ * packages/maker-shared/src/localOnly.ts) no target is baked, even when
+ * `config/log-upload.json` exists, and the file is not read. With the switch
+ * off, a missing file means "off" for every region (empty target) and a
+ * present but corrupt file still fails.
  */
 export function packagingLogUploadBuildEnv(options = {}) {
+  if (readLocalOnlySwitch(options.repoRoot)) {
+    return { [LOG_UPLOAD_TARGET_ENV]: '' };
+  }
   return desktopLogUploadBuildEnv({ ...options, allowMissing: true });
 }
