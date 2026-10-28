@@ -1,9 +1,9 @@
 /**
  * Countersign brand artwork: the single place the renderer takes it from.
  *
- * Source: the owner's countersign-brand folder (outside this repo; AI-generated for Countersign,
- * see FORK-CHANGES.md), scaled with a Lanczos filter, alpha kept. Files in
- * `src/renderer/assets/countersign/` (all transparent PNG):
+ * Source: the owner's countersign-brand folder (outside this repo), AI-generated
+ * for Countersign (see FORK-CHANGES.md), scaled with a Lanczos filter, alpha
+ * kept. Files in `src/renderer/assets/countersign/` (all transparent PNG):
  *
  * - `wordmark-light.png` / `wordmark-dark.png` (1024 x 350): the wordmark for
  *   light / dark backgrounds. Shown at 110 x 37.5 px on the new-chat screen and
