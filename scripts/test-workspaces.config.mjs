@@ -297,6 +297,8 @@ const desktopGuardInclude = [
   'src/main/countersign/__tests__/modelUpdaterText.contract.test.ts',
   // Countersign: main-entry points <model-viewer> decoders at a local path before rendering (I-1).
   'src/renderer/__tests__/countersignModelViewerWiring.contract.test.ts',
+  // Countersign: bootstrap starts each upstream background service only behind its guard (M-N7).
+  'src/main/countersign/__tests__/bootstrapServiceGuards.contract.test.ts',
 ];
 
 export function desktopUnitWorkerCount(
