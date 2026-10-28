@@ -4,21 +4,24 @@ import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { LOGIN_HANDOFF_TIMINGS, useLoginHandoff } from '@/contexts/LoginHandoffContext';
 import { useIsDarkMode } from '@/components/markdown/useIsDarkMode';
 
-import heroPng from '@/assets/login/hero.png';
-import heroPng2x from '@/assets/login/hero@2x.png';
-import heroMask from '@/assets/login/hero-mask.svg';
 import wordmarkPng from '@/assets/countersign/login-wordmark-light.png';
 import wordmarkPng2x from '@/assets/countersign/login-wordmark-light@2x.png';
 import wordmarkDarkPng from '@/assets/countersign/login-wordmark-dark.png';
 import wordmarkDarkPng2x from '@/assets/countersign/login-wordmark-dark@2x.png';
-import sloganPng from '@/assets/login/slogan.png';
-import sloganPng2x from '@/assets/login/slogan@2x.png';
-import sloganDarkPng from '@/assets/login/slogan-dark.png';
-import sloganDarkPng2x from '@/assets/login/slogan-dark@2x.png';
+import { COUNTERSIGN_BRAND_ASSETS } from '@/lib/countersignBrandAssets';
 
-import { brandPlacement, sloganShiftX, splashBrandPlacement } from './loginScale';
-import { HERO, LOGIN_COLORS, LOGIN_LOCAL_MODE, SLOGAN, STAGE, WORDMARK } from './loginDesignTokens';
+import { brandPlacement, splashBrandPlacement } from './loginScale';
+import { LOGIN_COLORS, LOGIN_LOCAL_MODE, STAGE, WORDMARK } from './loginDesignTokens';
 import { useViewportSize } from './LoginStage';
+
+/**
+ * Countersign: the stage draws the Countersign avatar where upstream drew its character
+ * portrait (934 x 934 at (443, 275)), and no slogan image. The avatar is centred on the
+ * wordmark's axis (x 910) and sits 70 px above it. The avatar and the wordmark are the
+ * two images that must settle before the handoff starts.
+ */
+const COUNTERSIGN_AVATAR = { x: 782, y: 720, size: 256 } as const;
+const BRAND_ASSET_COUNT = 2;
 
 /**
  * LoginBrandStage — 品牌视觉层唯一渲染者(implementation-plan Step 3b WHAT2)。
@@ -54,7 +57,6 @@ export function LoginBrandStage() {
     handoff.brandLayout === 'splash'
       ? splashBrandPlacement(width, height)
       : brandPlacement(width, height, panelBottomReserve);
-  const sloganShift = sloganShiftX(width, scale);
   // 暗色画布用白字版字标/SLOGAN(figma 532:585 CINDY_Standard_White / SLOGAN #FBFBFB;
   // 深浅判定同 useBrandLogo:跟随 theme-service 挂的 dark class)。立绘两模式同资产。
   const isDark = useIsDarkMode();
@@ -62,19 +64,16 @@ export function LoginBrandStage() {
   const wordmarkSrcSet = isDark
     ? `${wordmarkDarkPng} 1x, ${wordmarkDarkPng2x} 2x`
     : `${wordmarkPng} 1x, ${wordmarkPng2x} 2x`;
-  const sloganSrc = isDark ? sloganDarkPng : sloganPng;
-  const sloganSrcSet = isDark
-    ? `${sloganDarkPng} 1x, ${sloganDarkPng2x} 2x`
-    : `${sloganPng} 1x, ${sloganPng2x} 2x`;
 
   // 品牌资产推进锚:立绘/字标/Slogan 三图全部 settle(load 或 error 均计,防死锁)。
+  // Countersign: two images settle here, the avatar and the wordmark.
   const settledRef = useRef<Set<string>>(new Set());
   const reportedRef = useRef(false);
   const handleAssetSettled = useCallback(
     (key: string) => {
       if (reportedRef.current) return;
       settledRef.current.add(key);
-      if (settledRef.current.size >= 3) {
+      if (settledRef.current.size >= BRAND_ASSET_COUNT) {
         reportedRef.current = true;
         handoff.reportBrandAssetsReady();
       }
@@ -100,19 +99,6 @@ export function LoginBrandStage() {
         transition: 'opacity var(--splash-fade-duration) var(--splash-fade-easing)',
       }
     : {};
-
-  const sloganStyle: CSSProperties = {
-    left: SLOGAN.x,
-    top: SLOGAN.y,
-    width: SLOGAN.width,
-    height: SLOGAN.height,
-    opacity: handoff.sloganRevealed ? 1 : 0,
-    transform: sloganShift !== 0 ? `translateX(${sloganShift}px)` : undefined,
-    // 入场 transition 只在播放期挂(reduced-motion/回访直落终态无过渡)。
-    transition: handoff.isPlaying
-      ? `opacity ${LOGIN_HANDOFF_TIMINGS.sloganMs}ms ${LOGIN_HANDOFF_TIMINGS.sloganEasing}`
-      : undefined,
-  };
 
   return (
     <div
@@ -154,32 +140,17 @@ export function LoginBrandStage() {
             alt=""
             aria-hidden
             draggable={false}
-            data-testid="login-brand-hero"
-            ref={assetRef('hero')}
-            onLoad={() => handleAssetSettled('hero')}
-            onError={() => handleAssetSettled('hero')}
-            className="pointer-events-none absolute select-none object-cover"
-            src={heroPng}
-            srcSet={`${heroPng} 1x, ${heroPng2x} 2x`}
+            data-testid="login-brand-avatar"
+            ref={assetRef('avatar')}
+            onLoad={() => handleAssetSettled('avatar')}
+            onError={() => handleAssetSettled('avatar')}
+            className="pointer-events-none absolute select-none object-contain"
+            src={COUNTERSIGN_BRAND_ASSETS.lockupAvatar}
             style={{
-              left: HERO.x,
-              top: HERO.y,
-              width: HERO.size,
-              height: HERO.size,
-              // 立绘下半渐隐融入背景(figma §4.11 mask 347:970,alpha 图像 mask,
-              // 非自造 CSS gradient;资产为 Figma 原始 SVG,渐变 y=566→920 封装其中)。
-              // 静态 mask 无动画,规则 7 不涉。
-              // data URI 内含单引号,url() 必须双引号包裹(Vite 内联所致),
-              // 否则 CSSOM 静默丢弃 mask-image。
-              maskImage: `url("${heroMask}")`,
-              WebkitMaskImage: `url("${heroMask}")`,
-              maskMode: 'alpha',
-              maskSize: `${HERO.size}px ${HERO.size}px`,
-              maskRepeat: 'no-repeat',
-              maskPosition: 'center',
-              WebkitMaskSize: `${HERO.size}px ${HERO.size}px`,
-              WebkitMaskRepeat: 'no-repeat',
-              WebkitMaskPosition: 'center',
+              left: COUNTERSIGN_AVATAR.x,
+              top: COUNTERSIGN_AVATAR.y,
+              width: COUNTERSIGN_AVATAR.size,
+              height: COUNTERSIGN_AVATAR.size,
             }}
           />
           <img
@@ -198,19 +169,6 @@ export function LoginBrandStage() {
               width: WORDMARK.inner.width,
               height: WORDMARK.inner.height,
             }}
-          />
-          <img
-            alt=""
-            aria-hidden
-            draggable={false}
-            data-testid="login-slogan"
-            ref={assetRef('slogan')}
-            onLoad={() => handleAssetSettled('slogan')}
-            onError={() => handleAssetSettled('slogan')}
-            className="pointer-events-none absolute select-none object-contain"
-            src={sloganSrc}
-            srcSet={sloganSrcSet}
-            style={sloganStyle}
           />
         </div>
       </div>

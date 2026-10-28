@@ -299,6 +299,8 @@ const desktopGuardInclude = [
   'src/renderer/__tests__/countersignModelViewerWiring.contract.test.ts',
   // Countersign: bootstrap starts each upstream background service only behind its guard (M-N7).
   'src/main/countersign/__tests__/bootstrapServiceGuards.contract.test.ts',
+  // Countersign: the login brand stage (also the splash) imports no upstream portrait or slogan (I-10).
+  'src/renderer/__tests__/countersignLoginBrandArt.contract.test.ts',
 ];
 
 export function desktopUnitWorkerCount(

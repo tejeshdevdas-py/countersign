@@ -439,10 +439,11 @@ async function flush() {
   });
 }
 
+// Countersign (I-10): the stage draws the Countersign avatar instead of upstream's portrait
+// and no slogan image, so two images settle. The slogan phase of the handoff still runs.
 function loadBrandAssets() {
-  fireEvent.load(screen.getByTestId('login-brand-hero'));
+  fireEvent.load(screen.getByTestId('login-brand-avatar'));
   fireEvent.load(screen.getByTestId('login-brand-wordmark'));
-  fireEvent.load(screen.getByTestId('login-slogan'));
 }
 
 describe('冷启动集成(resolved snapshot,禁 mock-reject)', () => {
@@ -484,10 +485,10 @@ describe('冷启动集成(resolved snapshot,禁 mock-reject)', () => {
     // ── 冷启动品牌屏(demo desktop-splash 相):品牌可见、Slogan 未出现、
     //    Splash 统一面板在场、登录面板隐藏 ──
     expect(screen.getAllByTestId('login-stage-root').length).toBe(1);
-    const hero = screen.getByTestId('login-brand-hero');
-    expect(hero.style.left).toBe('443px'); // wave4 品牌位 = 登录位(379:5xx 实测)
-    expect(hero.style.top).toBe('275px');
-    expect(screen.getByTestId('login-slogan').style.opacity).toBe('0');
+    const avatar = screen.getByTestId('login-brand-avatar');
+    expect(avatar.style.left).toBe('782px'); // Countersign: splash position = login position
+    expect(avatar.style.top).toBe('720px');
+    expect(screen.queryByTestId('login-slogan')).toBeNull();
     expect(screen.getByTestId('splash-panel')).toBeTruthy();
     const group = screen.getByTestId('login-group');
     expect(group.style.opacity).toBe('0'); // splash 期登录面板不可见 → 最多一个可见 panel
@@ -495,7 +496,7 @@ describe('冷启动集成(resolved snapshot,禁 mock-reject)', () => {
     // 单一品牌 DOM:LoginPage 面板宿主层内不含任何品牌图(所有权契约)
     const panelHost = screen.getByTestId('login-panel-stage-root');
     expect(
-      panelHost.querySelectorAll('img[src*="hero"], img[src*="wordmark"], img[src*="slogan"]')
+      panelHost.querySelectorAll('img[src*="avatar"], img[src*="wordmark"], img[src*="slogan"]')
         .length,
     ).toBe(0);
     // overlay 不拦截 hit-test
@@ -533,23 +534,20 @@ describe('冷启动集成(resolved snapshot,禁 mock-reject)', () => {
     expect(groupIn.style.opacity).toBe('1');
     expect(groupIn.style.transform).toContain('translateY(0px)');
     expect(groupIn.style.transition).toContain('420ms cubic-bezier(.35,.1,.25,1)');
-    expect(screen.getByTestId('login-slogan').style.opacity).toBe('0');
 
     // +100ms Slogan 最后出现(500ms 缓入)
     await act(async () => {
       vi.advanceTimersByTime(100);
     });
     expect(probe.current!.phase).toBe('slogan');
-    const slogan = screen.getByTestId('login-slogan');
-    expect(slogan.style.opacity).toBe('1');
-    expect(slogan.style.transition).toContain('500ms cubic-bezier(.55,.06,.38,.96)');
+    expect(probe.current!.sloganRevealed).toBe(true);
 
     // 收尾:done 后品牌固定登录位、面板可点击、全程单面板
     await act(async () => {
       vi.advanceTimersByTime(560);
     });
     expect(probe.current!.phase).toBe('done');
-    expect(screen.getByTestId('login-brand-hero').style.left).toBe('443px');
+    expect(screen.getByTestId('login-brand-avatar').style.left).toBe('782px');
     expect(probe.current!.brandLayout).toBe('login');
     expect(screen.getByTestId('login-brand-canvas').style.transition).toBe('');
     const doneGroup = screen.getByTestId('login-group');
@@ -657,12 +655,11 @@ describe('冷启动集成(resolved snapshot,禁 mock-reject)', () => {
     const overlay = screen.getByTestId('login-stage-root');
     expect(overlay.className).toContain('pointer-events-none');
     // 终态:品牌固定登录位、Slogan 直落可见且无入场过渡(不重播,playedRef 语义)
-    const hero = screen.getByTestId('login-brand-hero');
-    expect(hero.style.left).toBe('443px');
-    expect(hero.style.top).toBe('275px');
-    const slogan = screen.getByTestId('login-slogan');
-    expect(slogan.style.opacity).toBe('1');
-    expect(slogan.style.transition).toBe('');
+    const avatar = screen.getByTestId('login-brand-avatar');
+    expect(avatar.style.left).toBe('782px');
+    expect(avatar.style.top).toBe('720px');
+    expect(probe.current!.sloganRevealed).toBe(true);
+    expect(screen.queryByTestId('login-slogan')).toBeNull();
     // 登录面板同样直落终态可点击,无入场动画重播
     const group = screen.getByTestId('login-group');
     expect(group.style.opacity).toBe('1');
@@ -675,7 +672,7 @@ describe('冷启动集成(resolved snapshot,禁 mock-reject)', () => {
     expect(probe.current!.phase).toBe('done');
     act(() => vi.runAllTimers());
     expect(probe.current!.phase).toBe('done');
-    expect(screen.getByTestId('login-slogan').style.opacity).toBe('1');
+    expect(probe.current!.sloganRevealed).toBe(true);
     expect(screen.getByTestId('login-group').style.opacity).toBe('1');
     expect(screen.getByTestId('login-stage-root')).toBeTruthy();
     expect(vi.getTimerCount()).toBe(0);

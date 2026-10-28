@@ -190,14 +190,11 @@ describe('wave4 stage 视觉', () => {
     expect(wordmark.style.height).toBe('145px');
   });
 
-  it('SLOGAN 为 #2A2828 矢量版资产,几何 453.22×129.12 @(1194,866)(368:1394)', async () => {
+  // Countersign (I-10): upstream's slogan image is not drawn, so this case is inverted.
+  it('draws no slogan image (Countersign)', async () => {
     mount(await identifierState('providers:both'));
-    const slogan = screen.getByTestId('login-slogan') as HTMLImageElement;
-    expect(slogan.src).toContain('slogan');
-    expect(slogan.style.left).toBe('1194px');
-    expect(slogan.style.top).toBe('866px');
-    expect(slogan.style.width).toBe('453.22px');
-    expect(slogan.style.height).toBe('129.12px');
+    expect(screen.queryByTestId('login-slogan')).toBeNull();
+    expect(document.querySelector('img[src*="slogan"]')).toBeNull();
   });
 
   it('slogan 窄窗左移只平移不缩放(demo applyDesktopScale 公式)', () => {
