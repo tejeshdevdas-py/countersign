@@ -1,6 +1,6 @@
 # Countersign fork changes
 
-Countersign is a fork of [Cindy](https://github.com/makecindy/cindy) (Apache-2.0). This file lists every change to upstream files, so upstream merges stay tractable and Apache-2.0 section 4(b) (modified files carry notice) is met. Countersign's own new files are listed only when they replace upstream behaviour.
+Countersign is a fork of [Cindy](https://github.com/makecindy/cindy) (Apache-2.0). This file lists the modified areas of upstream code: most rows name the files they change, and some name an area or a group of files changed the same way, so not every modified file appears by name. It keeps upstream merges tractable and, with the modification notice in `NOTICE`, serves Apache-2.0 section 4(b) (modified files carry notice). Countersign's own new files are listed only when they replace upstream behaviour.
 
 Base: `makecindy/cindy` main at `0f70b883436cbc31b6f9338c6a304e18a3d72bb6` (2026-10-26).
 
