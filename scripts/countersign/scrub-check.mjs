@@ -4,7 +4,8 @@
  *
  * Rules (rule id: what it matches; where it looks):
  *   anthropic-key, openai-key, github-token: real-shaped tokens; every line
- *   private-key-block: a PEM private-key header followed by a key body; whole file
+ *   private-key-block: a PEM private-key header followed by a key body; whole file,
+ *     and in --history the whole commit message and each file's added lines joined
  *   windows-user-path: a Windows user folder (drive letter, Users, a name; with
  *     backslashes, doubled backslashes or slashes), its URL-encoded form and the
  *     Git Bash /c/Users/<name> form; lines the fork added
@@ -605,6 +606,14 @@ export function scrubHistory(commits, extraPatterns = []) {
         findings.push({ sha: c.sha, where: `${where} name`, rule: hit.rule });
       }
     }
+    for (const m of c.body.matchAll(PRIVATE_KEY_BLOCK)) {
+      findings.push({
+        sha: c.sha,
+        where: `message:${lineOfIndex(c.body, m.index)}`,
+        rule: 'private-key-block',
+        matchHash: sha256(m[0]),
+      });
+    }
     c.body.split(/\r?\n/).forEach((line, index) => {
       for (const hit of lineFindings(line, true, privatePatterns)) {
         findings.push({ sha: c.sha, where: `message:${index + 1}`, rule: hit.rule });
@@ -659,7 +668,7 @@ function runHistory({ root, base, patterns, baseline, log, error }) {
   // A fixture accepted in the tree baseline is accepted in the commit that added it.
   const accepted = new Set(baseline.map((e) => baselineKey(e.file, e.rule, e.sha256)));
   const findings = scrubHistory(commits, patterns).filter(
-    (f) => !(f.matchHash && accepted.has(baselineKey(f.path, f.rule, f.matchHash))),
+    (f) => !(f.path && f.matchHash && accepted.has(baselineKey(f.path, f.rule, f.matchHash))),
   );
   for (const f of findings) {
     log(`${f.sha.slice(0, 9)} ${f.where} ${f.rule}`);

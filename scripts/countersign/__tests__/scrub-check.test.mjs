@@ -381,6 +381,27 @@ test('scrubHistory checks identity, message lines and added lines', () => {
   );
 });
 
+test('scrubHistory: a private key block in a commit message is reported on its BEGIN line', () => {
+  const commits = [
+    {
+      sha: 'e'.repeat(40),
+      an: 'owner',
+      ae: OWNER_EMAIL,
+      cn: 'owner',
+      ce: OWNER_EMAIL,
+      body: `Subject\n\npasted by mistake:\n${PEM_BLOCK}\n`,
+      added: new Map(),
+    },
+  ];
+  const findings = scrubHistory(commits);
+  assert.deepEqual(
+    findings.map((f) => `${f.where} ${f.rule}`),
+    ['message:4 private-key-block'],
+  );
+  assert.equal(findings[0].matchHash.length, 64);
+  assert.equal(JSON.stringify(findings).includes('M'.repeat(64)), false);
+});
+
 // ---------------------------------------------------------------------------
 // CLI, on temporary git repositories built here (never this repository's history).
 
@@ -614,4 +635,16 @@ test('CLI --history: clean commits pass; identity, message email and private wor
   for (const secret of [OUTSIDE_EMAIL, PRIVATE_WORD, 'someone']) {
     assert.equal(out.includes(secret), false, 'output must not carry the matched text');
   }
+});
+
+test('CLI --history: a private key block pasted into a commit message fails', (t) => {
+  const ctx = forkRepo(t);
+  write(ctx, 'src/d.ts', 'export const d = 4;\n');
+  const sha = commitAll(ctx, `fork: d\n\n${PEM_BLOCK}`);
+  const { code, out } = run(ctx, ['--history']);
+  assert.equal(code, 1, out);
+  const short = sha.slice(0, 9);
+  const findingLines = out.split(/\r?\n/).filter((l) => l.startsWith(short));
+  assert.deepEqual(findingLines, [`${short} message:3 private-key-block`]);
+  assert.equal(out.includes('M'.repeat(64)), false, 'output must not carry the key body');
 });
