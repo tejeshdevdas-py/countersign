@@ -78,7 +78,7 @@ describe('resolveAuth key-mode identityFile handling', () => {
         configuredIdentityFiles: [],
         identityFileDirectiveSeen: false,
         identityFileNoneSeen: false,
-        unsupportedReason: 'Cindy does not evaluate a Match block that may affect this SSH host',
+        unsupportedReason: 'A Match block that may affect this SSH host is not evaluated',
       },
     });
 
