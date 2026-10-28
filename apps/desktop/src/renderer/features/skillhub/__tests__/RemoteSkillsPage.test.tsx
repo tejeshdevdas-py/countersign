@@ -4,6 +4,12 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { setDataOwnerGeneration } from '@/contexts/dataOwnerGeneration';
+// Countersign: these cases cover upstream's hosted Skill Hub market, which LOCAL_ONLY
+// switches off (see SkillhubHome.localOnly.test.tsx).
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
 
 const mocks = vi.hoisted(() => ({
   invoke: vi.fn(),
