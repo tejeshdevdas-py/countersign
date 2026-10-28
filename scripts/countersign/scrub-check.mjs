@@ -36,6 +36,10 @@
  *     built-in rule, but the private words still run (on a -diff file only when it
  *     is text: no NUL byte in its first 8000 bytes, as git decides);
  *   - tracked files missing from the working tree (reported).
+ * A UTF-16 file (a UTF-16 byte order mark, or NULs alternating with ASCII) is
+ * decoded as UTF-16 and every line of it counts as added; in --history the NULs
+ * are dropped from its added lines. A UTF-16 file of mostly non-ASCII text
+ * without a byte order mark is still read as UTF-8.
  * A NUL byte is not a reason to skip a normal file: real source files carry one
  * inside a string. A -text attribute alone is not either: vendored source and
  * teammate packages carry it to keep their bytes (a reviewed departure from the
@@ -200,6 +204,87 @@ function looksBinary(text) {
   return text.slice(0, 8000).includes('\u0000');
 }
 
+/**
+ * 'le' or 'be' when bytes without a byte order mark look like UTF-16: in the
+ * first 4096 bytes, at least half of the two-byte units have a NUL in the same
+ * half and almost none in the other. One NUL in a source string is not enough.
+ */
+function utf16Order(bytes) {
+  const end = Math.min(bytes.length, 4096) & ~1;
+  const units = end / 2;
+  if (units < 4) {
+    return null;
+  }
+  let le = 0;
+  let be = 0;
+  for (let i = 0; i < end; i += 2) {
+    if (bytes[i] !== 0 && bytes[i + 1] === 0) {
+      le += 1;
+    } else if (bytes[i] === 0 && bytes[i + 1] !== 0) {
+      be += 1;
+    }
+  }
+  if (le >= units / 2 && be <= units / 50) {
+    return 'le';
+  }
+  if (be >= units / 2 && le <= units / 50) {
+    return 'be';
+  }
+  return null;
+}
+
+/**
+ * The text of a tracked file. A UTF-16 file (a UTF-16 byte order mark, or the
+ * alternating-NUL shape without one) is decoded as UTF-16, so its keys and
+ * paths are seen; anything else is read as UTF-8, as before.
+ * @param {Buffer} bytes
+ * @returns {{text: string, utf16: boolean}}
+ */
+export function decodeTrackedText(bytes) {
+  let order = null;
+  let body = bytes;
+  if (bytes.length >= 2 && bytes[0] === 0xff && bytes[1] === 0xfe) {
+    order = 'le';
+    body = bytes.subarray(2);
+  } else if (bytes.length >= 2 && bytes[0] === 0xfe && bytes[1] === 0xff) {
+    order = 'be';
+    body = bytes.subarray(2);
+  } else {
+    order = utf16Order(bytes);
+  }
+  if (order === null) {
+    return { text: bytes.toString('utf8'), utf16: false };
+  }
+  const even = Buffer.from(body.subarray(0, body.length & ~1));
+  if (order === 'be') {
+    even.swap16();
+  }
+  return { text: even.toString('utf16le'), utf16: true };
+}
+
+/**
+ * Added lines of a UTF-16 file as git prints them: each ASCII character is
+ * followed (or preceded) by a NUL. When NULs are at least a third of the
+ * characters, the NULs are dropped so the rules see the ASCII text (keys,
+ * paths and addresses are ASCII). Other lines are returned unchanged.
+ */
+function readableAddedLines(lines) {
+  let nul = 0;
+  let total = 0;
+  for (const l of lines) {
+    total += l.text.length;
+    for (const ch of l.text) {
+      if (ch === '\u0000') {
+        nul += 1;
+      }
+    }
+  }
+  if (nul < 4 || nul * 3 < total) {
+    return lines;
+  }
+  return lines.map((l) => ({ ...l, text: l.text.replaceAll('\u0000', '') }));
+}
+
 /** True when an email-shaped match is allowed (see the header). */
 export function isAllowedEmail(address, line, index) {
   const lower = address.toLowerCase();
@@ -313,7 +398,7 @@ export function scanMode(filePath, attrs, text) {
 
 /**
  * Scans in-memory files.
- * @param {{path: string, text: string, attrs?: {filter?: string, diff?: string}}[]} files
+ * @param {{path: string, text: string, attrs?: {filter?: string, diff?: string}, allLinesAdded?: boolean}[]} files
  * @param {(RegExp|{line: number, re: RegExp})[]} [extraPatterns] private words
  * @param {{addedLines?: Map<string, Set<number>>}} [options] lines the fork added,
  *   per repo-relative path; when absent every line counts as added
@@ -329,7 +414,10 @@ export function scrub(files, extraPatterns = [], options = {}) {
     if (mode === 'none') {
       continue;
     }
-    const added = addedLines ? (addedLines.get(filePath) ?? new Set()) : null;
+    // A file read as UTF-16 counts every line as added: git's line numbers for it
+    // are not trusted.
+    const added =
+      addedLines && !file.allLinesAdded ? (addedLines.get(filePath) ?? new Set()) : null;
     if (mode === 'all') {
       for (const m of file.text.matchAll(PRIVATE_KEY_BLOCK)) {
         findings.push({
@@ -762,6 +850,7 @@ function runTree({ root, base, patterns, baseline, skippedEntries, log, error })
   const pinned = new Map();
   let skipped = 0;
   let privateOnly = 0;
+  let readAsUtf16 = 0;
   for (const file of files) {
     const fileAttrs = attrs.get(file);
     const reason = skipReason(file, fileAttrs);
@@ -774,8 +863,9 @@ function runTree({ root, base, patterns, baseline, skippedEntries, log, error })
       continue;
     }
     let text;
+    let utf16 = false;
     try {
-      text = fs.readFileSync(path.join(root, file), 'utf8');
+      ({ text, utf16 } = decodeTrackedText(fs.readFileSync(path.join(root, file))));
     } catch (err) {
       if (err.code !== 'ENOENT' && err.code !== 'EISDIR') {
         error(`scrub: cannot read ${file} (${err.code})`);
@@ -792,7 +882,10 @@ function runTree({ root, base, patterns, baseline, skippedEntries, log, error })
     if (reason !== null) {
       privateOnly += 1;
     }
-    toScan.push({ path: file, text, attrs: fileAttrs });
+    if (utf16) {
+      readAsUtf16 += 1;
+    }
+    toScan.push({ path: file, text, attrs: fileAttrs, allLinesAdded: utf16 });
   }
   const findings = [...scrubPaths(files, patterns), ...scrub(toScan, patterns, { addedLines })];
   const { fresh, stale } = compareWithBaseline(findings, baseline);
@@ -818,7 +911,14 @@ function runTree({ root, base, patterns, baseline, skippedEntries, log, error })
   }
   const problems =
     fresh.length + stale.length + skippedCheck.fresh.length + skippedCheck.stale.length;
-  const privateNote = privateOnly > 0 ? ` (${privateOnly} for private words only)` : '';
+  const notes = [];
+  if (privateOnly > 0) {
+    notes.push(`${privateOnly} for private words only`);
+  }
+  if (readAsUtf16 > 0) {
+    notes.push(`${readAsUtf16} read as UTF-16`);
+  }
+  const privateNote = notes.length > 0 ? ` (${notes.join(', ')})` : '';
   log(
     `${problems} finding${problems === 1 ? '' : 's'}; ${toScan.length} files scanned${privateNote}, ${skipped} skipped`,
   );
@@ -890,13 +990,14 @@ export function scrubHistory(commits, extraPatterns = []) {
         matchHash: f.matchHash,
       });
     }
-    for (const [file, lines] of c.added) {
+    for (const [file, rawLines] of c.added) {
       // History reads no attributes: a binary extension skips every rule, and a
       // licence file gets the private words only (as in the tree mode).
       const mode = scanMode(file);
       if (mode === 'none') {
         continue;
       }
+      const lines = readableAddedLines(rawLines);
       const joined = lines.map((l) => l.text).join('\n');
       for (const m of mode === 'all' ? joined.matchAll(PRIVATE_KEY_BLOCK) : []) {
         const line = lines[lineOfIndex(joined, m.index) - 1].line;

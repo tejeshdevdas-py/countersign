@@ -11,6 +11,7 @@ import {
   OWNER_EMAIL,
   compareWithBaseline,
   compareWithHistoryBaseline,
+  decodeTrackedText,
   isAllowedEmail,
   parseAddedLines,
   parsePatterns,
@@ -1317,4 +1318,95 @@ test('CLI --history: a committer address other than the owner fails', (t) => {
     [`${short} committer identity`],
   );
   assert.equal(out.includes(OUTSIDE_EMAIL), false, 'output must not carry the address');
+});
+
+// scrub-1: a tracked file saved as UTF-16 (Windows PowerShell 5.1 writes it with `>`)
+// must be scanned as text, not as bytes no rule can match.
+function utf16le(text, bom) {
+  const body = Buffer.from(text, 'utf16le');
+  return bom ? Buffer.concat([Buffer.from([0xff, 0xfe]), body]) : body;
+}
+
+function utf16be(text) {
+  const body = Buffer.from(text, 'utf16le').swap16();
+  return Buffer.concat([Buffer.from([0xfe, 0xff]), body]);
+}
+
+test('decodeTrackedText reads UTF-16 with or without a BOM; UTF-8 with a NUL stays UTF-8', () => {
+  const text = `line one\r\nsee ${USER_PATH}\r\nkey ${ANTHROPIC_KEY}\r\n`;
+  assert.deepEqual(decodeTrackedText(utf16le(text, true)), { text, utf16: true });
+  assert.deepEqual(decodeTrackedText(utf16le(text, false)), { text, utf16: true });
+  assert.deepEqual(decodeTrackedText(utf16be(text)), { text, utf16: true });
+  const withNul = "export const sep = '\u0000';\nexport const b = 2;\n";
+  assert.deepEqual(decodeTrackedText(Buffer.from(withNul, 'utf8')), {
+    text: withNul,
+    utf16: false,
+  });
+  assert.deepEqual(decodeTrackedText(Buffer.from('', 'utf8')), { text: '', utf16: false });
+});
+
+test('CLI: a UTF-16 file (with or without a BOM) is decoded and its key and user path are found', (t) => {
+  const ctx = forkRepo(t);
+  const text = `notes\r\nsee ${USER_PATH}\r\nkey ${ANTHROPIC_KEY}\r\n`;
+  write(ctx, 'utf16.txt', utf16le(text, true));
+  write(ctx, 'utf16nobom.ps1', utf16le(`# ${USER_PATH}\r\n`, false));
+  commitAll(ctx, 'fork: utf-16 files');
+  const { code, out } = run(ctx);
+  assert.equal(code, 1, out);
+  const findingLines = out.split(/\r?\n/).filter((l) => /^\S+:\d+ \S+$/.test(l));
+  assert.deepEqual(findingLines.sort(), [
+    'utf16.txt:2 windows-user-path',
+    'utf16.txt:3 anthropic-key',
+    'utf16nobom.ps1:1 windows-user-path',
+  ]);
+  assert.match(out, /^3 findings; 7 files scanned \(2 read as UTF-16\), 1 skipped$/m);
+  for (const secret of [ANTHROPIC_KEY, 'someone']) {
+    assert.equal(out.includes(secret), false, 'output must not carry the matched text');
+  }
+});
+
+test('CLI --history: lines added to a UTF-16 file are read as text', (t) => {
+  const ctx = forkRepo(t);
+  const text = `notes\r\nsee ${USER_PATH}\r\nkey ${ANTHROPIC_KEY}\r\n`;
+  write(ctx, 'utf16.txt', utf16le(text, true));
+  write(ctx, 'utf16nobom.ps1', utf16le(`# ${USER_PATH}\r\n`, false));
+  const sha = commitAll(ctx, 'fork: utf-16 files');
+  const { code, out } = run(ctx, ['--history']);
+  assert.equal(code, 1, out);
+  const short = sha.slice(0, 9);
+  assert.deepEqual(out.split(/\r?\n/).filter((l) => l.startsWith(short)).sort(), [
+    `${short} utf16.txt:2 windows-user-path`,
+    `${short} utf16.txt:3 anthropic-key`,
+    `${short} utf16nobom.ps1:1 windows-user-path`,
+  ]);
+  assert.equal(out.includes(ANTHROPIC_KEY), false, 'output must not carry the key');
+});
+
+test('scrubHistory: added lines with NUL between ASCII characters are read as UTF-16 text', () => {
+  // Git diffs a UTF-16LE file into lines that carry a NUL after each ASCII character.
+  const raw = (s) => Buffer.from(s, 'utf16le').toString('utf8');
+  const commits = [
+    {
+      sha: 'e'.repeat(40),
+      an: 'owner',
+      ae: OWNER_EMAIL,
+      cn: 'owner',
+      ce: OWNER_EMAIL,
+      body: 'Subject\n',
+      added: new Map([
+        [
+          'a.txt',
+          [
+            { line: 1, text: `��${raw('clean\r')}` },
+            { line: 2, text: `\u0000${raw(`see ${USER_PATH}\r`)}` },
+          ],
+        ],
+        ['sep.ts', [{ line: 1, text: "export const sep = '\u0000';" }]],
+      ]),
+    },
+  ];
+  assert.deepEqual(
+    scrubHistory(commits).map((f) => `${f.where} ${f.rule}`),
+    ['a.txt:2 windows-user-path'],
+  );
 });
