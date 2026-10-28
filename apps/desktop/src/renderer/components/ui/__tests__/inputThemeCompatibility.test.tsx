@@ -18,7 +18,11 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
-import { loadLocalThemesSync, resetLocalThemesMigrationForTest } from '../../../../main/local-themes/loader';
+import {
+  getLocalThemesDir,
+  loadLocalThemesSync,
+  resetLocalThemesMigrationForTest,
+} from '../../../../main/local-themes/loader';
 import '../../../themes/colors';
 import { bootstrapLocalThemesSync, getLocalThemes } from '../../../themes/local-themes';
 import { exportThemeColors, resolveThemeValue } from '../../../themes/theme-service';
@@ -61,7 +65,7 @@ function consumed(field: HTMLInputElement, prefix: string, theme: Theme): string
 }
 
 function loadTheme(type: ThemeType, colors: Record<string, string>): Theme {
-  const dir = path.join(sandbox.home, '.cindy', 'themes');
+  const dir = getLocalThemesDir();
   fs.mkdirSync(dir, { recursive: true });
   const file = path.join(dir, 'input-compat.json');
   const bytes = `${JSON.stringify({ id: 'input-compat', name: 'Input compatibility fixture', type, colors }, null, 2)}\n`;

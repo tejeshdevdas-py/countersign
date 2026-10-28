@@ -42,7 +42,11 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { loadLocalThemesSync, resetLocalThemesMigrationForTest } from '../../../main/local-themes/loader';
+import {
+  getLocalThemesDir,
+  loadLocalThemesSync,
+  resetLocalThemesMigrationForTest,
+} from '../../../main/local-themes/loader';
 import '../colors';
 import { bootstrapLocalThemesSync, getLocalThemes } from '../local-themes';
 import type { Theme } from '../types';
@@ -77,7 +81,7 @@ describe('DS-2b · 用户主题生产组合不变量（loader → mapWireTheme �
   beforeEach(() => {
     osMock.homedir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'ds2b-pipeline-home-')));
     resetLocalThemesMigrationForTest();
-    const dir = path.join(osMock.homedir, '.cindy', 'themes');
+    const dir = getLocalThemesDir();
     fs.mkdirSync(dir, { recursive: true });
     for (const name of FIXTURE_FILES) {
       fs.copyFileSync(path.join(FIXTURE_DIR, name), path.join(dir, name));

@@ -66,7 +66,7 @@ describe('DS-2b · 用户主题磁盘与加载不变量', () => {
     osMock.homedir = home;
     resetLocalThemesMigrationForTest();
 
-    const dir = path.join(home, '.cindy', 'themes');
+    const dir = getLocalThemesDir();
     fs.mkdirSync(dir, { recursive: true });
     for (const name of FIXTURE_FILES) {
       fs.copyFileSync(path.join(FIXTURE_DIR, name), path.join(dir, name));
