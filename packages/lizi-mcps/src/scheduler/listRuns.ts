@@ -3,6 +3,7 @@
  */
 
 import { z } from 'zod';
+import { localOnlyText } from '../localOnlyTools.js';
 
 import { readDeviceShape, readOnDevices } from './_devices.js';
 import type { SchedulerMcpDeps } from '../types.js';
@@ -15,8 +16,12 @@ export function registerScheduleListRunsTool(
   registry.register({
     name: 'schedule_list_runs',
     category: 'scheduler',
-    description:
+    description: localOnlyText(
       '列出某条定时任务的历史触发记录（ScheduleRun[]，按 firedAt DESC 倒序）。默认查本机；其它电脑上的任务传 device=<deviceId>。可调 limit；storage 默认 50。',
+      [
+        ['默认查本机；其它电脑上的任务传 device=<deviceId>。', '只查本机。'],
+      ],
+    ),
     inputShape: {
       scheduleId: z.string().min(1).describe('Schedule id'),
       limit: z

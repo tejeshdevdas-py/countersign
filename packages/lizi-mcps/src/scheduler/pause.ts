@@ -7,6 +7,7 @@
  */
 
 import { z } from 'zod';
+import { localOnlyText } from '../localOnlyTools.js';
 
 import { runOnDevice, writeDeviceShape } from './_devices.js';
 import type { LiziMcpSessionContext, SchedulerMcpDeps } from '../types.js';
@@ -20,8 +21,12 @@ export function registerSchedulePauseTool(
   registry.register({
     name: 'schedule_pause',
     category: 'scheduler',
-    description:
+    description: localOnlyText(
       '把定时任务置为 paused（默认本机，其它电脑上的任务传 device）：保留所有字段但 scheduler tick 会跳过它。schedule_resume 可恢复（恢复时 nextFireAt 按当时重算）。在自动化任务 run 内暂停自己所属的 schedule 是安全的：本轮 run 会被豁免、自然跑完，不会被暂停动作中断。',
+      [
+        ['（默认本机，其它电脑上的任务传 device）', ''],
+      ],
+    ),
     inputShape: {
       id: z.string().min(1).describe('要暂停的 schedule id'),
       ...writeDeviceShape,

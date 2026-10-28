@@ -14,6 +14,7 @@
  */
 
 import { z } from 'zod';
+import { localOnlyShape } from '../localOnlyTools.js';
 
 import { AGENT_KIND, EFFORT, EXECUTION_MODE, SCRIPT_CAPABILITY } from './_enums.js';
 import { assertCronAndTimezoneValid, withScheduler } from './_shared.js';
@@ -107,14 +108,16 @@ export function registerScheduleCreateTool(
             '省略 → 走该 agent 原生默认来源（与不带本字段的旧行为字节级一致）。' +
             '只有要把任务钉在某个非原生来源（如 Anthropic 订阅档）时才传；heartbeat 模式留空则沿用绑定会话的来源。',
         ),
-      agentDeviceId: z
-        .string()
-        .min(1)
-        .optional()
-        .describe(
-          '可选：每次新建任务时 Agent 在哪里运行——同账号另一台电脑或分享来的供应商。取 schedule_list_models 返回的 locations[].agentDeviceId；省略或 "local" = 本机。' +
-            '设了必须同时传 schedule_list_models 在该位置列出的 model（建议连同 providerId）。绑定已有任务（targetSessionId / bindToCurrentSession 且非 persistentSession）时运行位置跟随该任务，不能设。',
-        ),
+      ...localOnlyShape({
+        agentDeviceId: z
+          .string()
+          .min(1)
+          .optional()
+          .describe(
+            '可选：每次新建任务时 Agent 在哪里运行——同账号另一台电脑或分享来的供应商。取 schedule_list_models 返回的 locations[].agentDeviceId；省略或 "local" = 本机。' +
+              '设了必须同时传 schedule_list_models 在该位置列出的 model（建议连同 providerId）。绑定已有任务（targetSessionId / bindToCurrentSession 且非 persistentSession）时运行位置跟随该任务，不能设。',
+          ),
+      }),
       effort: z
         .enum(EFFORT)
         .optional()

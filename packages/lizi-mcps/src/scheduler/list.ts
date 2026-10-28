@@ -7,6 +7,8 @@
  */
 
 import { z } from 'zod';
+import { localOnlyText } from '../localOnlyTools.js';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 
 import { SCHEDULE_STATUS } from './_enums.js';
 import { readDeviceShape, readOnDevices } from './_devices.js';
@@ -39,8 +41,12 @@ export function registerScheduleListTool(
   registry.register({
     name: 'schedule_list',
     category: 'scheduler',
-    description:
+    description: localOnlyText(
       '列出定时任务。默认只列本机的（与本机 GUI 列表同源同形）；定时任务保存在各自的电脑上，要确认「有没有 / 是否在跑」须传 device="all" 把其它电脑一并查到，结果按电脑分组，没查到的电脑会写明原因（partial=true 时不能断言不存在）。可按 status（active / paused / expired）和 query（按名称、提示词、绑定任务 id、工作目录、检查脚本命令做文本匹配，如 PR 链接）筛选。返回 Schedule[] 完整字段（含 cron 表达式 / nextFireAt / lastFiredAt / notify 嵌套对象等）。',
+      [
+        ['默认只列本机的（与本机 GUI 列表同源同形）；定时任务保存在各自的电脑上，要确认「有没有 / 是否在跑」须传 device="all" 把其它电脑一并查到，结果按电脑分组，没查到的电脑会写明原因（partial=true 时不能断言不存在）。', '只列本机的（与本机 GUI 列表同源同形）。'],
+      ],
+    ),
     inputShape: {
       status: z
         .enum(SCHEDULE_STATUS)
@@ -65,7 +71,8 @@ export function registerScheduleListTool(
           map: (rows) => filterSchedulesByText(rows, query),
         },
         // 本机结果自带范围,避免把「本机没有」读成「哪台电脑都没有」。
-        deps.remote ? { note: '仅本机；其它电脑用 device="all"。' } : {},
+        // Countersign: no other computers under LOCAL_ONLY.
+        deps.remote && !LOCAL_ONLY ? { note: '仅本机；其它电脑用 device="all"。' } : {},
       ),
   });
 }

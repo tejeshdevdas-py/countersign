@@ -1,5 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 
+// Countersign: these cases cover upstream's schedules and Workers on other computers,
+// which LOCAL_ONLY switches off (see localOnlyDeviceTools.test.ts).
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
+
 import { XdtHelperToolRegistry } from '../lizi_xdtHelperToolRegistry.js';
 import type { XdtHelperToolResult } from '../lizi_xdtHelperToolRegistry.js';
 import { registerListAvailableModelsTool } from '../xdt-helper/list_available_models.js';

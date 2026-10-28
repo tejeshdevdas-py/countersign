@@ -31,6 +31,8 @@
 
 import { withToolCallAuthority, type ToolCallAuthorizer } from '../tool-call-authority.js';
 import { BRAND_NAME } from '@cindy/maker-shared/branding';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
+import { localOnlyText } from '../localOnlyTools.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z, type ZodRawShape } from 'zod';
 
@@ -430,7 +432,10 @@ function registerOrcaDiagnosticTools(
     name: 'get_workspace_info',
     category: 'control',
     description:
-      'List the current Orca workflow and worker sessions, including whether each worker queue is paused. owns_worktree is true only for a Worker-owned checkout recycled on archive; worktree then includes its path and branch. Inheriting the Lead directory does not grant ownership. execution_devices lists other same-account computers a worker can run on (pass device_id as create_worker.execution_device_id only when supported=true); workers running on another computer carry execution_device.',
+      localOnlyText('List the current Orca workflow and worker sessions, including whether each worker queue is paused. owns_worktree is true only for a Worker-owned checkout recycled on archive; worktree then includes its path and branch. Inheriting the Lead directory does not grant ownership. execution_devices lists other same-account computers a worker can run on (pass device_id as create_worker.execution_device_id only when supported=true); workers running on another computer carry execution_device.', [
+        // Countersign: no other computers under LOCAL_ONLY.
+        [' execution_devices lists other same-account computers a worker can run on (pass device_id as create_worker.execution_device_id only when supported=true); workers running on another computer carry execution_device.', ''],
+      ]),
     inputShape: {},
     handler: async () => {
       const ctx = resolveLeadSessionContext(getSessionContext);
@@ -442,7 +447,7 @@ function registerOrcaDiagnosticTools(
         ui_capacity: result.ui_capacity,
         worker_count: result.worker_count,
         workers: result.workers,
-        ...(result.execution_devices ? { execution_devices: result.execution_devices } : {}),
+        ...(result.execution_devices && !LOCAL_ONLY ? { execution_devices: result.execution_devices } : {}),
       });
     },
   });

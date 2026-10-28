@@ -3,6 +3,13 @@
  * 不可用原因;写操作只作用于一台电脑;对方旧版本明确报不支持。
  */
 import { describe, expect, it, vi } from "vitest";
+
+// Countersign: these cases cover upstream's schedules and Workers on other computers,
+// which LOCAL_ONLY switches off (see localOnlyDeviceTools.test.ts).
+vi.mock("@cindy/maker-shared/local-only", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@cindy/maker-shared/local-only")>()),
+  LOCAL_ONLY: false,
+}));
 import type { Scheduler } from "@cindy/maker-scheduler";
 
 import {

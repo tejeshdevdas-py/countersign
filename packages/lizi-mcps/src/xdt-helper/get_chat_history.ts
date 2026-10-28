@@ -14,6 +14,7 @@
 
 import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { z } from 'zod';
+import { localOnlyLines } from '../localOnlyTools.js';
 
 import type { XdtHelperToolRegistry } from '../lizi_xdtHelperToolRegistry.js';
 import type { XdtHelperHistoryDeps, HistoryRole } from './_history_types.js';
@@ -49,42 +50,46 @@ const DEFAULT_QA_ROLES = ['user', 'assistant', 'ask_user', 'plan_review'] as con
 const DEFAULT_WORKDIR_WINDOW_DAYS = 180;
 const DEFAULT_WORKDIR_WINDOW_MS = DEFAULT_WORKDIR_WINDOW_DAYS * 24 * 60 * 60 * 1000;
 
-const DESCRIPTION = [
-  'sessions 元数据中的 sessionUrl 是可直接引用的任务链接；用 [任务标题](sessionUrl) 返回给用户。',
-  'Cross-device read-only history accepts exactly one session_id in the form deviceId::sessionId.',
-  'The source device must be online with an active authorized device-link; remote ids cannot be mixed with local or other remote ids.',
-  'Remote reads preserve the same filters, ordering, and cursor pagination. If a payload is too large, retry with a smaller limit.',
-  '拉取本地数据库里的原始 message 数据 (raw role + JSON.parse 后的 content + agentMeta),',
-  '按 session_ids / workdir / 时间段 / agent_kind / roles 任意组合过滤。',
-  '',
-  '【何时调用】用户想"看某个 session 的完整聊天 / 总结某个 workdir 某段时间的对话 /',
-  '帮我把昨天和 agent 的讨论整理成 memory 条目"等需要原始对话数据的场景。',
-  '',
-  '【必须至少满足一个主过滤】session_ids / workdir / from / to 至少传一个, 否则返',
-  'INVALID_FILTER。这是为了防止误调用一次性拉全库。要"全量"语义请用游标分页串联。',
-  '',
-  '【workdir 模式自带 180 天默认窗口】只带 workdir(不带 session_ids / from)调用时,',
-  '自动套最近 180 天的 from, 防止误触发跨年扫描。若用户明确说"全量历史/不限时间",',
-  '传 include_full_history=true 解锁。响应里的 query.auto_window_days 会标明窗口是否生效。',
-  '',
-  '【默认只返问答类 role】不传 roles = 只返 user / assistant / ask_user / plan_review,',
-  '排除 tool_use / tool_result / thinking 这些开发者 debug 用的技术性 role(体积大且',
-  '对"回顾对话"无价值)。需要工具调用 / 思考链等技术 role 时, 在 roles 里显式列出',
-  '(例如要全量就传 roles=["user","assistant","tool_use","tool_result","ask_user","plan_review","thinking"])。',
-  '',
-  '【返回原始数据】content 是 JSON.parse 后的原始结构 (按 role 形态不同, 调用方自己解析),',
-  '不做任何 markdown / 文本拼装。',
-  '',
-  '【输出结构】顶层有两个字段:',
-  '  - sessions: { [sessionId]: { workingDir, agentKind, title } } —— 涉及到的 session 元数据,',
-  '    按 id 索引一次, 避免在每条 message 上重复(同 session 拉 N 条消息 → 元数据只出现一次)。',
-  '  - messages: 数组, 每行字段 id / sessionId / role / content(已 JSON 解析) / createdAt(ISO);',
-  '    可选字段(仅在非 null 时出现): toolUseId / agentMeta(已 JSON 解析) / rewindAt(ISO)。',
-  '  要拿某条 message 的 workdir / agentKind / title, 用 sessions[message.sessionId] 查。',
-  '',
-  '【分页】游标分页, 默认 200/次, 最大 1000。串联 nextCursor 多次调用拿全量, 信息不丢。',
-  '默认按 createdAt desc + id desc, 同毫秒多消息靠 id 兜底排序稳定。',
-].join('\n');
+// Countersign: no cross-device history under LOCAL_ONLY (the device link is off).
+const DESCRIPTION = localOnlyLines(
+  [
+    'sessions 元数据中的 sessionUrl 是可直接引用的任务链接；用 [任务标题](sessionUrl) 返回给用户。',
+    'Cross-device read-only history accepts exactly one session_id in the form deviceId::sessionId.',
+    'The source device must be online with an active authorized device-link; remote ids cannot be mixed with local or other remote ids.',
+    'Remote reads preserve the same filters, ordering, and cursor pagination. If a payload is too large, retry with a smaller limit.',
+    '拉取本地数据库里的原始 message 数据 (raw role + JSON.parse 后的 content + agentMeta),',
+    '按 session_ids / workdir / 时间段 / agent_kind / roles 任意组合过滤。',
+    '',
+    '【何时调用】用户想"看某个 session 的完整聊天 / 总结某个 workdir 某段时间的对话 /',
+    '帮我把昨天和 agent 的讨论整理成 memory 条目"等需要原始对话数据的场景。',
+    '',
+    '【必须至少满足一个主过滤】session_ids / workdir / from / to 至少传一个, 否则返',
+    'INVALID_FILTER。这是为了防止误调用一次性拉全库。要"全量"语义请用游标分页串联。',
+    '',
+    '【workdir 模式自带 180 天默认窗口】只带 workdir(不带 session_ids / from)调用时,',
+    '自动套最近 180 天的 from, 防止误触发跨年扫描。若用户明确说"全量历史/不限时间",',
+    '传 include_full_history=true 解锁。响应里的 query.auto_window_days 会标明窗口是否生效。',
+    '',
+    '【默认只返问答类 role】不传 roles = 只返 user / assistant / ask_user / plan_review,',
+    '排除 tool_use / tool_result / thinking 这些开发者 debug 用的技术性 role(体积大且',
+    '对"回顾对话"无价值)。需要工具调用 / 思考链等技术 role 时, 在 roles 里显式列出',
+    '(例如要全量就传 roles=["user","assistant","tool_use","tool_result","ask_user","plan_review","thinking"])。',
+    '',
+    '【返回原始数据】content 是 JSON.parse 后的原始结构 (按 role 形态不同, 调用方自己解析),',
+    '不做任何 markdown / 文本拼装。',
+    '',
+    '【输出结构】顶层有两个字段:',
+    '  - sessions: { [sessionId]: { workingDir, agentKind, title } } —— 涉及到的 session 元数据,',
+    '    按 id 索引一次, 避免在每条 message 上重复(同 session 拉 N 条消息 → 元数据只出现一次)。',
+    '  - messages: 数组, 每行字段 id / sessionId / role / content(已 JSON 解析) / createdAt(ISO);',
+    '    可选字段(仅在非 null 时出现): toolUseId / agentMeta(已 JSON 解析) / rewindAt(ISO)。',
+    '  要拿某条 message 的 workdir / agentKind / title, 用 sessions[message.sessionId] 查。',
+    '',
+    '【分页】游标分页, 默认 200/次, 最大 1000。串联 nextCursor 多次调用拿全量, 信息不丢。',
+    '默认按 createdAt desc + id desc, 同毫秒多消息靠 id 兜底排序稳定。',
+  ],
+  (line) => /deviceId::sessionId|device-link|^Remote reads /.test(line),
+).join('\n');
 
 export interface GetChatHistoryToolDeps {
   history: XdtHelperHistoryDeps;

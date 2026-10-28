@@ -6,6 +6,7 @@
  */
 
 import { z } from 'zod';
+import { localOnlyShape, localOnlyText } from '../localOnlyTools.js';
 
 import { AGENT_KIND, EFFORT, EXECUTION_MODE, SCRIPT_CAPABILITY } from './_enums.js';
 import { assertCronAndTimezoneValid, buildJsonResult, withScheduler } from './_shared.js';
@@ -23,9 +24,13 @@ export function registerScheduleUpdateTool(
   registry.register({
     name: 'schedule_update',
     category: 'scheduler',
-    description:
+    description: localOnlyText(
       '修改一条定时任务的部分字段（patch 形态）。默认改本机的；其它电脑上的任务传 device（此时不支持 bindToCurrentSession，也不支持用 null 清空 intervalMs 以外的字段；改 preRunHook 必须显式带 timeoutMs（数值，或 null 表示不限时）；targetSessionId 可传该电脑的 deviceId::sessionId 或其本机 id，不能指向别的电脑）。改 cronExpr / timezone 时 nextFireAt 会自动重算。要暂停 / 恢复请用 schedule_pause / schedule_resume，不要直接 patch status。把任务改成跟进**当前对话**的 heartbeat 请传 bindToCurrentSession=true（代码自动绑定本会话,无需也不要自己查 / 传 session id）。' +
       '**目标值缺失时先问用户，禁止盲猜**：用户指令模糊（如"改一下时间"没说改到几点、"换个模型"没说换哪个）时，先用 AskUserQuestion（或一句话追问）确认目标值再 patch；只改用户点名的字段，不要顺手"优化"其它字段。',
+      [
+        ['默认改本机的；其它电脑上的任务传 device（此时不支持 bindToCurrentSession，也不支持用 null 清空 intervalMs 以外的字段；改 preRunHook 必须显式带 timeoutMs（数值，或 null 表示不限时）；targetSessionId 可传该电脑的 deviceId::sessionId 或其本机 id，不能指向别的电脑）。', ''],
+      ],
+    ),
     inputShape: {
       id: z.string().min(1).describe('Schedule id'),
       name: z.string().min(1).optional(),
@@ -52,12 +57,14 @@ export function registerScheduleUpdateTool(
         .nullable()
         .optional()
         .describe('传 null = 清空(同 model 一起回到默认路由);省略 = 不修改。'),
-      agentDeviceId: z
-        .string()
-        .min(1)
-        .nullable()
-        .optional()
-        .describe('每次新建任务时 Agent 的运行位置，语义见 schedule_create 同名字段（schedule_list_models 查位置与模型）。传 null 或 "local" = 回到本机；省略 = 不修改，但本次改了 agentKind / model / providerId 时会回到本机（来源与位置成对），要留在原处须一并重传。仅本机定时任务可设。'),
+      ...localOnlyShape({
+        agentDeviceId: z
+          .string()
+          .min(1)
+          .nullable()
+          .optional()
+          .describe('每次新建任务时 Agent 的运行位置，语义见 schedule_create 同名字段（schedule_list_models 查位置与模型）。传 null 或 "local" = 回到本机；省略 = 不修改，但本次改了 agentKind / model / providerId 时会回到本机（来源与位置成对），要留在原处须一并重传。仅本机定时任务可设。'),
+      }),
       effort: z
         .enum(EFFORT)
         .nullable()

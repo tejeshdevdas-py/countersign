@@ -21,6 +21,13 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+// Countersign: these cases cover upstream's schedules and Workers on other computers,
+// which LOCAL_ONLY switches off (see localOnlyDeviceTools.test.ts).
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 

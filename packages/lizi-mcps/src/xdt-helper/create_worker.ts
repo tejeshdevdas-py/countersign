@@ -4,6 +4,8 @@
 
 import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { z } from 'zod';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
+import { localOnlyLines, localOnlyText } from '../localOnlyTools.js';
 
 import type { XdtHelperToolRegistry } from '../lizi_xdtHelperToolRegistry.js';
 import type { ControlDispatchOutcome, ControlResult, ControlWorkerAgent } from '../lizi_xdtHelperMcpServer.js';
@@ -110,7 +112,7 @@ export const imagesListSchema = z.preprocess(
 );
 
 /** 单个 worker 的稳定输入 schema；create_worker/create_workers 共用。 */
-export const createWorkerSpecSchema = z.object({
+const upstreamCreateWorkerSpecSchema = z.object({
   role: z
     .string()
     .min(1)
@@ -154,19 +156,30 @@ export const createWorkerSpecSchema = z.object({
     .optional()
     .describe('可选, 随 initial_task 发给 worker 的图片(png/jpeg/gif/webp, 最多 8 张); 必须是扁平字符串数组, 每张图一个字符串, 如 ["cindy-media://...png"]; 仅本机 worker 支持, SSH 远端 worker 会拒绝; 不传 initial_task 时忽略。地址两类: (a) 用户在对话里贴的图 — 把上下文 <cindy-host-image-references> 里的 uri 原样传入; (b) Lead 自己落盘的本机绝对路径'),
   working_dir: z.string().min(1).max(4096).refine((value) => value.trim().length > 0).optional()
-    .describe('可选，Worker 所在主机上已存在的绝对目录。省略时继承 Lead 任务记录的工作目录（启动时的目录），不会跟随之后 cd 进入的 worktree。希望共用你当前的 worktree（含 git worktree add 自建的）时，请显式传其绝对路径；需要独立的新 worktree 时用 new_worktree。显式 working_dir / new_worktree 按会话权限审批。指定 execution_device_id 时目录属于那台电脑，省略由那台分配；校验失败不回退。'),
+    .describe(localOnlyText('可选，Worker 所在主机上已存在的绝对目录。省略时继承 Lead 任务记录的工作目录（启动时的目录），不会跟随之后 cd 进入的 worktree。希望共用你当前的 worktree（含 git worktree add 自建的）时，请显式传其绝对路径；需要独立的新 worktree 时用 new_worktree。显式 working_dir / new_worktree 按会话权限审批。指定 execution_device_id 时目录属于那台电脑，省略由那台分配；校验失败不回退。', [['指定 execution_device_id 时目录属于那台电脑，省略由那台分配；', '']])),
   new_worktree: z.object({
     source_branch: z.string().min(1).max(1024)
       .refine((value) => value.trim().length > 0 && !value.startsWith('-') && !Array.from(value).some((character) => character.charCodeAt(0) < 32))
       .optional()
       .describe('可选，源分支或提交；省略使用目标目录的当前分支，分离 HEAD 时使用当前提交。'),
   }).strict().optional()
-    .describe('可选，为 Worker 新建自有 Git worktree，传 {} 使用默认源分支。仅支持本机有提交的 Git 项目；不支持 SSH 或 execution_device_id。working_dir 指定源项目，返回 working_dir 才是 Worker 实际目录。此选项按会话权限审批。归档 Worker 时按普通任务规则回收该 worktree，未提交改动先快照。'),
+    .describe(localOnlyText('可选，为 Worker 新建自有 Git worktree，传 {} 使用默认源分支。仅支持本机有提交的 Git 项目；不支持 SSH 或 execution_device_id。working_dir 指定源项目，返回 working_dir 才是 Worker 实际目录。此选项按会话权限审批。归档 Worker 时按普通任务规则回收该 worktree，未提交改动先快照。', [['不支持 SSH 或 execution_device_id。', '不支持 SSH。']])),
   execution_device_id: z.string().trim().min(1).max(128).optional()
     .describe('可选，运行设备：同账号另一台电脑的设备 id，只能取 get_workspace_info 返回的 execution_devices 中 supported=true 的 device_id。指定后 Worker 的任务、目录、命令与文件都在那台电脑；省略则与 Lead 同一台。那台离线、未开启远程控制或版本过旧时创建失败，不会回退到本机。'),
   agent_device_id: z.string().trim().min(1).max(128).optional()
     .describe('可选，Worker 的 Agent 位置：取 list_available_models 的 locations[].agent_device_id；"local" 为 Worker 工作电脑。指定 execution_device_id 时省略用那台的默认，否则省略跟 Lead。'),
 }).strict();
+
+/**
+ * Countersign: under LOCAL_ONLY a Worker runs on this computer with this
+ * computer's providers, so the schema has no execution_device_id or
+ * agent_device_id (the strict schema rejects them). The type stays upstream's.
+ */
+export const createWorkerSpecSchema = (
+  LOCAL_ONLY
+    ? upstreamCreateWorkerSpecSchema.omit({ execution_device_id: true, agent_device_id: true })
+    : upstreamCreateWorkerSpecSchema
+) as typeof upstreamCreateWorkerSpecSchema;
 
 export type CreateWorkerSpec = z.infer<typeof createWorkerSpecSchema>;
 
@@ -180,7 +193,8 @@ export function toWorkerLimitPayload(limit: WorkerLimitSnapshot | undefined): Re
   };
 }
 
-const DESCRIPTION = [
+// Countersign: under LOCAL_ONLY Workers run on this computer only.
+const DESCRIPTION = localOnlyText(localOnlyLines([
   '在当前 workflow 内创建新 worker session。',
   '注:create_worker 建的是 Orca worker(session 级、持久、UI 可见),不是 subagent。若用户要的是 subagent(一次性、用完即弃),请用你自己的原生 subagent 机制(如 Codex 的 spawn_agent、Claude Code 的 Task 工具),不要用 create_worker。' +
   'Orca worker 永远不是 subagent 的替代品;你没有原生 subagent 机制时,如实告知用户并请他决定,不要拿 worker 顶替。',
@@ -212,7 +226,10 @@ const DESCRIPTION = [
   '- 该 agent 没有任何已连接的模型供应商 (provider) → 返 NO_PROVIDER_FOR_AGENT: 应如实把 message 转告用户 (去「设置 → 模型供应商」连接一个支持该 agent 的供应商), 或按 message 建议改用「已连接供应商的另一个 agent」创建 worker; 不要反复重试同一 agent。',
   '- Worker 解析出的精确 provider + model 路由当前不可用 → 返 PROVIDER_ROUTE_UNAVAILABLE: 应如实把 message 转告用户并调整模型或供应商; 不要按“完全没有供应商”处理，也不要反复重试同一路由。',
   '- 指定的运行设备或 agent_device_id 那台离线 / 未开启远程控制 → 返 REMOTE_AGENT_DEVICE_UNREACHABLE(分享来的供应商不可用 → REMOTE_AGENT_SHARE_*)；运行设备版本过旧 → 返 UNSUPPORTED_CAPABILITY。都不会改在本机创建：如实告知用户，由用户决定换设备或改在本机。',
-].join('\n');
+], (line) => /^- (?:execution_device_id|agent_device_id|指定的运行设备):?/.test(line)).join('\n'), [
+  ['指定 execution_device_id 时目录属于那台电脑，省略由那台分配；', ''],
+  ['SSH / execution_device_id 不支持', 'SSH 不支持'],
+]);
 
 export function registerCreateWorkerTool(
   registry: XdtHelperToolRegistry,

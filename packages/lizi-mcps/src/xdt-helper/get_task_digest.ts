@@ -7,6 +7,7 @@
  * 超出时先收紧长文字、最后置空,不截断成非法 JSON。
  */
 import { z } from 'zod';
+import { localOnlyText } from '../localOnlyTools.js';
 
 import type { XdtHelperToolRegistry } from '../lizi_xdtHelperToolRegistry.js';
 import type { LiziMcpSessionContext } from '../types.js';
@@ -111,7 +112,7 @@ export function boundTaskDigest(raw: TaskDigestWire): TaskDigestWire {
   return digest;
 }
 
-const DESCRIPTION = [
+const DESCRIPTION = localOnlyText([
   '已知任务 id、需要给用户任务链接时也用本工具；sessionUrl 可直接写成 [任务标题](sessionUrl)。',
   '读一件任务的短摘要(≤2KB):状态 phase、已持续分钟数、最近用户消息(排除隐藏协调/续跑输入)、最新助手回复首尾片段、待回答的问题、错误、当前模型路线、',
   '建议换到的下一条路线(只在出错或撞用量上限、换模型确实有用且装得下当前上下文时,给你候选链里还没试过的那条;否则 null,此时提醒主人)、PR 状态、排队消息数、谁开的 / 谁在跟。',
@@ -121,7 +122,10 @@ const DESCRIPTION = [
   'phase:running 运行中 / waiting-permission 等权限 / waiting-answer 等回答 / errored 出错 / usage-limit 撞用量上限 / finished 本轮已结束 / idle 空闲。',
   'finished 只描述所查任务的本轮，不代表它委派的后台任务或用户目标已完成。下一条消息的派发仍由该任务的实时运行状态和输入队列决定。',
   'suggested_route 只供判断，不是换模型授权。获得目标和变更的明确授权后才用 set_session_runtime(expected_generation 填 runtime_generation;只支持本机任务)。',
-].join('\n');
+].join('\n'), [
+  // Countersign: no other computers under LOCAL_ONLY.
+  ['作用范围:本机任务直接传 id;另一台电脑上的任务传 deviceId::sessionId(只读,对方须在线)。', '作用范围:本机任务,直接传 id。'],
+]);
 
 export interface GetTaskDigestToolDeps {
   history: XdtHelperHistoryDeps;
@@ -143,7 +147,7 @@ export function registerGetTaskDigestTool(
         .string()
         .min(1)
         .max(512)
-        .describe('任务 id;另一台电脑上的任务写 deviceId::sessionId'),
+        .describe(localOnlyText('任务 id;另一台电脑上的任务写 deviceId::sessionId', [[';另一台电脑上的任务写 deviceId::sessionId', '']])),
     },
     handler: async ({ session_id }) => {
       const scope = await resolveHistoryScope(deps.history, deps.getSessionContext, [session_id]);

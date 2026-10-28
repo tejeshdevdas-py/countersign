@@ -44,6 +44,8 @@ import { resolveLiziMcpSessionContext } from './session-context.js';
 import { withAccountDataAccess, type AccountDataAccess } from './account-data-access.js';
 import { withToolCallAuthority, type ToolCallAuthorizer } from './tool-call-authority.js';
 import type { LiziMcpSessionContext, SchedulerMcpDeps } from './types.js';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
+import { localOnlyText } from './localOnlyTools.js';
 
 /**
  * Per-session 上下文(在 providers.ts 的 toClaudeSdkConfig(ctx) 时绑定到闭包,
@@ -68,14 +70,16 @@ export interface SchedulerMcpSessionCtx {
 // markdown 模板是为了未来扩 chat_meta / reaction 等家族留 slot，scheduler 暂
 // 不需要。
 
-const D_LIST_TOOLS =
+const D_LIST_TOOLS = localOnlyText(
   '只读查询 cindy_scheduler 的工具元数据，不创建或运行调度、不发送通知。工具发现本身不需要创建调度的授权。' +
   '定时任务保存在各自的电脑上：工具默认只作用于本机，查询与管理其它电脑上的定时任务须传 device。' +
   '不传 category → 返回类目、用途与作用范围、工具数量。' +
   '传 category=scheduler → 返回该类目下每个工具的名称和简介。' +
-  '获取工具名后用 call_tool({name, args}) 执行；参数错误会返回完整 JSON Schema。';
+  '获取工具名后用 call_tool({name, args}) 执行；参数错误会返回完整 JSON Schema。',
+  [['定时任务保存在各自的电脑上：工具默认只作用于本机，查询与管理其它电脑上的定时任务须传 device。', '工具只作用于本机。']],
+);
 
-const D_CALL_TOOL =
+const D_CALL_TOOL = localOnlyText(
   '调用 cindy_scheduler 中的某个具体工具。先用 list_tools 拿工具名 + 简介，再用本工具执行。' +
   '错误码：' +
   '`SCHEDULER_NOT_READY` = scheduler 未启动（用户登出或切账号窗口期），可重试或提示用户登录；' +
@@ -83,14 +87,21 @@ const D_CALL_TOOL =
   '`REMOTE_*` / `DEVICE_*` = 目标电脑离线、未开启远程控制、版本不支持或超时，按 code 如实报告；`REMOTE_TIMEOUT` / `REMOTE_RESULT_UNKNOWN` 的写操作可能已生效，先查询再决定是否重试；' +
   '`INVALID_PARAMS` = 参数格式错（cron / timezone / 字段缺失等），按 message 修正；' +
   '`INVALID_ARGS` = zod schema 校验失败（返回 schema 自纠）；' +
-  '`INTERNAL` = 其他底层错。';
+  '`INTERNAL` = 其他底层错。',
+  [
+    ['在所查的电脑上不存在', '在本机不存在'],
+    ['`REMOTE_*` / `DEVICE_*` = 目标电脑离线、未开启远程控制、版本不支持或超时，按 code 如实报告；`REMOTE_TIMEOUT` / `REMOTE_RESULT_UNKNOWN` 的写操作可能已生效，先查询再决定是否重试；', ''],
+  ],
+);
 
 const CATEGORY_ENUM = ['scheduler'] as const;
 
 /** 类目概览的一句话用途 + 作用范围(本机 / 可跨电脑);改工具作用范围时同步改这里。 */
 export const SCHEDULER_CATEGORY_DESCRIPTIONS: Record<(typeof CATEGORY_ENUM)[number], string> = {
-  scheduler:
-    '定时任务（自动化 / 心跳）的查询与管理。定时任务保存在各自的电脑上：查询、修改、暂停、恢复、删除、立即运行可指定电脑（device，查询可传 all）；新建、检查脚本安装、当前运行的通知设置只在本机。本机定时任务可指定每次新建任务时 Agent 在哪台电脑或分享来的供应商上运行（schedule_list_models 查位置与模型）。',
+  // Countersign: under LOCAL_ONLY schedules live on this computer only.
+  scheduler: LOCAL_ONLY
+    ? '定时任务（自动化 / 心跳）的查询与管理，只作用于本机。'
+    : '定时任务（自动化 / 心跳）的查询与管理。定时任务保存在各自的电脑上：查询、修改、暂停、恢复、删除、立即运行可指定电脑（device，查询可传 all）；新建、检查脚本安装、当前运行的通知设置只在本机。本机定时任务可指定每次新建任务时 Agent 在哪台电脑或分享来的供应商上运行（schedule_list_models 查位置与模型）。',
 };
 
 function registerListToolsEntry(

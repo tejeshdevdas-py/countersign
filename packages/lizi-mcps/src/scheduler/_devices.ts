@@ -14,6 +14,7 @@ import type { SchedulerToolResult } from "../cindy_schedulerToolRegistry.js";
 import type { SchedulerMcpDeps } from "../types.js";
 import { buildJsonResult, withScheduler } from "./_shared.js";
 import { classifySchedulerError } from "./errors.js";
+import { localOnlyShape } from "../localOnlyTools.js";
 
 export interface SchedulerDevice {
   deviceId: string;
@@ -50,19 +51,19 @@ export interface SchedulerRemoteDeps {
 
 const DEVICE_ID = z.string().min(1).max(256);
 
-/** 读工具：本机、全部电脑或指定电脑。 */
-export const readDeviceShape = {
+/** 读工具：本机、全部电脑或指定电脑。Countersign: no `device` under LOCAL_ONLY. */
+export const readDeviceShape = localOnlyShape({
   device: DEVICE_ID.optional().describe(
     'local（默认，仅本机）、all（本机 + 其它在线且已开启远程控制的电脑）或某台电脑的 deviceId（device="all" 的返回里有）。非 local 时结果按电脑分组。',
   ),
-};
+});
 
-/** 写工具：本机或指定的一台电脑。 */
-export const writeDeviceShape = {
+/** 写工具：本机或指定的一台电脑。Countersign: no `device` under LOCAL_ONLY. */
+export const writeDeviceShape = localOnlyShape({
   device: DEVICE_ID.optional().describe(
     "local（默认，本机）或目标定时任务所在电脑的 deviceId。schedule id 只在它所在的电脑上有效。",
   ),
-};
+});
 
 /**
  * 其它电脑返回的定时任务 / 运行记录里，绑定任务 id 只在那台电脑上有效。与历史查询同一约定，

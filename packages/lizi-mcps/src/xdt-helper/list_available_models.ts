@@ -5,6 +5,7 @@
 
 import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { z } from 'zod';
+import { localOnlyLines, localOnlyShape } from '../localOnlyTools.js';
 
 import type { XdtHelperToolRegistry } from '../lizi_xdtHelperToolRegistry.js';
 import type { ControlResult } from '../lizi_xdtHelperMcpServer.js';
@@ -93,7 +94,8 @@ function toToolAgentDeviceId(value: string | null): string {
   return value ?? LOCAL_AGENT_DEVICE;
 }
 
-const DESCRIPTION = [
+// Countersign: under LOCAL_ONLY models come from this computer only.
+const DESCRIPTION = localOnlyLines([
   '列出每个 agent 当前 host 支持的 model id 清单, 用于 create_worker 前确认 model 名拼写。',
   'Codex 和 Claude Code 支持的 model 完全不同, 不可跨用。',
   '',
@@ -117,7 +119,7 @@ const DESCRIPTION = [
   '默认规则: 用户只报模型名 (如 "gpt-5.5") 时, 一律默认 tier=standard (官方原版); 只有用户明确要求折扣路由才允许选 tier=budget。',
   '注意 budget 与 standard 可能 label 同名 (都叫 GPT-5.5), 必须用 tier 区分, 不能只看 label。',
   'tier=budget 仅在 Codex「API key 模式」下可用; OAuth 模式下 create_worker 会返 BUDGET_MODEL_REQUIRES_API_MODE。用户要 budget 档时, 若被拒就如实告知需切到 API key 模式。',
-].join('\n');
+], (line) => /^- (?:execution_device_id|agent_device_id):/.test(line)).join('\n');
 
 export function registerListAvailableModelsTool(
   registry: XdtHelperToolRegistry,
@@ -132,15 +134,17 @@ export function registerListAvailableModelsTool(
         .enum(['codex', 'claude-code', 'pi'])
         .optional()
         .describe('可选, 只查某一 agent 的 model 列表; 不传返三者'),
-      agent_device_id: z
-        .string()
-        .trim()
-        .min(1)
-        .max(128)
-        .optional()
-        .describe('可选, 模型位置: locations[].agent_device_id 或 "local"；指定工作电脑时相对它，否则不传跟 Lead'),
-      execution_device_id: z.string().trim().min(1).max(128).optional()
-        .describe('可选，Worker 的工作电脑；查询它可用的模型与远程供应商'),
+      ...localOnlyShape({
+        agent_device_id: z
+          .string()
+          .trim()
+          .min(1)
+          .max(128)
+          .optional()
+          .describe('可选, 模型位置: locations[].agent_device_id 或 "local"；指定工作电脑时相对它，否则不传跟 Lead'),
+        execution_device_id: z.string().trim().min(1).max(128).optional()
+          .describe('可选，Worker 的工作电脑；查询它可用的模型与远程供应商'),
+      }),
     },
     handler: async ({ agent, agent_device_id, execution_device_id }) => {
       const callerSessionId = deps.getSessionContext?.().sessionId;
