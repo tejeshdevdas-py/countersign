@@ -8,6 +8,8 @@
 # before each push. CI never sees your file and checks the built-in rules only.
 #
 # Format:
+# - Save the file as UTF-8 (a byte order mark is fine). A file saved as UTF-16,
+#   as some editors do by default, stops the check with exit code 2.
 # - One JavaScript regular expression per line, without /slashes/ or flags.
 #   Every line is matched case-insensitively.
 # - Lines starting with # are comments. Blank lines are ignored.
@@ -15,8 +17,12 @@
 # - A line that is not a valid expression stops the check with exit code 2 and
 #   names its line number.
 # - A finding prints as path:line private:<n>, where n is the line number in
-#   this file. The matched text and the expression are never printed.
-# - Private words are checked in every tracked file and cannot be baselined.
+#   this file. The matched text and the expression are never printed, except
+#   that a match in a file name prints as path:0 private:<n>, which shows the name.
+# - Private words are checked in every tracked text file (LICENSE and
+#   docs/legal included; binary files and Git LFS files are not read), in every
+#   tracked file name, and in --history in commit messages, added lines and the
+#   names of added or renamed files. They cannot be baselined.
 # - A short word also matches inside longer words. If one of your words is
 #   part of your public GitHub handle, add a negative lookahead for the rest of
 #   the handle, or list a longer fragment instead.
