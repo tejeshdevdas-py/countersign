@@ -322,4 +322,35 @@ describe('Countersign packaged output check', () => {
       assertPackagedOutputClean(resources, { userName: 'unrelated', publicIdentity: PUBLIC }),
     ).toThrow(/short \(8\.3\) profile folder/);
   });
+  // Residual round, build-4/build-5/docs-4: the helper programs in resources/tools are
+  // built outside this repository's packaging. The check reports which of them hold the
+  // user name or a short profile folder, and does not stop the package for them.
+  it('reports helper programs in resources/tools that hold the name, without failing', async () => {
+    const resources = await packaged(CLEAN);
+    const tools = path.join(resources, 'tools');
+    const write = (relative: string, content: Buffer) => {
+      const file = path.join(tools, relative);
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file, content);
+    };
+    write(
+      'helper/named.exe',
+      Buffer.concat([Buffer.alloc(32), Buffer.from(winPath(...PROFILE, '.cargo'))]),
+    );
+    write('helper/short.exe', Buffer.from(winPath('C:', 'Users', 'FIXTUR~1', '.cargo'), 'utf16le'));
+    write('helper/clean.exe', Buffer.alloc(64, 3));
+
+    const options = { userName: USER, publicIdentity: PUBLIC };
+    const findings = assertPackagedOutputClean(resources, options);
+    expect(findings.tools.sort()).toEqual(['tools/helper/named.exe', 'tools/helper/short.exe']);
+    expect(findings.toolFilesChecked).toBe(3);
+    expect(findings.userName).toEqual([]);
+    expect(findings.intermediates).toEqual([]);
+  });
+
+  it('reports no helper programs when resources/tools is missing', async () => {
+    const resources = await packaged(CLEAN);
+    const findings = findPackagedBuildLeaks(resources, { userName: USER, publicIdentity: PUBLIC });
+    expect(findings).toMatchObject({ tools: [], toolFilesChecked: 0 });
+  });
 });

@@ -770,6 +770,19 @@ function assertCountersignPackagedOutputClean(buildPath: string, platform: Forge
   console.log(
     `[forge:postPackage] ${findings.filesChecked} packaged files: no build intermediates, no user name or short (8.3) folder in a profile path`,
   );
+  // Residual round (build-4, build-5): the helper programs in resources\tools are
+  // built outside this step; the check reports those that hold the name, without failing.
+  if (findings.tools.length > 0) {
+    console.warn(
+      `[forge:postPackage] ${findings.tools.length} helper programs in resources\\tools hold this machine's user name ` +
+        `or a short (8.3) profile folder (from their own builds); this check reports them and does not remove them:\n  ` +
+        findings.tools.join('\n  '),
+    );
+  } else {
+    console.log(
+      `[forge:postPackage] ${findings.toolFilesChecked} files in resources\\tools: no user name or short folder in a profile path`,
+    );
+  }
 }
 
 function targetPlatformKey(targetPlatform: string, targetArch: string): string {

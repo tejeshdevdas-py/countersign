@@ -281,6 +281,12 @@ export interface PackagedLeakFindings {
    */
   userName: string[];
   filesChecked: number;
+  /**
+   * Helper programs in resources/tools, as `tools/<path>`, that hold the user
+   * name or a short profile folder. Reported only: they do not fail the check.
+   */
+  tools: string[];
+  toolFilesChecked: number;
 }
 
 export interface PackagedLeakOptions {
@@ -449,14 +455,22 @@ type AsarNode = {
  * Lists what a packaged app must not carry: node-gyp/MSVC build
  * intermediates, and the build machine's user name (outside the public
  * identity) in any file name or content. Scans resources/app.asar (packed
- * files are read from the archive) and resources/app.asar.unpacked.
+ * files are read from the archive) and resources/app.asar.unpacked. Also lists
+ * the helper programs in resources/tools that hold the name, which
+ * assertPackagedOutputClean reports without failing.
  */
 export function findPackagedBuildLeaks(
   resourcesDir: string,
   options: PackagedLeakOptions,
 ): PackagedLeakFindings {
   const matcher = nameMatcher(options);
-  const findings: PackagedLeakFindings = { intermediates: [], userName: [], filesChecked: 0 };
+  const findings: PackagedLeakFindings = {
+    intermediates: [],
+    userName: [],
+    filesChecked: 0,
+    tools: [],
+    toolFilesChecked: 0,
+  };
   const visit = (shown: string, name: string, read: (() => Buffer) | null) => {
     const pattern = read ? BUILD_INTERMEDIATE_FILE : BUILD_INTERMEDIATE_DIR;
     if (pattern.test(name)) findings.intermediates.push(maskName(shown, matcher));
@@ -513,6 +527,30 @@ export function findPackagedBuildLeaks(
   };
   const unpacked = path.join(resourcesDir, 'app.asar.unpacked');
   if (fs.existsSync(unpacked)) walkDisk(unpacked, '');
+
+  // Countersign (residual round, build-4/build-5): the helper programs in
+  // resources/tools are built outside this packaging step (their Rust builds can
+  // record cargo registry paths). They are reported, not failed.
+  const walkTools = (dir: string, relative: string) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const childPath = relative ? `${relative}/${entry.name}` : entry.name;
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walkTools(full, childPath);
+      } else if (entry.isFile()) {
+        findings.toolFilesChecked++;
+        const shown = `tools/${childPath}`;
+        const content = fs.readFileSync(full);
+        const named =
+          matcher !== null && (pathHoldsName(shown, matcher) || holdsName(content, matcher));
+        if (named || pathHoldsShortProfile(shown) || holdsShortProfile(content)) {
+          findings.tools.push(maskName(shown, matcher));
+        }
+      }
+    }
+  };
+  const tools = path.join(resourcesDir, 'tools');
+  if (fs.existsSync(tools)) walkTools(tools, '');
   return findings;
 }
 

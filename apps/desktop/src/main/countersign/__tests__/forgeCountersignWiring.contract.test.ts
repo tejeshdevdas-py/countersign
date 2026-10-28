@@ -99,6 +99,17 @@ describe('forge.config.ts Countersign packaging wiring', () => {
     expect(/console\.\w+\([^;]*profileName/.test(body)).toBe(false);
     expect(/writeFile|appendFile/.test(body)).toBe(false);
   });
+
+  it('build-4: postPackage reports helper programs in resources/tools that hold the name', () => {
+    const start = forge.indexOf('function assertCountersignPackagedOutputClean(');
+    const body = forge.slice(start, forge.indexOf('\nfunction ', start + 1));
+    expect(body).toContain('if (findings.tools.length > 0) {');
+    expect(body).toMatch(
+      /console\.warn\(\s*`\[forge:postPackage\] \$\{findings\.tools\.length\} helper programs in resources\\\\tools/,
+    );
+    // Reported only: the tools list never throws.
+    expect(body).not.toMatch(/throw[^;]*findings\.tools/);
+  });
 });
 
 describe('package-desktop.mjs Countersign wiring', () => {
