@@ -33,6 +33,13 @@
  *
  * (11) The bundled browser recipe and site guide JSON (lizi-mcps) is scanned
  * string by string: the browser tool returns it to the model whole.
+ *
+ * (12) Locale string values, prompt template lines and prompt source string
+ * literals are also scanned for the upstream repository owner (makecindy), the
+ * upstream domains (cindy.app, cindy.cn, cindy.com.cn) and the upstream
+ * company's name (XD Inc), in any case and inside URLs too. The checks above
+ * match only the capitalised old name, so these lower-case addresses passed.
+ * Deliberate ones are listed in UPSTREAM_REF_EXEMPT with their reason.
  */
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
@@ -472,6 +479,135 @@ export function findPromptLeaks(files, sourceFiles = PROMPT_SOURCE_FILES) {
 }
 
 // ---------------------------------------------------------------------------
+// (12) Upstream addresses and the upstream company's name in locale strings,
+// prompt templates and prompt source literals: text a person reads in the app
+// or a model repeats. URLs are not exempt here, because the address is the
+// problem: it sends the user to the upstream project or names its maker.
+// ---------------------------------------------------------------------------
+
+const UPSTREAM_REF = /makecindy|\bcindy\.(?:com\.cn|app|cn)\b|\bXD\s*Inc\b/gi;
+const UPSTREAM_REF_ANY = new RegExp(UPSTREAM_REF.source, 'i');
+
+// Upstream references that stay, each with its reason. `token` is the match in
+// lower case; `count` is how often it occurs in that file's scanned text. More
+// occurrences fail, and so do fewer (shrink the list).
+export const UPSTREAM_REF_EXEMPT = [
+  {
+    path: 'apps/desktop/src/renderer/i18n/locales/en/common.json',
+    token: 'xd inc',
+    count: 1,
+    reason:
+      'stock-briefing home suggestion: the example ticker 2400.HK is labelled with its listed company; it says nothing about who makes Countersign (README limit 9)',
+  },
+  {
+    path: 'apps/desktop/src/renderer/i18n/locales/ko/common.json',
+    token: 'xd inc',
+    count: 1,
+    reason:
+      'stock-briefing home suggestion: the example ticker 2400.HK is labelled with its listed company; it says nothing about who makes Countersign (README limit 9)',
+  },
+  {
+    path: 'apps/desktop/resources/system-skills/cindy-plugin-creator/references/plugin-structure.md',
+    token: 'makecindy',
+    count: 2,
+    reason:
+      'plugin creator references: the upstream plugin catalog and host source as worked examples; the skill content rewrite is deferred with the cloud-feature scrub (FORK-CHANGES deferred table)',
+  },
+  {
+    path: 'apps/desktop/resources/system-skills/cindy-plugin-creator/references/plugin-publishing.md',
+    token: 'makecindy',
+    count: 1,
+    reason:
+      'plugin creator references: publishing to the upstream official plugin catalog; deferred with the cloud-feature scrub (FORK-CHANGES deferred table)',
+  },
+  {
+    path: 'packages/lizi-mcps/src/xdt-helper/capabilities.ts',
+    token: 'makecindy',
+    count: 1,
+    reason: 'about-cindy credits the upstream repository as the project Countersign forks',
+  },
+  {
+    path: 'packages/lizi-mcps/src/xdt-helper/capabilities.ts',
+    token: 'xd inc',
+    count: 1,
+    reason:
+      'about-cindy says Countersign is not affiliated with the upstream project or XD Inc. (the README non-affiliation sentence)',
+  },
+  {
+    path: 'packages/lizi-mcps/src/xdt-helper/submit_github_issue.ts',
+    token: 'makecindy',
+    count: 1,
+    reason:
+      'the issue tool result names the upstream repository; the tool is not registered under LOCAL_ONLY (O13)',
+  },
+];
+
+/** Upstream references: { path, line, token } with token in lower case. */
+export function findUpstreamRefs(files, sourceFiles = PROMPT_SOURCE_FILES) {
+  const hits = [];
+  const sources = new Set(sourceFiles.map(normalize));
+  const seen = new Set();
+  for (const file of files) {
+    const filePath = normalize(file.path);
+    if (seen.has(filePath) || EXEMPT.some((re) => re.test(filePath))) {
+      continue;
+    }
+    seen.add(filePath);
+    if (!UPSTREAM_REF_ANY.test(file.text)) {
+      continue;
+    }
+    const texts = [];
+    if (LOCALE_PATH.test(filePath)) {
+      file.text.split(/\r?\n/).forEach((line, index) => {
+        const m = JSON_VALUE.exec(line);
+        if (m) {
+          texts.push({ line: index + 1, text: decodeJsonString(m[1]) });
+        }
+      });
+    } else if (isPromptTemplatePath(filePath)) {
+      file.text.split(/\r?\n/).forEach((line, index) => {
+        texts.push({ line: index + 1, text: line });
+      });
+    } else if (sources.has(filePath)) {
+      texts.push(...stringLiterals(filePath, file.text));
+    }
+    for (const t of texts) {
+      for (const m of t.text.matchAll(UPSTREAM_REF)) {
+        const token = m[0].toLowerCase().replace(/\s+/g, ' ');
+        hits.push({ path: filePath, line: t.line, token });
+      }
+    }
+  }
+  return hits;
+}
+
+/** Upstream references beyond their exempt count (fresh) and exemptions found fewer times (stale). */
+export function compareUpstreamRefs(hits, exempt = UPSTREAM_REF_EXEMPT) {
+  const key = (p, token) => `${normalize(p)}\u0000${token}`;
+  const groups = new Map();
+  for (const hit of hits) {
+    const k = key(hit.path, hit.token);
+    if (!groups.has(k)) {
+      groups.set(k, []);
+    }
+    groups.get(k).push(hit);
+  }
+  const allowed = new Map(exempt.map((e) => [key(e.path, e.token), e.count]));
+  const fresh = [];
+  for (const [k, group] of groups) {
+    fresh.push(...group.slice(allowed.get(k) ?? 0));
+  }
+  const stale = [];
+  for (const e of exempt) {
+    const found = groups.get(key(e.path, e.token))?.length ?? 0;
+    if (found < e.count) {
+      stale.push({ ...e, found });
+    }
+  }
+  return { fresh, stale };
+}
+
+// ---------------------------------------------------------------------------
 // (9) Every non-test .ts/.tsx under apps/desktop/src and packages/*/src: every
 // string literal, template part and JSX text, except
 //  - arguments of real logger calls (receiver log, logger, console, this.log or
@@ -708,6 +844,7 @@ export function main({
   root = REPO_ROOT,
   baselinePath = path.join(root, 'scripts', 'countersign', 'brand-guard-baseline.json'),
   promptSourceFiles = PROMPT_SOURCE_FILES,
+  upstreamRefExempt = UPSTREAM_REF_EXEMPT,
   log = (line) => console.log(line),
   error = (line) => console.error(line),
 } = {}) {
@@ -733,6 +870,8 @@ export function main({
   const baseline = loadBaseline(baselinePath);
   const problems = validateBaseline(baseline);
   const { fresh, stale } = compareWithBaseline(hits, baseline);
+  const upstreamHits = findUpstreamRefs([...files, ...promptFiles], promptSourceFiles);
+  const upstream = compareUpstreamRefs(upstreamHits, upstreamRefExempt);
   for (const leak of leaks) {
     error(`${leak.path}:${leak.line}: user-visible "${leak.match}"`);
   }
@@ -753,19 +892,29 @@ export function main({
   for (const problem of problems) {
     error(`baseline: ${problem}`);
   }
+  for (const hit of upstream.fresh) {
+    error(`${hit.path}:${hit.line}: upstream reference "${hit.token}" in locale or prompt text`);
+  }
+  for (const e of upstream.stale) {
+    error(
+      `${e.path}: upstream reference "${e.token}" listed ${e.count} time(s), found ${e.found}; shrink UPSTREAM_REF_EXEMPT`,
+    );
+  }
   const total =
     leaks.length +
     promptLeaks.length +
     dataLeaks.length +
     fresh.length +
     stale.length +
-    problems.length;
+    problems.length +
+    upstream.fresh.length +
+    upstream.stale.length;
   if (total > 0) {
     error(`brand guard: ${total} problem(s)`);
     return 1;
   }
   log(
-    `brand guard: ok (${files.length} files, ${promptFiles.length} prompt files, ${modelData.length} model data files and ${sourceFiles.length} source files scanned; ${hits.length} old-name text(s), all in the ${baseline.length}-entry baseline)`,
+    `brand guard: ok (${files.length} files, ${promptFiles.length} prompt files, ${modelData.length} model data files and ${sourceFiles.length} source files scanned; ${hits.length} old-name text(s), all in the ${baseline.length}-entry baseline; ${upstreamHits.length} upstream reference(s), all in the ${upstreamRefExempt.length}-entry exempt list)`,
   );
   return 0;
 }

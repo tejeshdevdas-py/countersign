@@ -9,12 +9,15 @@ import { fileURLToPath } from 'node:url';
 import {
   BASELINE_CATEGORIES,
   PROMPT_SOURCE_FILES,
+  UPSTREAM_REF_EXEMPT,
+  compareUpstreamRefs,
   compareWithBaseline,
   findBrandAssetNames,
   findBrandLeaks,
   findHtmlLeaks,
   findModelDataLeaks,
   findPromptLeaks,
+  findUpstreamRefs,
   findUserTextHits,
   isPromptTemplatePath,
   isUserTextSourcePath,
@@ -336,6 +339,95 @@ test('every listed prompt source exists', () => {
   }
 });
 
+// (12) Upstream addresses and the upstream company's name in locale strings and
+// prompt text, in any case and inside URLs too.
+
+const HOST_PROMPT = 'apps/desktop/src/main/maker-host/host-system-prompt.md';
+
+function refs(hits) {
+  return hits.map((h) => `${h.path}:${h.line} ${h.token}`);
+}
+
+test('flags upstream addresses and the company name in prompt text, in any case and in URLs', () => {
+  const text = [
+    'You are Countersign, an open-source AI assistant.',
+    'Source: https://github.com/makecindy/cindy',
+    'Sites: https://Cindy.App and www.cindy.cn',
+    'Mirror: cindy.com.cn. Made by XD Inc.',
+    'Source: https://github.com/tejeshdevdas-py/countersign',
+    'A cindy.application or cindy.cnx is not an upstream address.',
+  ].join('\n');
+  assert.deepEqual(refs(findUpstreamRefs([{ path: HOST_PROMPT, text }])), [
+    `${HOST_PROMPT}:2 makecindy`,
+    `${HOST_PROMPT}:3 cindy.app`,
+    `${HOST_PROMPT}:3 cindy.cn`,
+    `${HOST_PROMPT}:4 cindy.com.cn`,
+    `${HOST_PROMPT}:4 xd inc`,
+  ]);
+});
+
+test('upstream references: locale values and prompt source literals; not comments or other files', () => {
+  const locale = '{\n  "a": "Mail cindy.app support",\n  "makecindy": "ok"\n}\n';
+  const source = [
+    '// see https://github.com/makecindy/cindy',
+    "export const URL = 'https://github.com/makecindy/cindy';",
+  ].join('\n');
+  const promptSource = 'packages/maker-shared/src/richAnswerGuide.ts';
+  const hits = findUpstreamRefs([
+    { path: LOCALE, text: locale },
+    { path: promptSource, text: source },
+    { path: 'apps/desktop/src/renderer/pages/About.tsx', text: source },
+    { path: 'apps/desktop/help-knowledge/about.md', text: 'see cindy.app\n' },
+    { path: 'FORK-CHANGES.md', text: 'makecindy\n' },
+  ]);
+  assert.deepEqual(refs(hits), [`${LOCALE}:2 cindy.app`, `${promptSource}:2 makecindy`]);
+});
+
+test('upstream references: listed ones pass, extra ones fail, a listed one that is gone fails', () => {
+  const hits = [
+    { path: 'a.md', line: 1, token: 'makecindy' },
+    { path: 'a.md', line: 3, token: 'makecindy' },
+    { path: 'b.md', line: 1, token: 'xd inc' },
+  ];
+  const exempt = [
+    { path: 'a.md', token: 'makecindy', count: 1, reason: 'credit' },
+    { path: 'c.md', token: 'cindy.app', count: 1, reason: 'gone' },
+  ];
+  const { fresh, stale } = compareUpstreamRefs(hits, exempt);
+  assert.deepEqual(refs(fresh), ['a.md:3 makecindy', 'b.md:1 xd inc']);
+  assert.deepEqual(
+    stale.map((e) => `${e.path} ${e.token} ${e.found}`),
+    ['c.md cindy.app 0'],
+  );
+});
+
+test('every upstream-reference exemption names a file, a token, a count and its reason', () => {
+  const keys = new Set();
+  for (const e of UPSTREAM_REF_EXEMPT) {
+    assert.equal(typeof e.path === 'string' && e.path.length > 0, true, JSON.stringify(e));
+    assert.match(e.token, /^(?:makecindy|cindy\.(?:com\.cn|app|cn)|xd inc)$/, e.path);
+    assert.equal(Number.isInteger(e.count) && e.count >= 1, true, e.path);
+    assert.equal(typeof e.reason === 'string' && e.reason.trim().length > 0, true, e.path);
+    const key = `${e.path} ${e.token}`;
+    assert.equal(keys.has(key), false, `listed twice: ${key}`);
+    keys.add(key);
+  }
+});
+
+test('the shipped host and headless prompts name no upstream address', () => {
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
+  const prompts = [
+    HOST_PROMPT,
+    ...['claude', 'codex', 'pi'].map(
+      (engine) => `apps/cindy-headless/profiles/cindy-production-${engine}/prompt.md`,
+    ),
+  ];
+  for (const rel of prompts) {
+    const text = fs.readFileSync(path.join(root, rel), 'utf8');
+    assert.deepEqual(refs(findUpstreamRefs([{ path: rel, text }])), [], rel);
+  }
+});
+
 // (9) Every non-test .ts/.tsx under apps/desktop/src and packages/*/src: every string
 // literal, template part and JSX text, minus logger calls and identifier tokens; what
 // stays is checked against the committed baseline.
@@ -596,7 +688,7 @@ function fixtureTree(baselineEntries) {
   return { root, baselinePath };
 }
 
-function runMain(baselineEntries, edit) {
+function runMain(baselineEntries, edit, upstreamRefExempt = []) {
   const { root, baselinePath } = fixtureTree(baselineEntries);
   edit?.(root);
   const out = [];
@@ -604,6 +696,7 @@ function runMain(baselineEntries, edit) {
     root,
     baselinePath,
     promptSourceFiles: [],
+    upstreamRefExempt,
     log: (line) => out.push(line),
     error: (line) => out.push(line),
   });
@@ -663,4 +756,23 @@ test('main() fails a fixture tree whose baseline lists a text that is gone', () 
   });
   assert.equal(code, 1);
   assert.match(out, /no longer occurs/);
+});
+
+test('main() fails a fixture tree whose host prompt names the upstream repository', () => {
+  const { code, out } = runMain([FIXTURE_ENTRY], (root) => {
+    writeFile(
+      root,
+      HOST_PROMPT,
+      'You are Countersign.\nSource: https://github.com/makecindy/cindy\n',
+    );
+  });
+  assert.equal(code, 1);
+  assert.match(out, /host-system-prompt\.md:2: upstream reference "makecindy"/);
+});
+
+test('main() fails a fixture tree whose upstream-reference exemption no longer occurs', () => {
+  const exempt = [{ path: HOST_PROMPT, token: 'makecindy', count: 1, reason: 'fixture' }];
+  const { code, out } = runMain([FIXTURE_ENTRY], undefined, exempt);
+  assert.equal(code, 1);
+  assert.match(out, /upstream reference "makecindy" listed 1 time\(s\), found 0/);
 });
