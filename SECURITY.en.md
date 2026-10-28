@@ -29,19 +29,15 @@ Please provide as much of the following as possible:
   personal data;
 - potential impact, exploitation requirements, and any suggested mitigation.
 
-If the issue also involves the independently maintained server, identify the
-affected regional endpoint and client version so that we can route it to the
-appropriate maintainers. The server is outside this repository, but its
-details must not be disclosed in a public issue either.
-
 ## Response process
 
 We will acknowledge the report, reproduce it, assess its impact, and update the
-report when a fix or mitigation can be disclosed. Our target cadence:
-**acknowledgement with an initial assessment within 5 business days**, and a
-**90-day coordinated disclosure window** for confirmed vulnerabilities
-(adjustable in coordination with the reporter). If you hear nothing for more
-than 7 days, please add a comment to the report.
+report when a fix or mitigation can be disclosed. The maintainer answers on a
+best-effort basis. Confirmed vulnerabilities follow a **90-day coordinated
+disclosure window** (adjustable in coordination with the reporter). If you hear
+nothing for more than 7 days, please add a comment to the report.
+
+<!-- owner: confirm -->
 
 ## Contributor notes
 
