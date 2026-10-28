@@ -34,6 +34,8 @@
 
 import type { Session, OnHeadersReceivedListenerDetails } from 'electron';
 
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
+
 import { createLogger } from '../logger.js';
 
 const cspLog = createLogger('csp');
@@ -162,7 +164,11 @@ export function buildContentSecurityPolicy(ctx: CspContext): string {
     // 'unsafe-inline': CodeMirror / ProseMirror (style-mod) and Vite inject
     // runtime <style> tags; fonts.googleapis.com: drawio viewer loads Google
     // Font stylesheets for sketch-font diagrams. Styles cannot execute JS.
-    'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+    // Countersign: under LOCAL_ONLY the drawio preview skips remote fonts
+    // (renderer/lib/countersignDrawioOffline.ts), so the host is not listed.
+    'style-src': LOCAL_ONLY
+      ? ["'self'", "'unsafe-inline'"]
+      : ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
     'img-src': ["'self'", 'data:', 'blob:', 'https:', 'http:', ...CUSTOM_IMG_SCHEMES],
     'media-src': ["'self'", 'data:', 'blob:', 'https:', 'http:', ...CUSTOM_MEDIA_SCHEMES],
     'font-src': ["'self'", 'data:', 'https:'],

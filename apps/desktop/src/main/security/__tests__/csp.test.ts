@@ -6,7 +6,14 @@
  * (mainFrame-only rewrite, pre-existing CSP stripping, subresource passthrough).
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+
+// Countersign: upstream's policy is kept as it was, with LOCAL_ONLY off. The
+// LOCAL_ONLY style-src is pinned in csp.localOnly.test.ts.
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
 
 import {
   buildContentSecurityPolicy,
