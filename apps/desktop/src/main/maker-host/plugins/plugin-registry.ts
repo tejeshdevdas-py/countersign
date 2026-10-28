@@ -48,12 +48,21 @@ export interface PluginListItem {
   globalOverride?: { enabled: boolean } | null;
 }
 
-/** Countersign: chat-app tools (Feishu bot, personal WeChat, Slack) not listed under LOCAL_ONLY. */
+/** Countersign: chat-app tools (Feishu bot, personal WeChat, Slack), off and not listed under LOCAL_ONLY. */
 const LOCAL_ONLY_HIDDEN_PLUGIN_IDS: ReadonlySet<PluginId> = new Set<PluginId>([
   'feishu_bot',
   'wechat',
   'slack',
 ]);
+
+/**
+ * Countersign: true for a chat-app tool under LOCAL_ONLY. Such a tool is neither
+ * listed nor enabled, whatever a settings file says, because the user has no
+ * switch for it any more and its tool server describes sending to outside apps.
+ */
+export function isLocalOnlyHiddenPlugin(pluginId: PluginId): boolean {
+  return LOCAL_ONLY && LOCAL_ONLY_HIDDEN_PLUGIN_IDS.has(pluginId);
+}
 
 export class PluginRegistry {
   private plugins: Plugin[];
@@ -69,6 +78,9 @@ export class PluginRegistry {
    * Called from MCP provider isEnabled(ctx) gate during session start.
    */
   isEnabled(pluginId: PluginId, workingDir?: string): boolean {
+    // Countersign: chat-app tools are off under LOCAL_ONLY.
+    if (isLocalOnlyHiddenPlugin(pluginId)) return false;
+
     // Tier 0 — unknown plugin: fail-open.
     const plugin = this.plugins.find((p) => p.id === pluginId);
     if (!plugin && !ESSENTIAL_PLUGIN_IDS.has(pluginId)) return true;
@@ -101,6 +113,16 @@ export class PluginRegistry {
 
   /** Full async enable-state query used by IPC handlers. */
   async getEnableState(pluginId: PluginId, workingDir?: string): Promise<PluginEnableState> {
+    // Countersign: chat-app tools are off under LOCAL_ONLY.
+    if (isLocalOnlyHiddenPlugin(pluginId)) {
+      return {
+        effectiveEnabled: false,
+        productDefaultEnabled: false,
+        projectOverride: null,
+        userOverride: null,
+        globalOverride: null,
+      };
+    }
     const plugin = this.plugins.find((p) => p.id === pluginId);
     const essential = plugin?.essential ?? ESSENTIAL_PLUGIN_IDS.has(pluginId);
 
@@ -169,7 +191,7 @@ export class PluginRegistry {
     for (const plugin of this.plugins) {
       // Countersign: the chat-app connectors are off under LOCAL_ONLY, so neither Settings
       // nor the teammate capability catalog offers their tools.
-      if (LOCAL_ONLY && LOCAL_ONLY_HIDDEN_PLUGIN_IDS.has(plugin.id)) continue;
+      if (isLocalOnlyHiddenPlugin(plugin.id)) continue;
       if (!includeHidden && ESSENTIAL_PLUGIN_IDS.has(plugin.id)) continue;
       // Toggleable but surfaced in a dedicated Settings section (e.g. browser
       // under「电脑使用」), so omit from the generic project list. Browser is

@@ -110,6 +110,7 @@ import { getInputHandoffService } from '../input-handoff/service.js';
 import { isInputHandoffDisabledForSession } from '../input-handoff/botPolicy.js';
 import { isIpcError } from '../../shared/ipc-errors.js';
 import type { PluginRegistry } from '../maker-host/plugins/plugin-registry.js';
+import { isLocalOnlyHiddenPlugin } from '../maker-host/plugins/plugin-registry.js';
 import { getDesktopContactsManager } from '../maker-host/maker-contacts-host.js';
 import { broadcastContactsChanged } from '../maker-host/contacts-change-broadcast.js';
 import { readContactsSettings } from '../maker-host/contacts-settings-store.js';
@@ -1261,6 +1262,11 @@ export function createDesktopMcpProviders(deps: DesktopMcpProvidersDeps): LiziMc
         source: 'builtin' as const,
       },
       isEnabled: (ctx: LiziMcpSessionContext) => {
+        // Countersign: the chat-app tool servers are off under LOCAL_ONLY, before
+        // the Codex/Pi deferral below could register them.
+        if (isLocalOnlyHiddenPlugin(pluginId)) {
+          return false;
+        }
         // Codex 与 Pi 的共享 app-server / bridge 在还没有 thread/workdir 的阶段构建
         // MCP 工具清单。普通工具必须先全部注册，真正调用时由 HTTP bridge 按新会话
         // 冻结的策略阻断；否则某个用户默认会错误地影响所有项目（空 workdir 快照被缓存后，
