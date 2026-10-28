@@ -163,7 +163,15 @@ Local models run through Pi. M1 used LM Studio.
 What may leave your computer:
 
 - traffic to the model providers you use, for their API and sign-in (for example Anthropic and Claude for Claude Code, OpenAI and ChatGPT for Codex, your own API endpoints, and local servers such as LM Studio);
-- traffic a task causes because you asked for it: pages an agent browses, MCP servers you added, packages it installs.
+- traffic a task causes because you asked for it: pages an agent browses, MCP servers you added, packages it installs;
+- git traffic to your project's own remote: before a task gets its own worktree (for example a handoff to a new worktree, or a scheduled task's temporary worktree), git asks the remote (`upstream`, else `origin`) for its default branch and fetches it, within 15 seconds;
+- images in an answer that point to a web address: they load as soon as the answer is shown. A YouTube link shows its poster image from `i.ytimg.com`; the player loads only when you click it. The egress log records these hosts;
+- downloads and checks you start yourself:
+  - Settings > Providers, Ollama: installing Ollama asks `api.github.com` for the latest release and downloads it from GitHub. Downloading a model makes Ollama itself contact its model registry (`registry.ollama.ai`), or Hugging Face for an `hf.co/...` model;
+  - Settings > Providers, llama.cpp: installing it asks `api.github.com` and downloads from GitHub; its models come from `huggingface.co` and Hugging Face's download hosts;
+  - Settings > Computer Use: installing or updating the cua-driver runs the project's install script from `raw.githubusercontent.com` in PowerShell, and that script downloads the driver. "Check for updates" there asks `api.github.com`, and so does the check after an update you started. Opening the tab checks nothing;
+  - Android automation: if the bundled adb cannot run, preparing it downloads the latest platform-tools from `dl.google.com`;
+  - connecting GitHub from a task's git status downloads the GitHub CLI (`gh`) from GitHub and signs in to GitHub with it.
 
 What is refused: the hosts listed in [What this version does](#what-this-version-does-m1), when the request is made by the app itself.
 
@@ -187,7 +195,7 @@ Engine switches: see [`docs/countersign/engine-telemetry.md`](docs/countersign/e
 
 The log records the protocol, the host and whether the request was refused. It never records a path, a query or credentials, and it writes at most one line per host and outcome per minute. The report sorts hosts into allowed, blocked and unexpected. It exits 0 when entries were recorded and none was blocked, unexpected or malformed; 1 when one was, or when the log is empty; 2 on an input error.
 
-The engines (Claude Code, Codex, Pi) and git run as separate processes. Their traffic is not in this log; checking it needs a capture of the whole process tree.
+The engines (Claude Code, Codex, Pi), git and the other programs the app starts (such as Ollama, the cua-driver install script and `gh`) run as separate processes. Their traffic is not in this log; checking it needs a capture of the whole process tree.
 
 ## Known limits
 
