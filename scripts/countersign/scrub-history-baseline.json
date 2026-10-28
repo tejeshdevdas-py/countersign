@@ -1,0 +1,82 @@
+{
+  "note": "Reviewed scrub-check --history exceptions. Email rule only: identity, keys, paths and private words are fixed by rewriting history, never listed. Each entry names the commit by its subject line (which survives re-authoring), the location as --history prints it, and the sha256 of the matched address (never the address). An entry that matches no finding fails as stale.",
+  "entries": [
+    {
+      "commit": "Countersign: rebrand user-visible text, add brand guard",
+      "where": "apps/desktop/src/renderer/i18n/locales/en/common.json:7803",
+      "rule": "email",
+      "sha256": "d153f01710247d3a55e3d8ef4c4d518e620992d6a4cda954d2c4897ae9166a99",
+      "reason": "Upstream's public support address, already in the base's own locale text (3 times per file). This commit only replaced the product name next to it with {{appName}}. The support-routes commit (ruling O10) later removed these lines from the tree."
+    },
+    {
+      "commit": "Countersign: rebrand user-visible text, add brand guard",
+      "where": "apps/desktop/src/renderer/i18n/locales/en/common.json:7952",
+      "rule": "email",
+      "sha256": "d153f01710247d3a55e3d8ef4c4d518e620992d6a4cda954d2c4897ae9166a99",
+      "reason": "Upstream's public support address, already in the base's own locale text (3 times per file). This commit only replaced the product name next to it with {{appName}}. The support-routes commit (ruling O10) later removed these lines from the tree."
+    },
+    {
+      "commit": "Countersign: rebrand user-visible text, add brand guard",
+      "where": "apps/desktop/src/renderer/i18n/locales/ja/common.json:7771",
+      "rule": "email",
+      "sha256": "d153f01710247d3a55e3d8ef4c4d518e620992d6a4cda954d2c4897ae9166a99",
+      "reason": "Upstream's public support address, already in the base's own locale text (3 times per file). This commit only replaced the product name next to it with {{appName}}. The support-routes commit (ruling O10) later removed these lines from the tree."
+    },
+    {
+      "commit": "Countersign: rebrand user-visible text, add brand guard",
+      "where": "apps/desktop/src/renderer/i18n/locales/ja/common.json:7920",
+      "rule": "email",
+      "sha256": "d153f01710247d3a55e3d8ef4c4d518e620992d6a4cda954d2c4897ae9166a99",
+      "reason": "Upstream's public support address, already in the base's own locale text (3 times per file). This commit only replaced the product name next to it with {{appName}}. The support-routes commit (ruling O10) later removed these lines from the tree."
+    },
+    {
+      "commit": "Countersign: rebrand user-visible text, add brand guard",
+      "where": "apps/desktop/src/renderer/i18n/locales/ko/common.json:7771",
+      "rule": "email",
+      "sha256": "d153f01710247d3a55e3d8ef4c4d518e620992d6a4cda954d2c4897ae9166a99",
+      "reason": "Upstream's public support address, already in the base's own locale text (3 times per file). This commit only replaced the product name next to it with {{appName}}. The support-routes commit (ruling O10) later removed these lines from the tree."
+    },
+    {
+      "commit": "Countersign: rebrand user-visible text, add brand guard",
+      "where": "apps/desktop/src/renderer/i18n/locales/ko/common.json:7920",
+      "rule": "email",
+      "sha256": "d153f01710247d3a55e3d8ef4c4d518e620992d6a4cda954d2c4897ae9166a99",
+      "reason": "Upstream's public support address, already in the base's own locale text (3 times per file). This commit only replaced the product name next to it with {{appName}}. The support-routes commit (ruling O10) later removed these lines from the tree."
+    },
+    {
+      "commit": "Countersign: rebrand user-visible text, add brand guard",
+      "where": "apps/desktop/src/renderer/i18n/locales/zh-CN/common.json:7771",
+      "rule": "email",
+      "sha256": "d153f01710247d3a55e3d8ef4c4d518e620992d6a4cda954d2c4897ae9166a99",
+      "reason": "Upstream's public support address, already in the base's own locale text (3 times per file). This commit only replaced the product name next to it with {{appName}}. The support-routes commit (ruling O10) later removed these lines from the tree."
+    },
+    {
+      "commit": "Countersign: rebrand user-visible text, add brand guard",
+      "where": "apps/desktop/src/renderer/i18n/locales/zh-CN/common.json:7920",
+      "rule": "email",
+      "sha256": "d153f01710247d3a55e3d8ef4c4d518e620992d6a4cda954d2c4897ae9166a99",
+      "reason": "Upstream's public support address, already in the base's own locale text (3 times per file). This commit only replaced the product name next to it with {{appName}}. The support-routes commit (ruling O10) later removed these lines from the tree."
+    },
+    {
+      "commit": "Countersign: rebrand user-visible text, add brand guard",
+      "where": "apps/desktop/src/renderer/i18n/locales/zh-TW/common.json:7771",
+      "rule": "email",
+      "sha256": "d153f01710247d3a55e3d8ef4c4d518e620992d6a4cda954d2c4897ae9166a99",
+      "reason": "Upstream's public support address, already in the base's own locale text (3 times per file). This commit only replaced the product name next to it with {{appName}}. The support-routes commit (ruling O10) later removed these lines from the tree."
+    },
+    {
+      "commit": "Countersign: rebrand user-visible text, add brand guard",
+      "where": "apps/desktop/src/renderer/i18n/locales/zh-TW/common.json:7920",
+      "rule": "email",
+      "sha256": "d153f01710247d3a55e3d8ef4c4d518e620992d6a4cda954d2c4897ae9166a99",
+      "reason": "Upstream's public support address, already in the base's own locale text (3 times per file). This commit only replaced the product name next to it with {{appName}}. The support-routes commit (ruling O10) later removed these lines from the tree."
+    },
+    {
+      "commit": "Countersign: support and security routes no longer point to Cindy",
+      "where": "message:5",
+      "rule": "email",
+      "sha256": "d153f01710247d3a55e3d8ef4c4d518e620992d6a4cda954d2c4897ae9166a99",
+      "reason": "The support-routes commit (ruling O10) names upstream's public support address in prose while saying it removed it from the locale strings. Public upstream text, not personal or employer detail."
+    }
+  ]
+}

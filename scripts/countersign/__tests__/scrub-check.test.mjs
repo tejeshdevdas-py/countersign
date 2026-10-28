@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 import {
   OWNER_EMAIL,
   compareWithBaseline,
+  compareWithHistoryBaseline,
   isAllowedEmail,
   parseAddedLines,
   parsePatterns,
@@ -18,6 +19,7 @@ import {
   scrubHistory,
   skipReason,
   validateBaseline,
+  validateHistoryBaseline,
 } from '../scrub-check.mjs';
 
 const SCRIPT = fileURLToPath(new URL('../scrub-check.mjs', import.meta.url));
@@ -402,6 +404,71 @@ test('scrubHistory: a private key block in a commit message is reported on its B
   assert.equal(JSON.stringify(findings).includes('M'.repeat(64)), false);
 });
 
+const HISTORY_ENTRY = {
+  commit: 'fork: c',
+  where: 'message:3',
+  rule: 'email',
+  sha256: sha256(OUTSIDE_EMAIL),
+  reason: 'public upstream address',
+};
+
+test('history baseline entries: email only, with commit subject, location, hash and reason', () => {
+  assert.deepEqual(validateHistoryBaseline([HISTORY_ENTRY]), []);
+  const invalid = validateHistoryBaseline([
+    { ...HISTORY_ENTRY, commit: ' ' },
+    { ...HISTORY_ENTRY, where: 'message' },
+    { ...HISTORY_ENTRY, rule: 'identity' },
+    { ...HISTORY_ENTRY, rule: 'windows-user-path' },
+    { ...HISTORY_ENTRY, sha256: 'xyz' },
+    { ...HISTORY_ENTRY, where: 'message:9', reason: '' },
+    HISTORY_ENTRY,
+    HISTORY_ENTRY,
+  ]);
+  assert.deepEqual(
+    invalid.map((p) => p.replace(/^entry \d+ \(\S+ \S+\): /, '')),
+    [
+      'no commit subject',
+      'where must be <path>:<line> or message:<line>',
+      'only the email rule can be accepted in history',
+      'only the email rule can be accepted in history',
+      'sha256 must be 64 lower-case hex characters',
+      'no reason',
+      'listed twice',
+    ],
+  );
+});
+
+test('history baseline: an entry accepts its one line in its one commit; unmatched entries are stale', () => {
+  const commits = [
+    {
+      sha: 'f'.repeat(40),
+      an: 'someone',
+      ae: OUTSIDE_EMAIL,
+      cn: 'owner',
+      ce: OWNER_EMAIL,
+      body: `fork: c\n\nask ${OUTSIDE_EMAIL}\nor ${OUTSIDE_EMAIL}\n`,
+      added: new Map([['src/c.ts', [{ line: 1, text: `// ${OUTSIDE_EMAIL}` }]]]),
+    },
+  ];
+  const findings = scrubHistory(commits);
+  const entries = [
+    HISTORY_ENTRY,
+    { ...HISTORY_ENTRY, where: 'src/c.ts:1' },
+    { ...HISTORY_ENTRY, where: 'message:4', commit: 'fork: another commit' },
+    { ...HISTORY_ENTRY, where: 'message:4', sha256: sha256('other') },
+  ];
+  const { fresh, accepted, stale } = compareWithHistoryBaseline(findings, entries, commits);
+  assert.deepEqual(
+    fresh.map((f) => `${f.where} ${f.rule}`),
+    ['author identity', 'message:4 email'],
+  );
+  assert.equal(accepted, 2);
+  assert.deepEqual(
+    stale.map((s) => s.index),
+    [3, 4],
+  );
+});
+
 // ---------------------------------------------------------------------------
 // CLI, on temporary git repositories built here (never this repository's history).
 
@@ -647,4 +714,43 @@ test('CLI --history: a private key block pasted into a commit message fails', (t
   const findingLines = out.split(/\r?\n/).filter((l) => l.startsWith(short));
   assert.deepEqual(findingLines, [`${short} message:3 private-key-block`]);
   assert.equal(out.includes('M'.repeat(64)), false, 'output must not carry the key body');
+});
+
+test('CLI --history: listed email findings pass; a stale or invalid history entry fails', (t) => {
+  const ctx = forkRepo(t);
+  write(ctx, 'src/c.ts', `// mail ${OUTSIDE_EMAIL}\n`);
+  const sha = commitAll(ctx, `fork: c\n\nask ${OUTSIDE_EMAIL}`);
+  const short = sha.slice(0, 9);
+  const baselinePath = 'scripts/countersign/scrub-history-baseline.json';
+  const entries = [HISTORY_ENTRY, { ...HISTORY_ENTRY, where: 'src/c.ts:1' }];
+  write(ctx, baselinePath, JSON.stringify({ entries }));
+  const ok = run(ctx, ['--history']);
+  assert.equal(ok.code, 0, ok.out);
+  assert.match(ok.out, /^0 findings; 2 commits scanned$/m);
+  assert.match(ok.out, /^2 findings accepted by the history baseline$/m);
+
+  write(
+    ctx,
+    baselinePath,
+    JSON.stringify({ entries: [HISTORY_ENTRY, { ...entries[1], where: 'src/c.ts:2' }] }),
+  );
+  const stale = run(ctx, ['--history']);
+  assert.equal(stale.code, 1, stale.out);
+  assert.match(stale.out, new RegExp(`^${short} src/c\.ts:1 email$`, 'm'));
+  assert.match(
+    stale.out,
+    /^history baseline entry 2 \(src\/c\.ts:2 email\): matches no finding; remove it$/m,
+  );
+  assert.match(stale.out, /^2 findings; 2 commits scanned$/m);
+
+  write(ctx, baselinePath, JSON.stringify({ entries: [{ ...HISTORY_ENTRY, rule: 'identity' }] }));
+  const invalid = run(ctx, ['--history']);
+  assert.equal(invalid.code, 1, invalid.out);
+  assert.match(
+    invalid.out,
+    /scrub history baseline: entry 1 \(message:3 identity\): only the email rule can be accepted in history/,
+  );
+  for (const out of [ok.out, stale.out, invalid.out]) {
+    assert.equal(out.includes(OUTSIDE_EMAIL), false, 'output must not carry the matched text');
+  }
 });

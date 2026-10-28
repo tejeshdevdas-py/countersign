@@ -30,6 +30,12 @@
  * the sha256 of the matched text (never the text). A finding not in the
  * baseline fails, and so does a baseline entry found fewer times than listed.
  *
+ * --history also reads scrub-history-baseline.json: reviewed email findings in
+ * commits, each named by commit subject, location, rule and the sha256 of the
+ * address. Only the email rule can be listed there; identity, keys, paths and
+ * private words are fixed by rewriting history. An entry that matches no finding
+ * fails as stale.
+ *
  * Output names path:line and rule only. It never prints the matched text, the
  * line, or a private pattern's source.
  *
@@ -616,7 +622,12 @@ export function scrubHistory(commits, extraPatterns = []) {
     }
     c.body.split(/\r?\n/).forEach((line, index) => {
       for (const hit of lineFindings(line, true, privatePatterns)) {
-        findings.push({ sha: c.sha, where: `message:${index + 1}`, rule: hit.rule });
+        findings.push({
+          sha: c.sha,
+          where: `message:${index + 1}`,
+          rule: hit.rule,
+          matchHash: sha256(hit.text),
+        });
       }
     });
     for (const [file, lines] of c.added) {
@@ -650,7 +661,84 @@ export function scrubHistory(commits, extraPatterns = []) {
   return findings;
 }
 
-function runHistory({ root, base, patterns, baseline, log, error }) {
+/** Rule ids a history baseline entry may name; anything else is fixed by rewriting history. */
+export const HISTORY_BASELINE_RULES = ['email'];
+
+function historyKey(subject, where, rule, hash) {
+  return `${subject}\u0000${where}\u0000${rule}\u0000${hash}`;
+}
+
+function subjectOf(body) {
+  return (body ?? '').split(/\r?\n/)[0];
+}
+
+/** Problems with the history baseline entries (empty when valid). Never names matched text. */
+export function validateHistoryBaseline(entries) {
+  const problems = [];
+  const seen = new Set();
+  entries.forEach((e, index) => {
+    const label = `entry ${index + 1} (${e.where ?? '?'} ${e.rule ?? '?'})`;
+    if (typeof e.commit !== 'string' || e.commit.trim().length === 0) {
+      problems.push(`${label}: no commit subject`);
+    }
+    if (typeof e.where !== 'string' || !/^.+:\d+$/.test(e.where)) {
+      problems.push(`${label}: where must be <path>:<line> or message:<line>`);
+    }
+    if (!HISTORY_BASELINE_RULES.includes(e.rule)) {
+      problems.push(`${label}: only the email rule can be accepted in history`);
+    }
+    if (typeof e.sha256 !== 'string' || !/^[0-9a-f]{64}$/.test(e.sha256)) {
+      problems.push(`${label}: sha256 must be 64 lower-case hex characters`);
+    }
+    if (typeof e.reason !== 'string' || e.reason.trim().length === 0) {
+      problems.push(`${label}: no reason`);
+    }
+    const key = historyKey(e.commit ?? '', e.where ?? '', e.rule ?? '', e.sha256 ?? '');
+    if (seen.has(key)) {
+      problems.push(`${label}: listed twice`);
+    }
+    seen.add(key);
+  });
+  return problems;
+}
+
+/**
+ * Splits history findings into fresh ones and ones a history baseline entry accepts.
+ * An entry accepts the email findings at its location and hash in the commit whose
+ * subject (first message line) it names, so it survives re-authoring but not a change
+ * to that line. An entry that accepts nothing is stale.
+ * @returns {{fresh: object[], accepted: number, stale: {index: number, entry: object}[]}}
+ *   stale indexes are 1-based
+ */
+export function compareWithHistoryBaseline(findings, entries, commits) {
+  const subjects = new Map(commits.map((c) => [c.sha, subjectOf(c.body)]));
+  const indexByKey = new Map(
+    entries.map((e, index) => [historyKey(e.commit, e.where, e.rule, e.sha256), index]),
+  );
+  const used = new Set();
+  const fresh = [];
+  let accepted = 0;
+  for (const f of findings) {
+    const acceptable = f.matchHash && HISTORY_BASELINE_RULES.includes(f.rule);
+    const key = historyKey(subjects.get(f.sha) ?? '', f.where, f.rule, f.matchHash ?? '');
+    const index = acceptable ? indexByKey.get(key) : undefined;
+    if (index === undefined) {
+      fresh.push(f);
+      continue;
+    }
+    used.add(index);
+    accepted += 1;
+  }
+  const stale = [];
+  entries.forEach((entry, index) => {
+    if (!used.has(index)) {
+      stale.push({ index: index + 1, entry });
+    }
+  });
+  return { fresh, accepted, stale };
+}
+
+function runHistory({ root, base, patterns, baseline, historyBaseline, log, error }) {
   const listed = git(root, ['log', '--no-merges', HISTORY_FORMAT, `${base}..HEAD`]);
   if (!listed.ok) {
     error('scrub: git log failed');
@@ -670,13 +758,23 @@ function runHistory({ root, base, patterns, baseline, log, error }) {
   const findings = scrubHistory(commits, patterns).filter(
     (f) => !(f.path && f.matchHash && accepted.has(baselineKey(f.path, f.rule, f.matchHash))),
   );
-  for (const f of findings) {
+  const compared = compareWithHistoryBaseline(findings, historyBaseline, commits);
+  for (const f of compared.fresh) {
     log(`${f.sha.slice(0, 9)} ${f.where} ${f.rule}`);
   }
-  log(
-    `${findings.length} finding${findings.length === 1 ? '' : 's'}; ${commits.length} commits scanned`,
-  );
-  return findings.length > 0 ? 1 : 0;
+  for (const s of compared.stale) {
+    log(
+      `history baseline entry ${s.index} (${s.entry.where} ${s.entry.rule}): matches no finding; remove it`,
+    );
+  }
+  if (compared.accepted > 0) {
+    log(
+      `${compared.accepted} finding${compared.accepted === 1 ? '' : 's'} accepted by the history baseline`,
+    );
+  }
+  const problems = compared.fresh.length + compared.stale.length;
+  log(`${problems} finding${problems === 1 ? '' : 's'}; ${commits.length} commits scanned`);
+  return problems > 0 ? 1 : 0;
 }
 
 /** Runs the check from `cwd`; returns the process exit code. */
@@ -728,12 +826,27 @@ export function main({
   if (problems.length > 0) {
     return 1;
   }
+  let historyBaseline = [];
+  if (history) {
+    const historyPath = path.join(root, 'scripts', 'countersign', 'scrub-history-baseline.json');
+    historyBaseline = fs.existsSync(historyPath) ? loadBaselineFile(historyPath, error) : [];
+    if (historyBaseline === null) {
+      return 2;
+    }
+    const historyProblems = validateHistoryBaseline(historyBaseline);
+    for (const problem of historyProblems) {
+      error(`scrub history baseline: ${problem}`);
+    }
+    if (historyProblems.length > 0) {
+      return 1;
+    }
+  }
   log(
     loaded.present
       ? `scrub: built-in rules and ${loaded.patterns.length} private pattern(s) from .scrub-patterns`
       : 'scrub: built-in rules only (no .scrub-patterns file)',
   );
-  const context = { root, base, patterns: loaded.patterns, baseline, log, error };
+  const context = { root, base, patterns: loaded.patterns, baseline, historyBaseline, log, error };
   return history ? runHistory(context) : runTree(context);
 }
 
