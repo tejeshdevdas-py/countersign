@@ -12,8 +12,6 @@ import path from 'node:path';
 
 import { afterAll, describe, expect, it, vi } from 'vitest';
 
-import { summarizeEgress } from '../../../../../../scripts/countersign/egress-report.mjs';
-
 vi.mock('electron', () => {
   // Getter-only properties: assigning a wrapper throws in strict mode, as a
   // read-only export would.
@@ -70,6 +68,13 @@ describe('installEgressGuard when net cannot be patched', () => {
       { time: expect.any(String), guard: 'net.fetch', installed: false },
     ]);
     // The egress report counts these lines against the log, so it cannot pass.
+    const report = new URL(
+      '../../../../../../scripts/countersign/egress-report.mjs',
+      import.meta.url,
+    );
+    const { summarizeEgress } = (await import(report.href)) as {
+      summarizeEgress: (lines: string[]) => { malformed: number };
+    };
     expect(summarizeEgress(lines).malformed).toBe(2);
   });
 });
