@@ -18,7 +18,7 @@ import { CCAgentSessionView } from '@/features/cc-agent/CCAgentSessionView';
 import { NewMakerDraftRoute } from '@/features/cc-agent/NewMakerDraftRoute';
 import { OrcaWorkflowRoute } from '@/features/cc-agent/OrcaWorkflowRoute';
 import { WorkdirBrowseRoute } from '@/features/cc-agent/workdir-browse/WorkdirBrowseRoute';
-import { IssuesRoute } from '@/features/issue-tracker/IssuesRoute';
+import { IssueTrackerFeatureLayout } from '@/features/issue-tracker/IssueTrackerFeatureLayout';
 import { SkillhubFeatureLayout } from '@/features/skillhub/SkillhubFeatureLayout';
 import { SkillhubLocalLayout } from '@/features/skillhub/SkillhubLocalLayout';
 import { SkillhubDetailRoute, LegacySkillDetailRedirect } from '@/features/skillhub/SkillhubDetailRoute';
@@ -143,9 +143,8 @@ export const router = createHashRouter([
                   },
                   {
                     // Issue Tracker — 已迁移至 GitHub，此处仅保留引导页
-                    // Countersign: IssuesRoute redirects to / under LOCAL_ONLY.
                     path: 'issues',
-                    element: <IssuesRoute />,
+                    element: <IssueTrackerFeatureLayout />,
                   },
                   {
                     // SkillHub v0.2 —— Local skills (v0.2.1) + Market (v0.2.3)
