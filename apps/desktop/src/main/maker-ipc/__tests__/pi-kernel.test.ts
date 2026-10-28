@@ -6,6 +6,11 @@ const logError = vi.hoisted(() => vi.fn());
 vi.mock('../../logger.js', () => ({ createLogger: () => ({ trace: vi.fn(), debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: logError, fatal: vi.fn() }) }));
 vi.mock('../../agent-binaries/index.js', () => ({ getPiKernelManager: vi.fn() }));
 vi.mock('../../manifestService.js', () => ({ getBaseUrl: vi.fn(), getPlatformKey: vi.fn() }));
+// Countersign: Pi updates are refused under LOCAL_ONLY; these upstream cases cover the update path.
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
 const manager = { state: vi.fn(), check: vi.fn(), install: vi.fn() };
 const assertSender = vi.fn();
 const handlers = createPiKernelIpc({ assertSender, manager: () => manager });

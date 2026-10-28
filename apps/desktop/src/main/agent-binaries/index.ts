@@ -267,6 +267,12 @@ export function getPiKernelManager(): PiKernelManager {
 
 /** Managed commands and About use the same installer and durable selection. */
 export async function updateReadyPiBinary(force: boolean): Promise<string> {
+  // Countersign: Pi ships with the app; the managed "update" command does not download another build.
+  if (LOCAL_ONLY) {
+    throw new Error(
+      'PI_UPDATES_DISABLED: Pi updates are off in this local-only build; Pi ships with the app',
+    );
+  }
   return getPiKernelManager().install({ source: 'upstream', force });
 }
 

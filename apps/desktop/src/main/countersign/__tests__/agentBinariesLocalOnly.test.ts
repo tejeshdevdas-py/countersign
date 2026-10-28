@@ -185,4 +185,10 @@ describe('agent binaries under LOCAL_ONLY', () => {
     expect(h.whichOnPath).not.toHaveBeenCalled();
     expect(h.appMock.getPath).not.toHaveBeenCalled();
   });
+
+  it('refuses the managed Pi update: Pi ships with the app', async () => {
+    await expect(binaries.updateReadyPiBinary(false)).rejects.toThrow(/PI_UPDATES_DISABLED/);
+    await expect(binaries.updateReadyPiBinary(true)).rejects.toThrow(/PI_UPDATES_DISABLED/);
+    expect(h.appMock.getPath).not.toHaveBeenCalled();
+  });
 });

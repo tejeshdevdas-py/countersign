@@ -187,10 +187,42 @@ export function AgentVersionsRows() {
         onCheck={codex.check}
       />
       <Divider />
-      <PiKernelVersionRow />
+      {LOCAL_ONLY ? <PiInstalledVersionRow /> : <PiKernelVersionRow />}
       <Divider />
     </>
   );
+}
+
+/** Countersign: Pi ships with the app; only the installed version, no check, update or restore. */
+function PiInstalledVersionRow() {
+  const { t } = useTranslation();
+  // undefined: loading; null: no Pi ready; false: the state could not be read.
+  const [version, setVersion] = useState<string | null | false | undefined>(undefined);
+
+  useEffect(() => {
+    let cancelled = false;
+    void Promise.resolve()
+      .then(() => window.electronAPI.maker.piKernel.getState(false))
+      .then(
+        (state) => {
+          if (!cancelled) setVersion(state.currentVersion);
+        },
+        () => {
+          if (!cancelled) setVersion(false);
+        },
+      );
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const value =
+    version === undefined
+      ? t('settings.about.version.loading')
+      : version === false
+        ? t('settings.about.version.unknown')
+        : (version ?? t('settings.about.version.notReady'));
+  return <InfoRow label={t('settings.about.piVersionLabel')} value={value} />;
 }
 
 function AgentVersionRow({

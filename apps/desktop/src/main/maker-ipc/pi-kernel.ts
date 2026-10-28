@@ -1,4 +1,5 @@
 import { ipcMain, type IpcMainInvokeEvent } from 'electron';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import type { PiKernelManager } from '../agent-binaries/pi-kernel-manager.js';
 import { PiKernelError } from '../agent-binaries/pi-kernel-manager.js';
 import { getPiKernelManager } from '../agent-binaries/index.js';
@@ -10,6 +11,10 @@ import { MAKER_INVOKE } from './channels.js';
 
 const log = createLogger('pi-kernel');
 
+/** Countersign: Pi ships with the app; no online check and no other Pi build under LOCAL_ONLY. */
+export const PI_UPDATES_DISABLED_MESSAGE =
+  'PI_UPDATES_DISABLED: Pi updates are off in this local-only build; Pi ships with the app';
+
 export function createPiKernelIpc<Event>(deps: {
   assertSender: (event: Event) => void;
   manager: () => Pick<PiKernelManager, 'state' | 'check' | 'install'>;
@@ -18,11 +23,13 @@ export function createPiKernelIpc<Event>(deps: {
     async state(event: Event, check: unknown = false) {
       deps.assertSender(event);
       if (typeof check !== 'boolean') throwIpcError('INVALID_PARAMS', 'check must be boolean');
+      if (check && LOCAL_ONLY) throwIpcError('PRECONDITION_FAILED', PI_UPDATES_DISABLED_MESSAGE);
       try { return await (check ? deps.manager().check() : deps.manager().state()); }
       catch { throwIpcError('INTERNAL', 'Pi kernel state unavailable'); }
     },
     async install(event: Event, input: unknown) {
       deps.assertSender(event);
+      if (LOCAL_ONLY) throwIpcError('PRECONDITION_FAILED', PI_UPDATES_DISABLED_MESSAGE);
       if (!input || typeof input !== 'object' || Array.isArray(input)) throwIpcError('INVALID_PARAMS', 'Invalid Pi install request');
       const body = input as Record<string, unknown>;
       if ((body.source !== 'official' && body.source !== 'upstream') || typeof body.version !== 'string'
