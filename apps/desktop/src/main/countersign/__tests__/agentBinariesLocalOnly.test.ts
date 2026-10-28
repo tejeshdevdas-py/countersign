@@ -61,14 +61,19 @@ function placeBundled(resources: string, relative: string): string {
   return file;
 }
 
-beforeEach(async () => {
+/** agent-binaries keeps resolved and ready paths in module state, so each case loads it afresh. */
+async function loadBinaries(): Promise<typeof import('../../agent-binaries/index')> {
+  // reset-modules: agent-binaries keeps resolved and ready paths in module state; each case starts clean.
   vi.resetModules();
+  return import('../../agent-binaries/index');
+}
+
+beforeEach(() => {
   vi.clearAllMocks();
   h.appMock.isPackaged = true;
   h.findDevBinary.mockReturnValue(null);
   h.whichOnPath.mockReturnValue(null);
   Object.defineProperty(process, 'resourcesPath', { value: makeResources(), configurable: true });
-  binaries = await import('../../agent-binaries/index');
 });
 
 afterAll(() => {
@@ -77,6 +82,7 @@ afterAll(() => {
 
 describe('agent binaries under LOCAL_ONLY', () => {
   it('packaged: prepare uses the bundled binaries and never touches the manifest or the CDN provisioner', async () => {
+    binaries = await loadBinaries();
     const claude = placeBundled(process.resourcesPath, path.join('claude-code', exe('claude')));
     const codex = placeBundled(
       process.resourcesPath,
@@ -107,6 +113,7 @@ describe('agent binaries under LOCAL_ONLY', () => {
   });
 
   it("packaged: falls back to the CLI on PATH (the user's own login)", async () => {
+    binaries = await loadBinaries();
     const onPath = path.join(makeResources(), exe('claude'));
     h.whichOnPath.mockImplementation((cmd) => (cmd === 'claude' ? onPath : null));
 
@@ -119,6 +126,7 @@ describe('agent binaries under LOCAL_ONLY', () => {
   });
 
   it('packaged: neither bundled nor on PATH returns the install message, with no download', async () => {
+    binaries = await loadBinaries();
     const result = await binaries.prepare('codex');
 
     expect(result.ready).toBe(false);
@@ -129,6 +137,7 @@ describe('agent binaries under LOCAL_ONLY', () => {
   });
 
   it('dev: a missing apps/*-bin binary gives the resolver error, not a download', async () => {
+    binaries = await loadBinaries();
     h.appMock.isPackaged = false;
     h.appMock.getAppPath.mockReturnValue(path.join(makeResources(), 'apps', 'desktop'));
 
@@ -141,6 +150,7 @@ describe('agent binaries under LOCAL_ONLY', () => {
   });
 
   it('dev: the apps/*-bin binary is used', async () => {
+    binaries = await loadBinaries();
     h.appMock.isPackaged = false;
     const devPath = path.join('apps', 'claude-code-bin', 'x', exe('claude'));
     h.findDevBinary.mockReturnValue(devPath);
@@ -154,6 +164,7 @@ describe('agent binaries under LOCAL_ONLY', () => {
   });
 
   it('peekNeedsDownload is false and makes no manifest request', async () => {
+    binaries = await loadBinaries();
     for (const kind of ['claude-code', 'codex', 'pi'] as const) {
       await expect(binaries.peekNeedsDownload(kind)).resolves.toBe(false);
     }
@@ -162,6 +173,7 @@ describe('agent binaries under LOCAL_ONLY', () => {
   });
 
   it('isVettedAgentBinaryPath accepts exactly the resolved path and nothing else', async () => {
+    binaries = await loadBinaries();
     const codex = placeBundled(
       process.resourcesPath,
       path.join('codex-package', 'bin', exe('codex')),
@@ -177,7 +189,8 @@ describe('agent binaries under LOCAL_ONLY', () => {
     expect(binaries.isVettedAgentBinaryPath('codex', '')).toBe(false);
   });
 
-  it('getCachedBinaryStatus reports the bundled binary without a PATH lookup or userData scan', () => {
+  it('getCachedBinaryStatus reports the bundled binary without a PATH lookup or userData scan', async () => {
+    binaries = await loadBinaries();
     expect(binaries.getCachedBinaryStatus('pi')).toEqual({ binaryReady: false });
     const pi = placeBundled(process.resourcesPath, path.join('pi', exe('pi')));
 
@@ -187,6 +200,7 @@ describe('agent binaries under LOCAL_ONLY', () => {
   });
 
   it('refuses the managed Pi update: Pi ships with the app', async () => {
+    binaries = await loadBinaries();
     await expect(binaries.updateReadyPiBinary(false)).rejects.toThrow(/PI_UPDATES_DISABLED/);
     await expect(binaries.updateReadyPiBinary(true)).rejects.toThrow(/PI_UPDATES_DISABLED/);
     expect(h.appMock.getPath).not.toHaveBeenCalled();

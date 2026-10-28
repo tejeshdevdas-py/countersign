@@ -31,30 +31,36 @@ vi.mock('../../countersign/cliResolver.js', async (importOriginal) => ({
 }));
 
 beforeEach(() => {
-  vi.resetModules();
   h.existsSync.mockReset().mockReturnValue(false);
   h.whichOnPath.mockReset().mockReturnValue(null);
 });
+
+/** runtime-configs keeps the resolved rg path in module state, so each case loads it afresh. */
+async function loadRuntimeConfigs(): Promise<typeof import('../runtime-configs.js')> {
+  // reset-modules: runtime-configs caches the resolved rg path in module state; each case starts clean.
+  vi.resetModules();
+  return import('../runtime-configs.js');
+}
 
 describe('runtime-configs ripgrep under LOCAL_ONLY', () => {
   it('uses rg from PATH when none is bundled', async () => {
     const onPath = path.join('/cs-rg', 'tools', process.platform === 'win32' ? 'rg.exe' : 'rg');
     h.whichOnPath.mockImplementation((cmd) => (cmd === 'rg' ? onPath : null));
-    const { getRipgrepBinaryPath } = await import('../runtime-configs.js');
+    const { getRipgrepBinaryPath } = await loadRuntimeConfigs();
 
     expect(getRipgrepBinaryPath()).toBe(onPath);
     expect(h.whichOnPath).toHaveBeenCalledWith('rg');
   });
 
   it('throws an install message naming ripgrep when it is neither bundled nor on PATH', async () => {
-    const { ensureBundledRipgrepReady } = await import('../runtime-configs.js');
+    const { ensureBundledRipgrepReady } = await loadRuntimeConfigs();
 
     expect(() => ensureBundledRipgrepReady()).toThrow(/ripgrep.*install/is);
   });
 
   it('prefers the bundled rg and does not look on PATH', async () => {
     h.existsSync.mockReturnValue(true);
-    const { getRipgrepBinaryPath } = await import('../runtime-configs.js');
+    const { getRipgrepBinaryPath } = await loadRuntimeConfigs();
 
     expect(path.basename(getRipgrepBinaryPath())).toMatch(/^rg(\.exe)?$/);
     expect(h.whichOnPath).not.toHaveBeenCalled();
