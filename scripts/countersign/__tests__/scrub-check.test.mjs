@@ -175,23 +175,66 @@ test('a user path is reported once, as windows-user-path, in each spelling', () 
     ['c:', 'users', 'someone'].join('\\'),
     ['%3A%5C', 'Users', '%5Csomeone'].join(''),
     ['', 'c', 'Users', 'someone', 'x'].join('/'),
+    // WSL: /mnt/<letter>/Users/<name>
+    ['', 'mnt', 'c', 'Users', 'someone', 'x'].join('/'),
+    ['', 'mnt', 'd', 'Users', 'someone'].join('/'),
   ];
   for (const spelling of spellings) {
-    assert.deepEqual(rules(scrub([{ path: 'a.ts', text: `p = "${spelling}"` }], [])), [
-      'windows-user-path',
-    ]);
+    assert.deepEqual(
+      rules(scrub([{ path: 'a.ts', text: `p = "${spelling}"` }], [])),
+      ['windows-user-path'],
+      spelling,
+    );
   }
   const others = [
     TOOLS_PATH,
     ['', 'home', 'someone', 'x'].join('/'),
     ['', 'Users', 'someone', ''].join('/'),
+    // Forward-slash drive paths.
+    ['C:', 'Tools'].join('/'),
+    ['D:', 'work', 'repo', 'notes.md'].join('/'),
+    // Git Bash drive paths: one letter after the leading slash.
+    ['', 'd', 'work', 'repo'].join('/'),
+    ['', 'c', 'Tools', 'bin', 'x.exe'].join('/'),
+    // /Users/<name> and /home/<name> without a trailing slash, at the end of a token.
+    ['', 'Users', 'someone'].join('/'),
+    ['', 'home', 'someone'].join('/'),
   ];
   for (const other of others) {
-    assert.deepEqual(rules(scrub([{ path: 'a.ts', text: `p = "${other}"` }], [])), ['local-path']);
+    assert.deepEqual(
+      rules(scrub([{ path: 'a.ts', text: `p = "${other}"` }], [])),
+      ['local-path'],
+      other,
+    );
   }
-  const notPaths = ['https://example.com/a/b', 'apps/desktop/src', 'see ./Users/x', 'C:/Tools'];
+  assert.deepEqual(
+    rules(scrub([{ path: 'a.md', text: `cd ${['', 'home', 'someone'].join('/')}` }], [])),
+    ['local-path'],
+    'a bare /home/<name> at the end of a line',
+  );
+  const notPaths = [
+    'https://example.com/a/b',
+    'https://example.com/d/work',
+    'apps/desktop/src',
+    'see ./Users/x',
+    'see ../d/x',
+    'a/b/c',
+    'x.replace(/\\//g, "-")',
+    'url(data:image/png;base64,AAAA)',
+    'ratio 16:9 and 4:3',
+  ];
   for (const text of notPaths) {
     assert.deepEqual(scrub([{ path: 'a.ts', text }], []), [], text);
+  }
+});
+
+test('the new path shapes keep the hash of the full path token', () => {
+  const drive = ['D:', 'work', 'repo'].join('/');
+  const bash = ['', 'd', 'work', 'repo'].join('/');
+  const home = ['', 'home', 'someone'].join('/');
+  for (const token of [drive, bash, home]) {
+    const [finding] = scrub([{ path: 'a.md', text: `see ${token} now` }], []);
+    assert.equal(finding.matchHash, sha256(token), token);
   }
 });
 

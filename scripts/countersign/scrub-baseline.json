@@ -30,6 +30,13 @@
       "reason": "test fixture: process command lines for a placeholder user \"me\""
     },
     {
+      "file": "apps/desktop/src/main/__tests__/countersignLocalMode.test.ts",
+      "rule": "local-path",
+      "sha256": "86e679a5df79d34c6c824055fe072e37e24efe10ef93f5c3d856edc6abc636de",
+      "count": 1,
+      "reason": "test fixture: a placeholder app data folder, written with forward slashes, returned by the mocked app.getPath"
+    },
+    {
       "file": "apps/desktop/src/main/__tests__/deepLink.test.ts",
       "rule": "local-path",
       "sha256": "610f2859aa64ec32d9940295962ff12626d6a2ea539802dde19d3a12d616004f",
@@ -77,6 +84,13 @@
       "sha256": "eccda90348adffaa176d0173c9ed83948b432565f8eea84bb4211836930be010",
       "count": 5,
       "reason": "test fixture: PATH entries and files for a placeholder user \"someone\""
+    },
+    {
+      "file": "apps/desktop/src/main/countersign/__tests__/egressGuard.test.ts",
+      "rule": "local-path",
+      "sha256": "22e60e747d1ee577c2e1efc1519c09cabd48c093708c75d1d27a6c5f7bc1c238",
+      "count": 1,
+      "reason": "test fixture: a file:// URL to a placeholder app page, to check that local pages pass the egress guard"
     },
     {
       "file": "apps/desktop/src/main/maker-ipc/helpKnowledge.generated.ts",

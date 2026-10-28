@@ -7,10 +7,13 @@
  *   private-key-block: a PEM private-key header followed by a key body; whole file,
  *     and in --history the whole commit message and each file's added lines joined
  *   windows-user-path: a Windows user folder (drive letter, Users, a name; with
- *     backslashes, doubled backslashes or slashes), its URL-encoded form and the
- *     Git Bash /c/Users/<name> form; lines the fork added
- *   local-path: any other drive-absolute path, /Users/<name>/ and /home/<name>/;
- *     lines the fork added
+ *     backslashes, doubled backslashes or slashes), its URL-encoded form, the
+ *     Git Bash form (a slash, the drive letter, then Users and a name) and the WSL
+ *     /mnt/<letter>/Users/<name> form; lines the fork added
+ *   local-path: any other drive-absolute path (a drive letter and a colon, then
+ *     backslashes or slashes), a Git Bash drive path (a slash, one letter, a
+ *     slash, a name), /Users/<name> and /home/<name> (with or without a
+ *     trailing slash); lines the fork added
  *   email: an email address outside the allow list (the owner's noreply address,
  *     reserved example and test domains, @2x image names, URL userinfo, and the
  *     Co-Authored-By trailer address); lines the fork added and commit metadata
@@ -98,12 +101,21 @@ const WINDOWS_USER_PATH = [
   /(?<![A-Za-z0-9_-])[A-Za-z]:(?:\\{1,4}|\/)Users(?:\\{1,4}|\/)[^\\/\s"'`<>|*?:)\]]+/gi,
   // The URL-encoded user folder; split so this file does not match itself.
   new RegExp('%3A%5C' + 'Users' + '%5C[^%\\s"\'`<>&]*', 'gi'),
-  // Git Bash form /c/Users/<name>.
+  // Git Bash form: a slash, the drive letter, a slash, Users, a name.
   /(?<![A-Za-z0-9_.-])\/[A-Za-z]\/Users\/[^/\s"'`<>|*?:)\]]+/g,
+  // WSL form /mnt/<letter>/Users/<name>.
+  /(?<![A-Za-z0-9_.~-])\/mnt\/[A-Za-z]\/Users\/[^/\s"'`<>|*?:)\]]+/gi,
 ];
+// Each match runs to the end of its path token, so different paths hash differently.
 const LOCAL_PATH = [
+  // A drive letter and a colon, then backslashes.
   /(?<![A-Za-z0-9_-])[A-Za-z]:\\{1,4}[A-Za-z0-9_][^\s"'`<>|*?)\],;]*/g,
-  /(?<![A-Za-z0-9_.~-])\/(?:Users|home)\/[^/\s"'`<>|*?:)\]]+\//g,
+  // A drive letter and a colon, then slashes.
+  /(?<![A-Za-z0-9_-])[A-Za-z]:\/{1,2}[A-Za-z0-9_][^\s"'`<>|*?)\],;]*/g,
+  // Git Bash drive path: a slash, one letter, a slash, a name (not inside a URL or a relative path).
+  /(?<![A-Za-z0-9_.~/:-])\/[A-Za-z]\/[A-Za-z0-9_][^\s"'`<>|*?)\],;]*/g,
+  // /Users/<name> and /home/<name>, with or without a trailing slash.
+  /(?<![A-Za-z0-9_.~-])\/(?:Users|home)\/[^/\s"'`<>|*?:)\]]+\/?/g,
 ];
 const EMAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}/g;
 
