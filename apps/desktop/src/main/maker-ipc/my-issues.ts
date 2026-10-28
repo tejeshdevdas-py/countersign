@@ -9,16 +9,19 @@
  */
 
 import { ipcMain } from 'electron';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 
 import type {
   MyIssuesErrorCode,
   MyIssuesResult,
   MyIssuesSnapshot,
 } from '../../shared/myIssues.js';
+import { ISSUE_REPORTING_DISABLED_MESSAGE } from '../countersign/issueReporting.js';
 import { getMyIssuesService, getMyIssuesSnapshot } from '../github-issue/myIssuesRuntime.js';
 import { isStaleAccountScopeError } from '../github-issue/myIssuesService.js';
 import { createLogger } from '../logger.js';
 import { assertTrustedAppRendererEvent } from '../security/trustedAppRenderer.js';
+import { throwIpcError } from '../utils/ipcValidate.js';
 import { MAKER_INVOKE } from './channels.js';
 
 const log = createLogger('maker-ipc/my-issues');
@@ -101,6 +104,8 @@ export function registerMyIssuesIpc(): void {
   ipcMain.handle(MAKER_INVOKE.MY_ISSUES_SNAPSHOT, (event) => {
     // 快照含 issue 标题与 GitHub 用户名,与 list 同属账号私有数据 —— 同一道来源闸。
     assertTrustedAppRendererEvent(event);
+    // Countersign: issue reporting is off under LOCAL_ONLY; there is no snapshot to show.
+    if (LOCAL_ONLY) return null;
     return handleMyIssuesSnapshot();
   });
 
@@ -109,6 +114,8 @@ export function registerMyIssuesIpc(): void {
     // 发起带登录态的平台请求。只允许 Cindy 自有顶层页面调用:WebView、Ghost 页面、
     // 子 frame 一律拒绝。不可信来源直接 throw,不给它降级数据。
     assertTrustedAppRendererEvent(event);
+    // Countersign: the list reads the upstream project's tracker; refused under LOCAL_ONLY.
+    if (LOCAL_ONLY) throwIpcError('PRECONDITION_FAILED', ISSUE_REPORTING_DISABLED_MESSAGE);
     return handleMyIssuesList(raw);
   });
 }

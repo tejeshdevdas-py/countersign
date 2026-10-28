@@ -7,6 +7,7 @@
  */
 
 import { BRAND_NAME } from '@cindy/maker-shared/branding';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import os from 'node:os';
 
 import { app } from 'electron';
@@ -19,6 +20,7 @@ import { serverApiFetch } from '../serverApiClient';
 import { getClientEndpoint } from '../clientEndpointsService';
 import type { IssueConfirmBridge } from './issueConfirmBridge';
 import { getAppCapabilities } from '../appCapabilities.js';
+import { ISSUE_REPORTING_DISABLED_MESSAGE } from '../countersign/issueReporting.js';
 import { buildGithubUserSubmitterDeps } from './cindyGithubGhostDeps.js';
 import {
   submitGithubIssueWithConfirm,
@@ -54,6 +56,10 @@ export function initGithubIssueSubmit(
 export async function submitGithubIssueForSession(
   req: SubmitIssueRequest,
 ): Promise<GithubIssueSubmitResult> {
+  // Countersign: reports would land in the upstream project's tracker; refuse before any card or request.
+  if (LOCAL_ONLY) {
+    return { ok: false, errorCode: 'AUTH_NOT_READY', message: ISSUE_REPORTING_DISABLED_MESSAGE };
+  }
   if (!getAppCapabilities().canUseCindyAccountServices) {
     return {
       ok: false,

@@ -19,12 +19,14 @@ import { MenuButton } from '@/components/title-bar/MenuButton';
 afterEach(() => cleanup());
 
 describe('MenuButton in Countersign', () => {
-  it('has no "Check for updates" item', async () => {
+  it('has no "Check for updates" item and no issue-reporting item', async () => {
     const user = userEvent.setup();
     render(<MenuButton />);
     await user.click(screen.getByRole('button', { name: 'titleBar.menu' }));
     expect(screen.getByRole('menu')).toBeTruthy();
     expect(screen.queryByText('titleBar.menuItems.checkForUpdates')).toBeNull();
-    expect(screen.getByText('titleBar.menuItems.issues')).toBeTruthy();
+    // Issue reports would go to the upstream project's tracker.
+    expect(screen.queryByText('titleBar.menuItems.issues')).toBeNull();
+    expect(screen.getByText('titleBar.menuItems.help')).toBeTruthy();
   });
 });

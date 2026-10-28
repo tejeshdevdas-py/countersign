@@ -97,14 +97,17 @@ export function MenuButton({ onExitFullscreen }: { onExitFullscreen?: () => void
             全是动作短语(帮助 / 检查更新);夹一个英文名词既断了风格,也让不熟悉 GitHub
             的用户不知道该不该点。术语裁决(i18n/GLOSSARY.md)管的是指代那类对象的位置
             —— 页面标题与正文仍写 Issue,因为点进去就跳 GitHub,名字必须对得上。 */}
-        <DropdownMenuItem
-          onSelect={() => {
-            log.info('Issues clicked');
-            navigate('/issues');
-          }}
-        >
-          {t('titleBar.menuItems.issues')}
-        </DropdownMenuItem>
+        {/* Countersign: reports would go to the upstream project's tracker; hidden under LOCAL_ONLY. */}
+        {!LOCAL_ONLY && (
+          <DropdownMenuItem
+            onSelect={() => {
+              log.info('Issues clicked');
+              navigate('/issues');
+            }}
+          >
+            {t('titleBar.menuItems.issues')}
+          </DropdownMenuItem>
+        )}
         {!LOCAL_ONLY && (
           <DropdownMenuItem
             onSelect={() => { void checkForUpdateWithToast(t); }}

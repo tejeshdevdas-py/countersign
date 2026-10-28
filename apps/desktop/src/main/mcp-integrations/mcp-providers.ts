@@ -70,6 +70,7 @@ import {
 } from '../maker-ipc/register.js';
 import { createBotProfile } from '../localDb/ipc/bots.js';
 import { submitGithubIssueForSession } from '../github-issue/index.js';
+import { issueReportingToolDeps } from '../countersign/issueReporting.js';
 import {
   listWorkdirsForHistory,
   listSessionsForHistory,
@@ -1196,7 +1197,8 @@ export function createDesktopMcpProviders(deps: DesktopMcpProvidersDeps): LiziMc
       },
       // submit_github_issue: 官方反馈提交(确认卡片 → serverApiFetch)。
       // holder 同样是延迟查找，registerMakerIpc 里 init。
-      githubIssue: (req) => submitGithubIssueForSession(req),
+      // Countersign: not registered under LOCAL_ONLY (issueReportingToolDeps returns no githubIssue).
+      ...issueReportingToolDeps(submitGithubIssueForSession),
     },
     // cindy_orca: 多 worker 协同 team 工具集。创建权限由 Main handler 实时校验。
     orca: {

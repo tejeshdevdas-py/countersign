@@ -14,6 +14,7 @@ import { spawn } from 'node:child_process';
 import { app, BrowserWindow, webContents } from 'electron';
 import { parseGoalCommand } from '@cindy/maker-shared/goal-command';
 import { BRAND_NAME } from '@cindy/maker-shared/branding';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import { MAKER_PUSH } from '../maker-ipc/channels.js';
 import { createLogger } from '../logger.js';
 import { t } from '../i18n.js';
@@ -620,6 +621,8 @@ export function registerBuiltinDesktopCommands(
   registry.register({
     name: 'issue',
     description: `File feedback to the ${BRAND_NAME} team — the agent helps clarify details, then submits a GitHub issue after your confirmation. Usage: /issue [initial description]`,
+    // Countersign: issue reporting would go to the upstream project's tracker; off under LOCAL_ONLY.
+    isVisible: () => !LOCAL_ONLY,
     execute: (ctx) => {
       sendDesktopCommandToSender(ctx, buildPayload('issue', ctx));
     },
