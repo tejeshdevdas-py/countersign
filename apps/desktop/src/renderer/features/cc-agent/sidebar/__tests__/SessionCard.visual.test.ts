@@ -30,6 +30,12 @@ import { SessionItem } from '../SessionItem';
 import { sessionCardVisualCases } from '../__fixtures__/sessionCardVisualCases';
 import { SPLIT_GROUP_SESSION_MIME } from '../../splitGroupDnd';
 import { sharedTaskHostPeer } from '@cindy/device-link';
+// Countersign: these cases cover upstream's task menu, including the cloud task-sharing
+// entries that LOCAL_ONLY switches off (see SessionTaskMenu.localOnly.test.tsx).
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
 
 const mocks = vi.hoisted(() => ({
   navigate: vi.fn(),
