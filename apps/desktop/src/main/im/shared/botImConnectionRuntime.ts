@@ -390,7 +390,6 @@ export interface BotImConnectionAddOptions {
   rejectConflictWithinMs?: number;
 }
 
-/** 添加前的检查(伙伴在、可用, 平台身份没被别处用着); 移交个人 bot 前先跑一遍, 免得白停一次。 */
 /**
  * Countersign: chat-app bots come later. Under LOCAL_ONLY no connection is
  * added, whether from a teammate's settings, a Settings bot adoption or a
@@ -405,6 +404,7 @@ function assertImConnectorsEnabled(): void {
   }
 }
 
+/** 添加前的检查(伙伴在、可用, 平台身份没被别处用着); 移交个人 bot 前先跑一遍, 免得白停一次。 */
 export async function assertBotImConnectionAddable(
   input: BotImConnectionAddInput,
   options: Pick<BotImConnectionAddOptions, 'adoptingSettingsBot'> = {},
