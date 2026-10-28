@@ -1,6 +1,21 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { BUILD_INTERMEDIATE_DIR, BUILD_INTERMEDIATE_FILE } from './forge-countersign';
+
+// Countersign: no relative imports here. readSheetPackageProbe.mjs loads this file
+// with plain Node (--experimental-strip-types), which cannot resolve an
+// extensionless './module' import.
+
+/**
+ * File names only a node-gyp/MSVC build leaves behind: objects, symbols, logs,
+ * projects, incremental-link and precompiled-header files, compiled resources,
+ * build-state and recipe files, and @electron/rebuild's `.forge-meta` marker.
+ * The prune removes them and the packaged-output check (forge-countersign.ts)
+ * fails on them.
+ */
+export const BUILD_INTERMEDIATE_FILE =
+  /\.(?:obj|iobj|pdb|ipdb|lib|exp|tlog|sln|ilk|idb|pch|res|lastbuildstate|recipe|forge-meta)$|\.vcxproj(?:\.[^\\/]+)?$|^config\.gypi$/i;
+/** Compiler output folders. */
+export const BUILD_INTERMEDIATE_DIR = /^obj(?:\.target)?$/i;
 
 /** Only call on the disposable package copy, after native rebuild has finished. */
 export function prunePackagedRuntime(buildPath: string): void {

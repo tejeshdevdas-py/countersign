@@ -9,6 +9,8 @@ import * as path from 'node:path';
 
 import { getRawHeader } from '@electron/asar';
 
+import { BUILD_INTERMEDIATE_DIR, BUILD_INTERMEDIATE_FILE } from './forge-prune-runtime';
+
 // ── Bundled agent engines ────────────────────────────────────────────────────
 
 /**
@@ -233,15 +235,8 @@ export async function withEnv<T>(vars: Record<string, string>, run: () => Promis
 
 // ── Packaged output: no build intermediates, no builder user name ────────────
 
-/**
- * File names only a node-gyp/MSVC build leaves behind: objects, symbols, logs,
- * projects, incremental-link and precompiled-header files, compiled resources,
- * build-state and recipe files, and @electron/rebuild's `.forge-meta` marker.
- */
-export const BUILD_INTERMEDIATE_FILE =
-  /\.(?:obj|iobj|pdb|ipdb|lib|exp|tlog|sln|ilk|idb|pch|res|lastbuildstate|recipe|forge-meta)$|\.vcxproj(?:\.[^\\/]+)?$|^config\.gypi$/i;
-/** Compiler output folders. */
-export const BUILD_INTERMEDIATE_DIR = /^obj(?:\.target)?$/i;
+// The build-intermediate patterns live in forge-prune-runtime.ts, which the prune
+// also uses; that file has no relative imports so Node can load it on its own.
 /**
  * A short (8.3) profile folder: a drive, then `Users` (or `Documents and
  * Settings`), then up to six characters, a tilde and a number, the form Windows
