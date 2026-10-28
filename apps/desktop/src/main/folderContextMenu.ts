@@ -59,7 +59,8 @@ const log = createLogger('folderContextMenu');
  * 文案与正式包可区分;与 installer.nsh customInstall 写入的文案保持一致,
  * 否则启动自愈会误判"值漂移"反复重写。
  */
-const MENU_LABEL = `通过 ${brandExecutableName(CURRENT_CINDY_REGION)} 打开`;
+// Countersign: an English label, kept equal to installer.nsh ("Open with ${PRODUCT_FILENAME}").
+const MENU_LABEL = `Open with ${brandExecutableName(CURRENT_CINDY_REGION)}`;
 
 /**
  * shell 子键名(2026-07-17 品牌翻转:xdt-maker → cindy;按区域 exe 基名
@@ -226,4 +227,4 @@ export async function unregisterFolderContextMenu(): Promise<void> {
 }
 
 /** 仅给单测用,导出 parser 让 ut 不依赖真实 reg.exe。 */
-export const __testing = { parseRegDefault };
+export const __testing = { parseRegDefault, MENU_LABEL };

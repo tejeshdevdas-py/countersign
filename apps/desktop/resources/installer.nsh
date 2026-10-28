@@ -63,6 +63,8 @@
     !insertmacro cindyRestoreUpgradeShortcuts
   ${EndIf}
   ; 注册文件夹右键菜单 "通过 <区域名> 打开" (与 main/folderContextMenu.ts 写的是同一组键)。
+  ; Countersign: the label is English, "Open with ${PRODUCT_FILENAME}"; folderContextMenu.ts
+  ; MENU_LABEL must stay the same text, or the start-up check rewrites it.
   ; 双重保险:installer 写一次让首装即可用, app 启动时的 registerFolderContextMenu()
   ; 也会校验+修复, 覆盖 "升级后路径漂移" / "组策略清掉注册表" 等场景。
   ;
@@ -72,16 +74,16 @@
   ; 键名用 ${PRODUCT_FILENAME}(区域身份):cn/global 'Cindy' 与历史 'cindy'
   ; 键大小写不敏感同键(2026-07-26 起两区同键,双装互写已被 owner 接受);
   ; dev 'CindyDev' 独立键;都与老 XDMaker 安装的 xdt-maker 键并存。
-  WriteRegStr HKCU "Software\Classes\Directory\shell\${PRODUCT_FILENAME}" "" "通过 ${PRODUCT_FILENAME} 打开"
+  WriteRegStr HKCU "Software\Classes\Directory\shell\${PRODUCT_FILENAME}" "" "Open with ${PRODUCT_FILENAME}"
   WriteRegStr HKCU "Software\Classes\Directory\shell\${PRODUCT_FILENAME}" "Icon" "$INSTDIR\${APP_EXECUTABLE_FILENAME},0"
   WriteRegStr HKCU "Software\Classes\Directory\shell\${PRODUCT_FILENAME}\command" "" '"$INSTDIR\${APP_EXECUTABLE_FILENAME}" --open-folder "%V"'
-  WriteRegStr HKCU "Software\Classes\Directory\Background\shell\${PRODUCT_FILENAME}" "" "通过 ${PRODUCT_FILENAME} 打开"
+  WriteRegStr HKCU "Software\Classes\Directory\Background\shell\${PRODUCT_FILENAME}" "" "Open with ${PRODUCT_FILENAME}"
   WriteRegStr HKCU "Software\Classes\Directory\Background\shell\${PRODUCT_FILENAME}" "Icon" "$INSTDIR\${APP_EXECUTABLE_FILENAME},0"
   WriteRegStr HKCU "Software\Classes\Directory\Background\shell\${PRODUCT_FILENAME}\command" "" '"$INSTDIR\${APP_EXECUTABLE_FILENAME}" --open-folder "%V"'
-  WriteRegStr HKCU "Software\Classes\SystemFileAssociations\.cshare\shell\${PRODUCT_FILENAME}" "" "通过 ${PRODUCT_FILENAME} 打开"
+  WriteRegStr HKCU "Software\Classes\SystemFileAssociations\.cshare\shell\${PRODUCT_FILENAME}" "" "Open with ${PRODUCT_FILENAME}"
   WriteRegStr HKCU "Software\Classes\SystemFileAssociations\.cshare\shell\${PRODUCT_FILENAME}" "Icon" "$INSTDIR\${APP_EXECUTABLE_FILENAME},0"
   WriteRegStr HKCU "Software\Classes\SystemFileAssociations\.cshare\shell\${PRODUCT_FILENAME}\command" "" '"$INSTDIR\${APP_EXECUTABLE_FILENAME}" --open-share-file "%1"'
-  WriteRegStr HKCU "Software\Classes\SystemFileAssociations\.xdtshare\shell\${PRODUCT_FILENAME}" "" "通过 ${PRODUCT_FILENAME} 打开"
+  WriteRegStr HKCU "Software\Classes\SystemFileAssociations\.xdtshare\shell\${PRODUCT_FILENAME}" "" "Open with ${PRODUCT_FILENAME}"
   WriteRegStr HKCU "Software\Classes\SystemFileAssociations\.xdtshare\shell\${PRODUCT_FILENAME}" "Icon" "$INSTDIR\${APP_EXECUTABLE_FILENAME},0"
   WriteRegStr HKCU "Software\Classes\SystemFileAssociations\.xdtshare\shell\${PRODUCT_FILENAME}\command" "" '"$INSTDIR\${APP_EXECUTABLE_FILENAME}" --open-share-file "%1"'
 
