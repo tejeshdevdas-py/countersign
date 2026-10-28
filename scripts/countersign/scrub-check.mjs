@@ -4,7 +4,8 @@
  *
  * Rules (rule id: what it matches; where it looks):
  *   anthropic-key, openai-key, github-token, aws-access-key-id, google-api-key,
- *     slack-token, huggingface-token: real-shaped tokens; every line
+ *     slack-token, huggingface-token, openrouter-key, xai-key, generic-sk-key (sk-
+ *     and 32 or more letters and digits): real-shaped tokens; every line
  *   private-key-block: a PEM private-key header followed by a key body; whole file,
  *     and in --history the whole commit message and each file's added lines joined
  *   windows-user-path: a Windows user folder (drive letter, Users, a name; with
@@ -102,6 +103,11 @@ const KEY_RULES = [
   { id: 'google-api-key', re: /(?<![A-Za-z0-9])AIza[0-9A-Za-z_-]{35}/g },
   { id: 'slack-token', re: /(?<![A-Za-z0-9])xox[baprs]-[0-9A-Za-z-]{10,}/g },
   { id: 'huggingface-token', re: /(?<![A-Za-z0-9])hf_[A-Za-z0-9]{34,}/g },
+  { id: 'openrouter-key', re: /(?<![A-Za-z0-9])sk-or-v1-[A-Za-z0-9]{32,}/g },
+  { id: 'xai-key', re: /(?<![A-Za-z0-9])xai-[A-Za-z0-9]{32,}/g },
+  // Any other sk- key: 32 or more letters and digits with no dash or underscore, so
+  // the named sk- shapes above never match twice and kebab-case names never match.
+  { id: 'generic-sk-key', re: /(?<![A-Za-z0-9])sk-[A-Za-z0-9]{32,}/g },
 ];
 const PRIVATE_KEY_BLOCK =
   /-----BEGIN [A-Z0-9 ]*PRIVATE KEY(?: BLOCK)?-----[\s\S]{0,300}?[A-Za-z0-9+/=]{40,}/g;
@@ -136,6 +142,9 @@ export const BASELINE_RULES = [
   'google-api-key',
   'slack-token',
   'huggingface-token',
+  'openrouter-key',
+  'xai-key',
+  'generic-sk-key',
   'private-key-block',
   'windows-user-path',
   'local-path',

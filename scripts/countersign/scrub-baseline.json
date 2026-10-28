@@ -93,6 +93,13 @@
       "reason": "test fixture: a file:// URL to a placeholder app page, to check that local pages pass the egress guard"
     },
     {
+      "file": "apps/desktop/src/main/learn-host/__tests__/controller.test.ts",
+      "rule": "generic-sk-key",
+      "sha256": "751da0d2100c8413bb2a75e87327144355cca63a7634fa28ec370a74b13a8c9b",
+      "count": 1,
+      "reason": "upstream test fixture: the same 32-character sequential run of digits and letters, a fake key that checks redaction before prompt injection, not a real key"
+    },
+    {
       "file": "apps/desktop/src/main/learn-host/__tests__/redaction.test.ts",
       "rule": "aws-access-key-id",
       "sha256": "1a5d44a2dca19669d72edf4c4f1c27c4c1ca4b4408fbb17f6ce4ad452d78ddb3",
@@ -105,6 +112,13 @@
       "sha256": "7828319d7ebcfa2a8e72abdeb92f2dee2748124737a3ac37cb9feccbeba6f8d2",
       "count": 1,
       "reason": "upstream test fixture: a made-up Slack bot token shape (digits and three letters), used to test log redaction"
+    },
+    {
+      "file": "apps/desktop/src/main/learn-host/__tests__/skillsIndex.test.ts",
+      "rule": "generic-sk-key",
+      "sha256": "751da0d2100c8413bb2a75e87327144355cca63a7634fa28ec370a74b13a8c9b",
+      "count": 2,
+      "reason": "upstream test fixture: the same 32-character sequential run of digits and letters, a fake key that checks redaction before prompt injection, not a real key"
     },
     {
       "file": "apps/desktop/src/main/maker-ipc/helpKnowledge.generated.ts",

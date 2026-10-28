@@ -309,6 +309,46 @@ test('key shapes: GitHub tokens after an underscore, AWS, Google, Slack and Hugg
   }
 });
 
+test('key shapes: OpenRouter, xAI and other sk- keys of 32 or more letters and digits', () => {
+  const openrouter = ['sk', 'or', 'v1', '0f'.repeat(32)].join('-');
+  const xai = ['xai', 'Zq8'.repeat(27)].join('-');
+  const sk = ['sk', 'Ab1'.repeat(16)].join('-');
+  const cases = [
+    [`OPENROUTER_API_KEY=${openrouter}`, 'openrouter-key'],
+    [`"${xai}"`, 'xai-key'],
+    [`key: ${sk}`, 'generic-sk-key'],
+    [`TOKEN_${sk}`, 'generic-sk-key'],
+    [['sk', '9f'.repeat(16)].join('-'), 'generic-sk-key'],
+  ];
+  for (const [text, rule] of cases) {
+    const findings = scrub([{ path: 'a.ts', text }], [], { addedLines: new Map() });
+    assert.deepEqual(rules(findings), [rule], text);
+  }
+  // The named sk- shapes stay one finding each.
+  for (const [text, rule] of [
+    [ANTHROPIC_KEY, 'anthropic-key'],
+    [OPENAI_KEY, 'openai-key'],
+    [openrouter, 'openrouter-key'],
+  ]) {
+    assert.deepEqual(rules(scrub([{ path: 'a.ts', text }], [])), [rule], rule);
+  }
+  const nearMisses = [
+    ['sk', 'A'.repeat(31)].join('-'), // 31 characters after sk-
+    `x${sk}`, // inside a longer word
+    `${'Q'.repeat(3)}${xai}`,
+    ['sk', 'loading', 'placeholder', 'for', 'the', 'session', 'list', 'row'].join('-'), // kebab case
+    ['xai', 'Q'.repeat(31)].join('-'),
+    ['sk', 'or', 'v1', 'ab'.repeat(15)].join('-'),
+  ];
+  for (const text of nearMisses) {
+    assert.deepEqual(scrub([{ path: 'a.ts', text }], []), [], text);
+  }
+  for (const rule of ['openrouter-key', 'xai-key', 'generic-sk-key']) {
+    const entry = { file: 'a.ts', rule, sha256: sha256(rule), count: 1, reason: 'fixture' };
+    assert.deepEqual(validateBaseline([entry]), [], rule);
+  }
+});
+
 test('a finding carries path, line, rule and the sha256 of the match, never the text', () => {
   const [finding] = scrub([{ path: 'a.ts', text: `k = ${ANTHROPIC_KEY}` }], []);
   assert.deepEqual(Object.keys(finding).sort(), ['line', 'matchHash', 'path', 'rule']);
