@@ -45,6 +45,34 @@ afterEach(async () => {
 });
 
 describe('CodexMicroGuardService suspension', () => {
+  it('Countersign: leaves the guard of an installed Cindy alone', async () => {
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), 'countersign-guard-home-'));
+    roots.push(home);
+    const homedir = vi.spyOn(os, 'homedir').mockReturnValue(home);
+    try {
+      const cindyStore = new CodexMicroGuardStore(
+        path.join(home, 'Library', 'CindyCodexMicroGuard', 'aaaaaaaaaaaa'),
+      );
+      const token = seedLegacyGuard(cindyStore);
+      const runner = new GuardEnvironmentRunner(token);
+      // Default support path: the folder name follows BRAND_IDENTITY.
+      const service = new CodexMicroGuardService({
+        platform: 'darwin',
+        launchctlDomain: 'gui/501',
+        runner,
+        environment: {},
+      });
+      services.push(service);
+
+      expect(await service.getState()).toEqual(PAUSED);
+
+      expect(runner.nodeOptions).toBe(token);
+      expect(cindyStore.readState()).not.toBeNull();
+    } finally {
+      homedir.mockRestore();
+    }
+  });
+
   it('starts paused without installing a hook, setting NODE_OPTIONS or scheduling a heartbeat', async () => {
     const f = fixture();
     const interval = vi.spyOn(globalThis, 'setInterval');

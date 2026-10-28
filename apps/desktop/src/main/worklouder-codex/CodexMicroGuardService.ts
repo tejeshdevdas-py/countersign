@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import os from 'node:os';
 import path from 'node:path';
 import { app } from 'electron';
+import { BRAND_IDENTITY } from '@cindy/maker-shared/brand-identity';
 
 import type { CodexMicroGuardState } from '../../shared/codexMicroGuard.js';
 import { desktopMakerLogger } from '../maker-host/logger-adapter.js';
@@ -128,7 +129,13 @@ function defaultSupportPath(): string {
     .update(app.getPath('userData'))
     .digest('hex')
     .slice(0, 12);
-  return path.join(os.homedir(), 'Library', 'CindyCodexMicroGuard', identity);
+  // Countersign: the folder follows BRAND_IDENTITY, so cleanup never retires an installed Cindy's guard.
+  return path.join(
+    os.homedir(),
+    'Library',
+    `${BRAND_IDENTITY.userDataDirName}CodexMicroGuard`,
+    identity,
+  );
 }
 
 function currentUid(): number {
