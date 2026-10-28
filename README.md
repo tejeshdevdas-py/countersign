@@ -1,191 +1,227 @@
-<p align="center">
-  <a href="https://cindy.app"><img src=".github/assets/hero-en.webp" width="100%" alt="CINDY — Consider it done. The open-source AI agent that works out of the box, doing real work on your own computer."></a>
-</p>
+# Countersign
 
-<p align="center">
-  <strong>English</strong> · <a href="README.zh-CN.md">简体中文</a>
-</p>
+Countersign is a desktop AI agent app for Windows that runs on your own computer with no account. It is an independent fork of [Cindy](https://github.com/makecindy/cindy) (Apache-2.0). Countersign keeps Cindy's agent work (Claude Code, Codex and local models working on your files and projects) and removes or switches off every feature that needs Cindy's servers. Later versions add checked team work: a second agent reviews a team's result before it reaches you (see [Planned, not built yet](#planned-not-built-yet)).
 
-<p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue.svg" alt="License" /></a>
-  <a href="https://github.com/makecindy/cindy/actions/workflows/ci.yml"><img src="https://github.com/makecindy/cindy/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
-  <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-22.x-brightgreen.svg" alt="Node.js 22.x" /></a>
-  <a href="https://pnpm.io"><img src="https://img.shields.io/badge/pnpm-10-orange.svg" alt="pnpm" /></a>
-</p>
+Countersign is an independent project. It is not affiliated with, endorsed by or supported by the Cindy project or XD Inc.
 
-<p align="center">
-  🌐 <a href="https://cindy.app">cindy.app</a> &nbsp;·&nbsp; ⬇️ <a href="https://cindy.app/download/">Download</a>
-</p>
+This is milestone 1 (M1): the renamed, local-only app. Read [Known limits](#known-limits) and [Verification status](#verification-status) before you rely on it.
 
+## What this version does (M1)
 
-Cindy is an open-source AI agent that works out of the box. She brings multiple
-harnesses, models and tools into one agent that finishes real work in your
-projects and apps. Ready from day one, yours to shape over time.
+- Starts in local mode. There is no sign-in screen and no account.
+- Refuses requests to `cindy.app`, `cindy.com.cn`, `tapdb.com`, `tapapis.com` and `log.aliyuncs.com` (and their subdomains) that the app makes through its own network calls and windows. Every other host is allowed; see [Network](#network).
+- Does not start upstream's background services: analytics, the usage heartbeat, log upload, the app updater, the engine update check, and the chat-app (IM) bot connectors.
+- Starts the bundled Claude Code and Codex engines with the switches each offers for telemetry, error reports, feature flags and self-update turned off. Each switch, and where its name comes from, is in [`docs/countersign/engine-telemetry.md`](docs/countersign/engine-telemetry.md).
+- Ships Pi with the app. Settings > About shows the installed Pi version only; the app does not check for or download Pi updates.
+- Can write an egress log of the hosts the app itself contacts, for you to check (see [Network](#network)).
+- Has its own identity: app id `io.github.tejeshdevdas-py.countersign`, user data in `%APPDATA%\Countersign`, link scheme `countersign://`.
 
-Cindy runs locally on your own machine, using your real files and logged-in
-apps. The first supported harnesses are **Claude Code** and **Codex** — more are
-being added, and a native harness is in the works. Models and harnesses mix
-freely and can switch mid-task while your workspace, memory, skills and tools
-stay continuous; one task can even be planned, executed in parallel, and
-reviewed by agents on different harness × model combos. She can drive your
-browser, computer and phone, and take work from IM and schedules.
+## Planned, not built yet
 
-This repository is the open-source **client** for Cindy — the desktop and mobile
-apps plus their shared packages, organized as a pnpm monorepo.
+None of this exists in the code yet.
 
-The client is free to use, and its source code is open under Apache-2.0. Bring
-models your way: sign in to the official Cindy service (usage deducted
-transparently), authorize the **Claude Code / Codex Coding Plan** you already
-pay for and keep using it inside Cindy — no duplicate bill — connect your own
-API keys, or use local models.
-See [cindy.app](https://cindy.app) for service details,
-[pricing](https://cindy.app/#pricing), and [downloads](https://cindy.app/download/).
+- M2, checked work: a team run works in a separate copy of the project, and its file changes are applied only after a reviewer agent passes the result.
+- M3, cost and schedules: a cache view with an estimated cost of the next message, and scheduled routines with a weekly run cap and a per-run budget.
+- M4, documents and review: an index of the pages and reports agents made, and comments pinned on a page that go back to the agent as a follow-up.
 
-Linux users: see the [Ubuntu, Arch Linux and Omarchy installation guide](docs/linux.md)
-for installation, updates, keyring setup and migration from a manual install.
+## Removed or switched off, and why
 
-## Yours to shape
+These need Cindy's servers, so they are removed or switched off:
 
-Open source means more than visible — it means changeable:
+- sign-in and accounts;
+- TapDB analytics, the usage heartbeat and log upload;
+- the app updater (the update service and the updater program) and the engines' self-update;
+- endpoint manifests;
+- Cindy's hosted model service;
+- the plugin market and Skill Hub;
+- provider sharing and the phone link (the relay never starts), and the mobile app download;
+- cloud chat, cloud file upload and cloud app connections (OAuth broker);
+- cloud voice (voice input with your own provider still works);
+- the Telegram, X and Slack bridges;
+- in-app issue reporting, both through Cindy's service and to Cindy's GitHub tracker;
+- the beta channel, and moving tasks between computers;
+- the build-time fallback to Cindy's download server.
 
-- **Memory** — correct her once and she does it right from then on, shared across harnesses.
-- **Skills** — teach a way of working once and reuse it everywhere; handing them to your team is in the making.
-- **Automation** — recurring work schedules itself, runs itself, reports back.
-- **MCP** — wire your internal tools and business systems into her reach.
-- **Plugins** — reshape features, UI and interactions, shared through an open marketplace *(in the making)*.
-- **Source** — audit, fork, extend, and contribute improvements back under Apache-2.0.
+Also off:
 
-Ready out of the box, never boxed in — start with
-[`CONTRIBUTING.en.md`](CONTRIBUTING.en.md) and build Cindy with us.
+- Chat-app bots (Telegram, Discord and the like) are hidden and never connect. Local bots that use your own bot token are planned for later.
+- The `.cindy` file association is not registered on Windows.
+- The Cindy-character wallpapers are removed, and Cindy's logos and artwork are replaced.
 
-## What's in this repo
+Local Android automation over adb stays; only the cloud phone link is off.
 
-| Path | Description |
-| --- | --- |
-| `apps/desktop` | Electron desktop client |
-| `apps/mobile` | Expo / React Native mobile client |
-| `packages/*` | Shared client capabilities (auth, device-link, agent orchestration, model providers, …) |
-| `apps/*-bin` | Tool binaries shipped with the desktop app; none are committed — claude-code, codex, and ripgrep are downloaded per platform by `pnpm install`, and the Android platform-tools binaries are fetched (pinned version, sha256-verified) before Windows packaging |
+## Build on Windows 10/11 x64
 
-**Not in this repo:** the backend service lives in a separate
-repository and is not part of this monorepo.
+There are no binary releases. You build the installer yourself.
 
-| Mode | Account requirement | Availability |
-| --- | --- | --- |
-| Hosted service | Cindy cloud account | Use Cindy's full hosted service. See [pricing](https://cindy.app/#pricing). |
-| Skip Sign-In | No Cindy sign-in required | Choose “Skip Sign-In” on the login screen to use local agents; the app then shows the account state as “Not signed in”. Server-backed capabilities are unavailable in this state. |
+### Prerequisites
 
-## Prerequisites
+- Git and [Git LFS](https://git-lfs.com). A native library is stored in LFS.
+- Node.js 22. Version 22.22.3 was used (`.nvmrc`). `package.json` allows newer versions, but they are untested.
+- pnpm 10.33.2, the version in `package.json` `packageManager`. pnpm 11 is not supported.
+- Rust stable for `x86_64-pc-windows-msvc`, with `cargo` and `rustc` on `PATH`. Packaging builds several small Windows helper programs with cargo. Rust 1.99.1 was used.
+- Visual Studio Build Tools with the C++ workload (MSVC x64 tools and a Windows SDK). M1 was built with Build Tools 2026 (18.10) and Windows SDK 10.0.26100.
+- Python 3, needed only if a prebuilt native module is not available for your setup. The M1 build used prebuilt downloads.
 
-- **Node.js** 22.x
-- **pnpm** 10.x (v11 is not yet supported)
-- **Git LFS**
+Use PowerShell or cmd, with Windows' own `tar` (`%SystemRoot%\System32\tar.exe`) first on `PATH`. Git Bash's `tar` cannot unpack Pi's zip: `pnpm install` still finishes with only a warning, and packaging then stops because Pi is missing. If that happens, run `pnpm install:pi` from PowerShell.
 
-## Getting started
+### Steps
 
-Contributor setup, Git LFS, dependency updates, and access requirements are maintained in
-[`CONTRIBUTING.en.md`](CONTRIBUTING.en.md).
-Plugins are installed through SkillHub or manually.
-
-Minimal entry point:
-
-```bash
-git clone https://github.com/makecindy/cindy.git
-cd cindy
+```powershell
+git clone https://github.com/tejeshdevdas-py/countersign
+cd countersign
+git lfs install
 git lfs pull
 pnpm install
+pnpm release:package -- --platform win32 --allow-unsigned --skip-smoke
 ```
 
-## Development entry points
+<!-- owner: default branch pending -->
 
-```bash
-# Mainland China Cindy account
-pnpm restart:desktop:remote --region=cn
+`pnpm install` also downloads the Claude Code, Codex, Pi and ripgrep engines at the versions pinned in `tools/*/latest.json`. The last command is the packaging command M1 was built with. `--skip-smoke` skips a packaged smoke test that starts the app; that test has not been run on Countersign.
 
-# Global Cindy account
-pnpm restart:desktop:remote --region=global
-```
+The installer is written to `apps/desktop/release/artifacts/global/unversioned/win32-x64/Countersign-unversioned-Setup.exe`. It is unsigned.
 
-Remote development uses your own Cindy cloud account and existing login state, so
-you can continue existing sessions and work while developing the client. Use `cn`
-for Mainland China accounts and `global` for everyone else; do not rely
-on the internal default. Full desktop, mobile, data-isolation, and validation
-workflows are in [`CONTRIBUTING.en.md`](CONTRIBUTING.en.md).
+- Do not add `--region dev`: it needs a git-ignored config file and builds a separate CountersignDev identity.
+- Do not add `--version`: that is the release path, and it fails on a clean checkout.
+- If `CINDY_WIN_SIGN_CMD` is set (in your shell or in `apps/desktop/.env`), packaging signs with it; `--no-sign` skips signing.
 
-“Skip Sign-In” on the login screen runs local agents without a Cindy account
-(shown in the app as “Not signed in”), not a connection to a local server.
-Server-backed capabilities are unavailable in this state.
+### Hosts the build downloads from
 
-**About the default servers:** the client connects to Cindy's official cloud
-services by default (endpoint manifests in
-[`config/endpoint.json`](config/endpoint.json) and
-[`config/endpoint.global.json`](config/endpoint.global.json); desktop
-auto-updates also come from the official CDN). This is intentional — external
-developers don't need to self-host a server: sign in with your own Cindy
-account in a dev build and develop / test directly against the official
-servers.
+- `registry.npmjs.org`: npm packages.
+- `downloads.claude.ai`: Claude Code.
+- `github.com` and `api.github.com`: Codex, Pi and ripgrep releases.
+- `dl.google.com`: Android platform-tools r32.0.0, checked against a pinned sha256.
+- crates.io for the Rust helpers: assumed, not seen in the build logs.
 
-Skill Hub migration uses two separate manifest fields: released clients keep
-using `skillhubApiBaseUrl` (the deprecated XD proxy), while current clients use
-`cindySkillHubApiBaseUrl`. The current client deliberately does not fall back to
-the legacy field when the new endpoint is absent.
+When an engine or platform-tools download fails, the build stops and names the host. It does not fall back to another server.
 
-## Architecture
+Development mode (`pnpm dev:desktop`) was started once early in M1 and has not been checked since.
 
-- [`DESIGN.md`](DESIGN.md) — visual design system, color tokens, and UI conventions
-- [`docs/README.md`](docs/README.md) — complete documentation and rules index
-- [`docs/auth-realm-routing.md`](docs/auth-realm-routing.md) — organization SSO region discovery and session endpoint routing
-- [`CONTRIBUTING.en.md`](CONTRIBUTING.en.md) — contributor setup, validation, and submission workflow
-- [`AGENTS.md`](AGENTS.md) — engineering rules, launch/runtime contracts, and module boundaries
-- [`docs/dev-rules/`](docs/dev-rules/) — deep-dive architecture docs (e.g. Orca multi-agent orchestration)
+## Engines and sign-in
 
-## Contributing
+Countersign uses the engines bundled with it: Claude Code 2.1.296, Codex 0.159.2, Pi 1.0.2 and ripgrep 15.1.0. An engine on your `PATH` is used only when the bundled copy is missing. An npm-installed Codex (`codex.cmd`) is never run.
 
-Contributions go through pull requests into `main`. Read
-[`CONTRIBUTING.en.md`](CONTRIBUTING.en.md) first, then use
-[`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md).
-Every commit needs a [Developer Certificate of Origin](DCO) sign-off
-(`git commit -s`); a DCO check on each pull request enforces it, and no CLA is
-required.
-Please also follow [`CODE_OF_CONDUCT.en.md`](CODE_OF_CONDUCT.en.md). For ordinary
-usage questions, see [`SUPPORT.en.md`](SUPPORT.en.md); report security issues
-privately through [`SECURITY.en.md`](SECURITY.en.md).
+### Claude Code: your Claude Pro or Max subscription
 
-## Security
+- If Claude Code is already signed in with a subscription on this computer (in its default folder, `%USERPROFILE%\.claude`), Countersign uses that login, unless you disconnected it in Countersign.
+- Otherwise Settings > Providers starts Claude Code's own browser sign-in.
+- Console and API-key logins are not accepted for the subscription mode.
+- Countersign never reads Claude Code's credential store. Disconnect only stops Countersign from using the login; it does not sign Claude Code out.
+- At start, Countersign removes `CLAUDE_CONFIG_DIR`, `CLAUDE_CODE_OAUTH_TOKEN`, `ANTHROPIC_API_KEY` and related variables from its own environment.
+- The in-app sign-in has not been tested; M1 used an existing Claude Code login.
 
-Never commit credentials or authorization files to the working tree. If you
-discover a security issue, follow [`SECURITY.en.md`](SECURITY.en.md) to report it
-privately rather than opening a public issue.
+### Codex: your ChatGPT login
 
-## Privacy & telemetry
+- Countersign keeps its own Codex home in `%APPDATA%\Countersign\codex-home`.
+- When `%USERPROFILE%\.codex\auth.json` exists and Countersign has no other Codex login, Countersign links to that file at start and uses the login without a Connect step, unless you disconnected Codex in Countersign. A custom `CODEX_HOME` is ignored. This is read from the code; it has not been checked on a fresh Windows profile.
+- To use another account, use Connect in Settings > Providers (browser or device code).
+- Countersign itself uses the Codex login to call `chatgpt.com` for usage figures and chat titles.
 
-**Official distribution builds** include [TapDB](https://www.taptap.io/tapdb)
-usage analytics for product-level aggregate statistics (device / OS / app-version
-metadata; associated with your account ID after sign-in). It does **not** collect
-chat content, file content, or working-directory data. In addition, while signed
-in to a cloud account the client sends an online heartbeat to Cindy services
-(account ID, platform, and version only). Crash dumps stay on the local machine
-and are never uploaded automatically.
+### Your own API keys
 
-**Building from source?** You are not required to keep analytics:
+API keys you add under Settings > Providers are stored on this computer with Electron safeStorage.
 
-- Mobile is off by default — without TapDB credentials (`clientId` /
-  `clientToken`) injected at build time, `apps/mobile/src/analytics/mobileTapdb.ts`
-  is a no-op;
-- Desktop can be fully stripped by removing the `initTapdb()` call in
-  `apps/desktop/src/renderer/index.tsx` (implementation lives in
-  `apps/desktop/src/renderer/analytics/`).
+### Local models
 
-## License / 许可证
+Local models run through Pi. M1 used LM Studio.
 
-Except as otherwise noted, the source code in this repository is licensed under
-the [Apache License, Version 2.0](LICENSE). Individual source files do not
-carry per-file license headers; the repository-root `LICENSE` governs.
+- Load the model with a context larger than 8192 tokens. A 10,849-token prompt failed at 8192; a larger context worked. 16K is a suggestion, not a measured minimum.
+- The model picker shows the context size from the model catalog, not the size LM Studio loaded. When a prompt is too long for the loaded context, the error shows the loaded context and the prompt size.
+- Ollama and llama.cpp have not been tested.
 
-Model weights, datasets, prompts, trademarks, and other separately identified
-materials may be subject to their own license terms and are not automatically
-covered by the repository-level Apache-2.0 grant. Third-party open-source
-components retain their own copyright and license. Their attribution notices and
-SPDX SBOMs are managed under [`docs/legal/`](docs/legal/), with artifact-specific
-outputs in [`docs/legal/notices/`](docs/legal/notices/). See [`NOTICE`](NOTICE)
-for this project's copyright and attribution information.
+## Network
+
+What may leave your computer:
+
+- traffic to the model providers you use, for their API and sign-in (for example Anthropic and Claude for Claude Code, OpenAI and ChatGPT for Codex, your own API endpoints, and local servers such as LM Studio);
+- traffic a task causes because you asked for it: pages an agent browses, MCP servers you added, packages it installs.
+
+What is refused: the hosts listed in [What this version does](#what-this-version-does-m1), when the request is made by the app itself.
+
+Engine switches: see [`docs/countersign/engine-telemetry.md`](docs/countersign/engine-telemetry.md). Its "Not switchable, or not verified" section lists what the switches cannot cover.
+
+### Checking the app's own traffic
+
+1. Close Countersign. In PowerShell, set a log file, then start Countersign's `Countersign.exe` from that same window:
+
+   ```powershell
+   $env:COUNTERSIGN_EGRESS_LOG = "$env:TEMP\countersign-egress.jsonl"
+   ```
+
+2. Use the app, close it, then run from the repository folder:
+
+   ```powershell
+   node scripts/countersign/egress-report.mjs "$env:TEMP\countersign-egress.jsonl"
+   ```
+
+   Add `--task-hosts example.com,https://example.org/page` for hosts a task was asked to reach.
+
+The log records the protocol, the host and whether the request was refused. It never records a path, a query or credentials, and it writes at most one line per host and outcome per minute. The report sorts hosts into allowed, blocked and unexpected. It exits 0 when entries were recorded and none was blocked, unexpected or malformed; 1 when one was, or when the log is empty; 2 on an input error.
+
+The engines (Claude Code, Codex, Pi) and git run as separate processes. Their traffic is not in this log; checking it needs a capture of the whole process tree.
+
+## Known limits
+
+1. The egress guard is a block list. Every host not on it is allowed.
+2. The guard does not cover:
+   - raw TCP sockets, including the local tunnel that carries Claude Code traffic through a configured HTTP or SOCKS proxy;
+   - direct `undici` calls inside the `browser-control-runtime` and `opencli-vendor` packages;
+   - a library that kept its own reference to a network function before the guard was installed;
+   - child processes: the engines, git, and the app's own helper processes.
+3. On a direct connection (no proxy), a redirect is not checked again. This includes the voice input refiner.
+4. Engine telemetry:
+   - Model traffic and sign-in cannot be switched off. Codex sends its analytics to the same host as its model traffic, so a capture cannot show that analytics stopped.
+   - Your own engine settings can turn switches back on: the `env` block of `%USERPROFILE%\.claude\settings.json`, or `%USERPROFILE%\.codex\config.toml`.
+   - Actions you ask an engine for, such as installing a plugin or running its own login, still use the network.
+5. Countersign itself calls `chatgpt.com` with your Codex login, for usage figures and chat titles.
+6. Building downloads from the hosts listed under [Hosts the build downloads from](#hosts-the-build-downloads-from).
+7. The automatic helper-model chain (used for titles and similar small tasks) still contains the hosted model service's entries. Local mode cannot use them; only the label shown for the default changed.
+8. Model-facing tool and server ids such as `cindy_helper` and `cindy_memory` keep the old name, and a model may repeat them.
+9. Old-name text remains only where a Windows user in local mode does not normally see it. `scripts/countersign/brand-guard-baseline.json` lists every such text (343 entries, 378 texts), and [`FORK-CHANGES.md`](FORK-CHANGES.md) explains the reasons.
+10. Cindy's server addresses are still compiled in as build variables. Local mode never reads them, and the egress guard refuses them.
+11. The in-app help still describes removed cloud features, such as the hosted model service, sign-in and the `/issue` command.
+12. Pi cannot be installed or updated from inside the app. It ships with the app; a new Pi needs a rebuild.
+13. A chat's folder is fixed when the chat is created. A chat with no project works in a private per-chat folder under `%APPDATA%\Countersign`.
+14. Teammates imported from a pre-release Countersign build keep their old text. Fresh installs are not affected.
+15. Pre-release builds wrote `.cindy` file-type keys to the current user's registry. Current builds no longer write them but do not remove them.
+16. The installer is unsigned. How Windows SmartScreen treats it has not been checked.
+17. Only Windows is built. The mobile app (`apps/mobile`) is in the tree but is not built.
+18. The third-party notices in `docs/legal/notices/` were generated for Cindy. They list the updater, which Countersign does not ship, and say the engines are downloaded at runtime, while Countersign bundles them.
+19. The installer does not contain this repository's `LICENSE` or `NOTICE`. Add them before you share an installer.
+20. `CONTRIBUTING`, `SUPPORT` and other community files are upstream's and describe Cindy's process and services; only `SECURITY` and `CODE_OF_CONDUCT` were changed. The root `package.json` still names Cindy's homepage and repository.
+21. Not checked live: a start with no network, a build on a clean machine, and a network capture after the final set of engine switches.
+
+## Verification status
+
+Checked on one Windows 11 computer, on intermediate builds:
+
+- The installer was built with the packaging command above and installed; the app opened on its main screen with no sign-in.
+- Each engine completed a file-writing task: Claude Code with a subscription login, Codex with a ChatGPT login, and Pi with a model in LM Studio.
+- One TCP capture of the app's process tree saw only addresses attributed to `chatgpt.com` and to `api.anthropic.com`/`claude.ai`, apart from local connections. An earlier run, before the Claude Code switches, also saw `downloads.claude.ai` and `github.com`.
+
+Not checked: a build on a clean machine, a start with no network, and a capture after the final engine switches.
+
+## Checks in this repository
+
+- `pnpm check:countersign-brand` fails on the old product name in text a user or a model sees, unless the text is in the reviewed baseline.
+- `pnpm check:scrub` fails on keys, personal paths, email addresses and private words in tracked files; `pnpm check:scrub --history` checks the fork's commits. CI runs the built-in rules only. The owner's private words live in a git-ignored `.scrub-patterns` file (format in [`.scrub-patterns.example`](.scrub-patterns.example)) and are checked locally before each push.
+- `pnpm check:countersign-egress` fails when main-process code loads `undici` without calling the egress check.
+
+## Issues and security
+
+- Report a security problem through GitHub private vulnerability reporting on this repository; see [`SECURITY.en.md`](SECURITY.en.md).
+- Report bugs as GitHub issues on this repository. The in-app issue reporter is off.
+
+<!-- owner: enable on GitHub -->
+
+## Credit and licence
+
+Countersign is built on [Cindy](https://github.com/makecindy/cindy). Thanks to the Cindy authors for publishing it under Apache-2.0.
+
+- Licence: Apache License, Version 2.0 ([`LICENSE`](LICENSE)). Except where noted otherwise, the source code is under this licence. Source files carry no per-file licence header; the root `LICENSE` governs.
+- [`NOTICE`](NOTICE) keeps Cindy's notice and adds Countersign's modification notice.
+- [`FORK-CHANGES.md`](FORK-CHANGES.md) lists the modified areas.
+- Model weights, datasets, prompts, trademarks and other separately identified material may have their own terms and are not automatically covered by the repository's Apache-2.0 grant. The Cindy name and logo are not licensed for this project.
+- Third-party components keep their own copyright and licences. Their notices and SBOMs are in [`docs/legal/notices/`](docs/legal/notices/) (see limit 18).
+- A built installer contains third-party programs under their own terms, including Claude Code and `@anthropic-ai/claude-agent-sdk` under Anthropic's commercial terms, and the Microsoft Visual C++ runtime. Check those terms before you share an installer.
