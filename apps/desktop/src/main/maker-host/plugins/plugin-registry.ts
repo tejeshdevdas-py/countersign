@@ -15,6 +15,7 @@
  * that cannot be toggled, so showing them adds no value.
  */
 
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import type { Plugin, PluginId } from './types.js';
 import { DEFAULT_DISABLED_PLUGIN_IDS, ESSENTIAL_PLUGIN_IDS, GLOBAL_PLUGIN_IDS, HOSTED_ELSEWHERE_PLUGIN_IDS } from './types.js';
 import type { SettingsReader } from './settings-reader.js';
@@ -46,6 +47,13 @@ export interface PluginListItem {
   userOverride?: { enabled: boolean } | null;
   globalOverride?: { enabled: boolean } | null;
 }
+
+/** Countersign: chat-app tools (Feishu bot, personal WeChat, Slack) not listed under LOCAL_ONLY. */
+const LOCAL_ONLY_HIDDEN_PLUGIN_IDS: ReadonlySet<PluginId> = new Set<PluginId>([
+  'feishu_bot',
+  'wechat',
+  'slack',
+]);
 
 export class PluginRegistry {
   private plugins: Plugin[];
@@ -159,6 +167,9 @@ export class PluginRegistry {
   async listPlugins(workingDir?: string, includeHidden = false): Promise<PluginListItem[]> {
     const results: PluginListItem[] = [];
     for (const plugin of this.plugins) {
+      // Countersign: the chat-app connectors are off under LOCAL_ONLY, so neither Settings
+      // nor the teammate capability catalog offers their tools.
+      if (LOCAL_ONLY && LOCAL_ONLY_HIDDEN_PLUGIN_IDS.has(plugin.id)) continue;
       if (!includeHidden && ESSENTIAL_PLUGIN_IDS.has(plugin.id)) continue;
       // Toggleable but surfaced in a dedicated Settings section (e.g. browser
       // under「电脑使用」), so omit from the generic project list. Browser is

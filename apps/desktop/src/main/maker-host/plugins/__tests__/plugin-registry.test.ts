@@ -25,6 +25,13 @@ import {
 import type { KnownProviderName } from '../builtin-plugins.js';
 import { ESSENTIAL_PLUGIN_IDS, HOSTED_ELSEWHERE_PLUGIN_IDS } from '../types.js';
 
+// Countersign: these cases cover upstream's full builtin list, including the chat-app tools
+// that LOCAL_ONLY hides (see plugin-registry.localOnly.test.ts).
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
+
 function makeLogger() {
   return { warn: vi.fn() };
 }
