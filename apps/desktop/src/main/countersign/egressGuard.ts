@@ -30,6 +30,7 @@
  * blocked}` (no path, query or credentials), at most one line per
  * protocol+host+blocked state per minute. Unset means no log.
  */
+import fs from 'node:fs';
 import http from 'node:http';
 import https from 'node:https';
 import { syncBuiltinESMExports } from 'node:module';
@@ -184,6 +185,24 @@ export function guardWebRequest(webRequest: WebRequestLike, recorder?: EgressRec
 let installed = false;
 
 /**
+ * A main-process function the guard could not wrap: warn, and write one
+ * `{time, guard, installed: false}` line to the egress log. That line has no
+ * host, so the egress report counts it against the log and does not pass.
+ */
+function reportUnguarded(target: string, logFile: string | null, error: unknown): void {
+  console.warn(
+    `[countersign/egress] could not wrap ${target}; main-process requests through it are not checked (${String(error)})`,
+  );
+  if (!logFile) return;
+  const line = JSON.stringify({ time: new Date().toISOString(), guard: target, installed: false });
+  try {
+    fs.appendFileSync(logFile, `${line}\n`);
+  } catch {
+    // Logging is a diagnostic aid; a full disk must not stop the app.
+  }
+}
+
+/**
  * Wires the guard into the main process and every Electron session. Call
  * once, before any endpoint, window or session is used.
  */
@@ -205,8 +224,10 @@ export function installEgressGuard(opts: { logFile: string | null }): void {
         name === 'fetch'
           ? guardFetch(bound as (...args: never[]) => Promise<unknown>)
           : guardRequestFunction(bound);
-    } catch {
-      // A read-only property stays covered by the session webRequest guard.
+    } catch (error) {
+      // Renderer traffic stays covered by the session webRequest guard, but
+      // main-process calls through this function are not checked: say so.
+      reportUnguarded(`net.${name}`, opts.logFile, error);
     }
   }
   for (const mod of [http, https] as unknown as Array<Record<string, unknown>>) {
