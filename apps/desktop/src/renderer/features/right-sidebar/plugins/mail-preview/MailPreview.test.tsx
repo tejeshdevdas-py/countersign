@@ -3,6 +3,13 @@ import { cleanup, render, screen, act, fireEvent } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest';
 import type { GhostCardFormField } from '@cindy/maker-shared/ghost-card-form';
 import { createHash } from 'node:crypto';
+// Countersign: upstream's avatar fallbacks (Gravatar, then the domain icon) are
+// tested here with LOCAL_ONLY off; MailParticipant.localOnly.test.tsx covers the
+// real switch, under which neither service is contacted.
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
 const h = vi.hoisted(() => ({ read: vi.fn(), owner: 1 }));
 vi.mock('../../lib/mailPreview', () => ({ readMailPreview: h.read }));
 vi.mock('../../registry', () => ({ registerTabKind: () => {} }));

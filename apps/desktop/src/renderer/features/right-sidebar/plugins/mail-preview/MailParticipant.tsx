@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ghostCardRecipients } from '@cindy/maker-shared/ghost-card-form';
 import { mailParticipantEmail, type MailMessage } from '@cindy/maker-shared/mail-message';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 
 const maxMailAvatars = 12;
 
@@ -22,6 +23,8 @@ const publicMailDomains = new Set(('gmail.com googlemail.com outlook.com hotmail
   'proton.me protonmail.com pm.me tutanota.com tuta.com fastmail.com hey.com mail.com gmx.com gmx.net web.de').split(' '));
 
 function domainIcon(email: string): string | undefined {
+  // Countersign: no avatar service is contacted under LOCAL_ONLY.
+  if (LOCAL_ONLY) return undefined;
   const domain = email.split('@')[1];
   if (!domain || publicMailDomains.has(domain) || /^(yahoo|hotmail|outlook|live|gmx)\./.test(domain) ||
       /(?:^|\.)(?:localhost|local|internal|test|invalid|example)$/.test(domain) || /\.{2}|^-|-$|\.-|-\./.test(domain)) return undefined;
@@ -35,7 +38,8 @@ function Avatar({ email, label, photo, compact }: { email?: string; label: strin
   const [loaded, setLoaded] = useState<string>();
   const contact = photo && !failed.includes(photo) ? photo : undefined;
   useEffect(() => {
-    if (!email || contact) return;
+    // Countersign: under LOCAL_ONLY only the plugin's photo or initials are shown.
+    if (!email || contact || LOCAL_ONLY) return;
     let active = true;
     // Gravatar receives only the normalized email hash, never the raw address.
     void Promise.resolve().then(() => crypto.subtle.digest('SHA-256', new TextEncoder().encode(email))).then(bytes => {
