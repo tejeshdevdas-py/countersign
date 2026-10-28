@@ -1,6 +1,13 @@
 // @vitest-environment jsdom
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+// Countersign: these cases cover upstream's CDN download path, which LOCAL_ONLY replaces
+// with bundled originals (see countersignWallpaperOriginals.test.tsx).
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
 import { useWallpaperAsset } from '../useWallpaperAsset';
 import { type WallpaperId, type WallpaperDownloadProgress } from '@/../shared/appearanceSettings';
 import manifest from '@/../shared/wallpaper-video-manifest.json';

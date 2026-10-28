@@ -1,4 +1,5 @@
 import { app } from 'electron';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -52,6 +53,9 @@ async function ensureWallpaperAsset(
   onProgress?: ProgressListener,
 ): Promise<string | null> {
   if (!isOfficialWallpaper(id)) throwIpcError('INVALID_PARAMS', 'Unsupported wallpaper');
+  // Countersign: the renderer draws the built-in originals it bundles (lib/wallpaper.ts),
+  // so under LOCAL_ONLY the wallpaper CDN is never resolved.
+  if (LOCAL_ONLY) return null;
   const entry = manifest[id];
   if (entry.delivery !== 'cdn') return null;
   const asset = kind === 'image' ? entry.image : 'sha256' in entry ? entry : null;
