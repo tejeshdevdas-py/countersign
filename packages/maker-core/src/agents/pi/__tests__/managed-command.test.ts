@@ -1,4 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+// Countersign: these upstream cases exercise the upstream grammar, so LOCAL_ONLY is mocked off.
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
 import { parsePiManagementArgs, parsePiManagementText } from '../managed-command.js';
 
 describe('Pi management grammar', () => {

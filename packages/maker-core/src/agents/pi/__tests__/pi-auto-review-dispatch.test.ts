@@ -73,6 +73,13 @@ const readAppendedSystemPrompt = (): string => {
   return index >= 0 ? readFileSync(captured.args[index + 1]!, 'utf8') : '';
 };
 
+// Countersign: these upstream cases include Pi core updates (`pi update --self` / `--all`), which
+// LOCAL_ONLY refuses at parse time, so LOCAL_ONLY is mocked off to keep covering the upstream flow.
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
+
 vi.mock('../transport.js', () => ({
   createPiStdioTransport: (opts: {
     args: string[];

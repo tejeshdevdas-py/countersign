@@ -1,4 +1,6 @@
 /** Pi 0.84.4/0.85.1 CLI management grammar. No shell evaluation or slash dispatch. */
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
+
 export type PiNativeManagementCommand =
   | { kind: 'self'; force: boolean }
   | { kind: 'all'; force: boolean }
@@ -13,7 +15,25 @@ export type PiManagementCommand =
   | { action: 'command'; command: PiNativeManagementCommand };
 export type PiManagementParseResult = PiManagementCommand | { error: string };
 
+/**
+ * Countersign: Pi ships with the app and its core is never downloaded again
+ * (the Host installer refuses under LOCAL_ONLY). A command that would update
+ * the core, alone or after the extensions (`pi update --all`), is refused here,
+ * before any step runs, so no package is updated by a command that then fails.
+ */
+export const PI_CORE_UPDATE_LOCAL_ONLY_MESSAGE =
+  'Pi core updates are off in this local-only build: Pi ships with the app. Nothing was changed. To update installed Pi packages, use pi update --extensions.';
+
 export function parsePiManagementArgs(args: readonly string[]): PiManagementParseResult {
+  const parsed = parseUpstreamPiManagementArgs(args);
+  if (LOCAL_ONLY && 'action' in parsed && parsed.action === 'command'
+    && (parsed.command.kind === 'self' || parsed.command.kind === 'all')) {
+    return { error: PI_CORE_UPDATE_LOCAL_ONLY_MESSAGE };
+  }
+  return parsed;
+}
+
+function parseUpstreamPiManagementArgs(args: readonly string[]): PiManagementParseResult {
   const bad = (error: string): PiManagementParseResult => ({ error });
   if (args.length > 32) return bad('Too many Pi command arguments.');
   if (args.some(arg => !arg || arg.length > 4096 || /[\r\n\0]/.test(arg))) return bad('Invalid Pi command argument.');

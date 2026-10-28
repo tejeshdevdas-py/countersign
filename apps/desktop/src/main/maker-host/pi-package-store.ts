@@ -1,4 +1,5 @@
 import { BRAND_NAME } from '@cindy/maker-shared/branding';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import { piBinaryUpdateFailureStage } from '../agent-binaries/pi-self-update.js';
 /**
  * Cindy-owned Pi package store.
@@ -1205,6 +1206,13 @@ export async function executePiNativeManagementCommand(
     // The managed package home intentionally contains no session provider credentials.
     // Refreshing it would falsely claim that Cindy's host-owned model catalog changed.
     throw new Error(`Pi model catalogs are owned by ${BRAND_NAME} providers; this command is not supported in the package home.`);
+  }
+  if (LOCAL_ONLY && (command.kind === 'self' || command.kind === 'all')) {
+    // Countersign: the core step would be refused (updateReadyPiBinary), so refuse the whole
+    // command before any step; `--all` must not update the extensions and then fail.
+    throw new Error(
+      'PI_UPDATES_DISABLED: Pi core updates are off in this local-only build; Pi ships with the app. Nothing was changed.',
+    );
   }
   return enqueueMutation(async () => {
     const core = command.kind === 'self' || command.kind === 'all';

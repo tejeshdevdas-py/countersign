@@ -70,6 +70,13 @@ vi.mock('electron', () => ({
   app: { getPath: () => runtime.userData },
 }));
 
+// Countersign: the core-update cases exercise the upstream installer path, which LOCAL_ONLY
+// refuses before any step, so LOCAL_ONLY is mocked off here.
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
+
 vi.mock('../../agent-binaries/index.js', () => ({
   getReadyBinaryPath: () => '/mock/0.83.0/pi',
   updateReadyPiBinary: async (force: boolean) => {
