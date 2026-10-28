@@ -169,6 +169,81 @@ test('path and email rules see only added lines; key and private rules see every
   );
 });
 
+// Residual round, scrub-2: every Windows user-folder spelling is windows-user-path, a
+// rule the history baseline cannot accept, so no Windows user folder stays in history
+// by a baseline entry. (/Users/<name> and /home/<name> stay local-path, as the header says.)
+test('every Windows user-folder spelling is windows-user-path, never local-path', () => {
+  const windows = [
+    // Git Bash form in lower case.
+    ['', 'c', 'users', 'someone', 'proj'].join('/'),
+    // Doubled forward slashes after the drive.
+    ['C:', '', 'Users', '', 'someone', '', 'x'].join('/'),
+    // A UNC administrative share, with backslashes and with slashes.
+    ['', '', 'host', 'c$', 'Users', 'someone', 'x'].join('\\'),
+    ['', '', 'host', 'c$', 'Users', 'someone', 'x'].join('/'),
+    // The URL-encoded form with an encoded slash.
+    ['%3A%2F', 'Users', '%2Fsomeone'].join(''),
+  ];
+  for (const spelling of windows) {
+    assert.deepEqual(
+      rules(scrub([{ path: 'a.ts', text: `p = "${spelling}"` }], [])),
+      ['windows-user-path'],
+      spelling,
+    );
+  }
+});
+
+test('the history baseline accepts no Windows user folder in any spelling', () => {
+  const entry = {
+    commit: 'fork: paths',
+    where: 'src/u.ts:1',
+    rule: 'windows-user-path',
+    sha256: sha256('x'),
+    reason: 'r',
+  };
+  assert.deepEqual(
+    validateHistoryBaseline([entry]).map((p) => p.replace(/^entry \d+ \(\S+ \S+\): /, '')),
+    ['only the email and local-path rules can be accepted in history'],
+  );
+  const spellings = [
+    ['C:', 'Users', 'someone', 'x'].join('\\'),
+    ['', 'c', 'users', 'someone', 'proj'].join('/'),
+    ['C:', '', 'Users', '', 'someone', '', 'x'].join('/'),
+    ['', '', 'host', 'c$', 'Users', 'someone', 'x'].join('\\'),
+    ['', '', 'host', 'c$', 'Users', 'someone', 'x'].join('/'),
+    ['%3A%2F', 'Users', '%2Fsomeone'].join(''),
+  ];
+  const commits = [
+    {
+      sha: 'c'.repeat(40),
+      an: 'owner',
+      ae: OWNER_EMAIL,
+      cn: 'owner',
+      ce: OWNER_EMAIL,
+      body: 'fork: paths\n',
+      added: new Map([
+        ['src/u.ts', spellings.map((text, i) => ({ line: i + 1, text: `p = "${text}"` }))],
+      ]),
+    },
+  ];
+  const findings = scrubHistory(commits);
+  assert.equal(findings.length, spellings.length);
+  assert.ok(
+    findings.every((f) => f.rule === 'windows-user-path'),
+    'every spelling is a windows-user-path finding',
+  );
+  // Even an entry naming the exact location and hash under local-path accepts nothing.
+  const entries = findings.map((f) => ({
+    ...entry,
+    where: f.where,
+    rule: 'local-path',
+    sha256: f.matchHash,
+  }));
+  const result = compareWithHistoryBaseline(findings, entries, commits);
+  assert.equal(result.accepted, 0);
+  assert.equal(result.fresh.length, spellings.length);
+});
+
 test('a user path is reported once, as windows-user-path, in each spelling', () => {
   const spellings = [
     USER_PATH,

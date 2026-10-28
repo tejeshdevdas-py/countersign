@@ -8,10 +8,13 @@
  *     and 32 or more letters and digits): real-shaped tokens; every line
  *   private-key-block: a PEM private-key header followed by a key body; whole file,
  *     and in --history the whole commit message and each file's added lines joined
- *   windows-user-path: a Windows user folder (drive letter, Users, a name; with
- *     backslashes, doubled backslashes or slashes), its URL-encoded form, the
- *     Git Bash form (a slash, the drive letter, then Users and a name) and the WSL
- *     /mnt/<letter>/Users/<name> form; lines the fork added
+ *   windows-user-path: a Windows user folder (drive letter, Users, a name; with one
+ *     to four backslashes or slashes), a UNC administrative share (two slashes or
+ *     backslashes, a host, <letter>$, Users, a name), its URL-encoded form (an
+ *     encoded backslash or slash), the Git Bash form (a slash, the drive letter,
+ *     then Users and a name, in any case) and the WSL /mnt/<letter>/Users/<name>
+ *     form; lines the fork added. Every Windows user-folder spelling is this rule,
+ *     never local-path, so the history baseline cannot accept one
  *   local-path: any other drive-absolute path (a drive letter and a colon, then
  *     backslashes or slashes), a Git Bash drive path (a slash, one letter, a
  *     slash, a name), /Users/<name> and /home/<name> (with or without a
@@ -121,11 +124,16 @@ const KEY_RULES = [
 const PRIVATE_KEY_BLOCK =
   /-----BEGIN [A-Z0-9 ]*PRIVATE KEY(?: BLOCK)?-----[\s\S]{0,300}?[A-Za-z0-9+/=]{40,}/g;
 const WINDOWS_USER_PATH = [
-  /(?<![A-Za-z0-9_-])[A-Za-z]:(?:\\{1,4}|\/)Users(?:\\{1,4}|\/)[^\\/\s"'`<>|*?:)\]]+/gi,
-  // The URL-encoded user folder; split so this file does not match itself.
+  // A drive, then Users and a name, with one to four backslashes or slashes between.
+  /(?<![A-Za-z0-9_-])[A-Za-z]:(?:\\{1,4}|\/{1,4})Users(?:\\{1,4}|\/{1,4})[^\\/\s"'`<>|*?:)\]]+/gi,
+  // A UNC administrative share: two slashes or backslashes, a host, <letter>$, Users, a name.
+  /(?<![A-Za-z0-9_:-])(?:\\{2,4}|\/\/)[^\\/\s"'`<>|*?:]+(?:\\{1,4}|\/)[A-Za-z]\$(?:\\{1,4}|\/)Users(?:\\{1,4}|\/)[^\\/\s"'`<>|*?:)\]]+/gi,
+  // The URL-encoded user folder, with an encoded backslash or slash; split so this file
+  // does not match itself.
   new RegExp('%3A%5C' + 'Users' + '%5C[^%\\s"\'`<>&]*', 'gi'),
-  // Git Bash form: a slash, the drive letter, a slash, Users, a name.
-  /(?<![A-Za-z0-9_.-])\/[A-Za-z]\/Users\/[^/\s"'`<>|*?:)\]]+/g,
+  new RegExp('%3A%2F' + 'Users' + '%2F[^%\\s"\'`<>&]*', 'gi'),
+  // Git Bash form: a slash, the drive letter, a slash, Users, a name (any case).
+  /(?<![A-Za-z0-9_.-])\/[A-Za-z]\/Users\/[^/\s"'`<>|*?:)\]]+/gi,
   // WSL form /mnt/<letter>/Users/<name>.
   /(?<![A-Za-z0-9_.~-])\/mnt\/[A-Za-z]\/Users\/[^/\s"'`<>|*?:)\]]+/gi,
 ];
