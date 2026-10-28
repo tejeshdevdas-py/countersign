@@ -61,7 +61,9 @@ describe('hosted service and account wording under LOCAL_ONLY', () => {
     await i18n.changeLanguage(locale);
     const bundle = i18n.getResourceBundle(locale, 'common') as Record<string, unknown>;
     const offenders = flatten(bundle)
-      .filter(([, text]) => text.includes('{{appName}} AI') || text.includes(ACCOUNT_SERVICES[locale]))
+      .filter(
+        ([, text]) => text.includes('{{appName}} AI') || text.includes(ACCOUNT_SERVICES[locale]),
+      )
       .map(([key]) => key);
     expect(offenders).toEqual([]);
   });

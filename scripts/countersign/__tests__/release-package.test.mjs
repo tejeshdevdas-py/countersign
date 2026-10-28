@@ -38,9 +38,13 @@ test('with the switch off, --version is left to upstream packaging', () => {
 });
 
 test('the command exits 1 with the refusal and starts no dependency check', () => {
-  const result = spawnSync(process.execPath, [SCRIPT, '--', '--platform', 'win32', '--version', '1.2.3'], {
-    encoding: 'utf8',
-  });
+  const result = spawnSync(
+    process.execPath,
+    [SCRIPT, '--', '--platform', 'win32', '--version', '1.2.3'],
+    {
+      encoding: 'utf8',
+    },
+  );
   assert.equal(result.status, 1);
   assert.match(result.stderr, /ERROR: --version is not available in Countersign/);
   assert.doesNotMatch(`${result.stdout}${result.stderr}`, /ensure-deps/);

@@ -238,14 +238,21 @@ describe('native dependency packaging', () => {
       // Not a node-gyp package: its build folder is ordinary JavaScript output.
       ['plain-js', 'build', 'src', 'index.res'],
     ];
-    for (const parts of [['node-pty', 'binding.gyp'], ['@scope', 'addon', 'binding.gyp'], ...removed, ...kept]) {
+    for (const parts of [
+      ['node-pty', 'binding.gyp'],
+      ['@scope', 'addon', 'binding.gyp'],
+      ...removed,
+      ...kept,
+    ]) {
       const file = path.join(modules, ...parts);
       fs.mkdirSync(path.dirname(file), { recursive: true });
       fs.writeFileSync(file, 'fixture');
     }
     prunePackagedRuntime(f.buildPath);
-    for (const parts of removed) expect(fs.existsSync(path.join(modules, ...parts)), parts.join('/')).toBe(false);
-    for (const parts of kept) expect(fs.readFileSync(path.join(modules, ...parts), 'utf8')).toBe('fixture');
+    for (const parts of removed)
+      expect(fs.existsSync(path.join(modules, ...parts)), parts.join('/')).toBe(false);
+    for (const parts of kept)
+      expect(fs.readFileSync(path.join(modules, ...parts), 'utf8')).toBe('fixture');
     expect(fs.existsSync(path.join(modules, 'node-pty', 'build', 'Release', 'obj'))).toBe(false);
   });
 });
