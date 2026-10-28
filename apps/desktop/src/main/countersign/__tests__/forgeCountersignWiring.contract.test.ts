@@ -54,6 +54,17 @@ describe('forge.config.ts Countersign packaging wiring', () => {
     expect(body.split('electronRebuild(').length - 1).toBe(1);
   });
 
+  it('M-L2: postPackage puts the root LICENSE and NOTICE into the packaged resources', () => {
+    const postPackage = hookBody('postPackage');
+    expect(postPackage).toMatch(
+      /stageProjectLicense\(\s*packagedResourcesPath\(buildPath, opts\.platform\),\s*path\.join\(__dirname, '\.\.', '\.\.'\),\s*\);/,
+    );
+    // Before the Windows check, which then scans the final package.
+    expect(postPackage.indexOf('stageProjectLicense(')).toBeLessThan(
+      postPackage.indexOf('assertCountersignPackagedOutputClean('),
+    );
+  });
+
   it('M-B1: postPackage checks the Windows package for build intermediates and the user name', () => {
     const postPackage = hookBody('postPackage');
     const check = postPackage.indexOf(

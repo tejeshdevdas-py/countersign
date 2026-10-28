@@ -28,6 +28,7 @@ import {
   publicGithubIdentity,
   spawnEnsureAgentBinaries,
   stageAgentBinaries,
+  stageProjectLicense,
   withEnv,
 } from './forge-countersign';
 import { preparePackagedNodePty } from './forge-node-pty';
@@ -2064,6 +2065,11 @@ const config: ForgeConfig = {
           );
           const noticeName = stagePackagedThirdPartyNotices(buildPath, opts.platform);
           console.log(`[forge:postPackage] staged ${noticeName} + restricted component disclosure`);
+          // Countersign: the project's own LICENSE and NOTICE (Apache 2.0 section 4(d)).
+          stageProjectLicense(
+            packagedResourcesPath(buildPath, opts.platform),
+            path.join(__dirname, '..', '..'),
+          );
           signPackagedExes(buildPath);
           applyMacPackagedDisplayName(buildPath, opts.platform);
           assertCountersignPackagedOutputClean(buildPath, opts.platform);

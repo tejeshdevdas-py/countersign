@@ -124,6 +124,32 @@ export function stageAgentBinaries(options: {
   }
 }
 
+// ── The project's own licence in the package ─────────────────────────────────
+
+/**
+ * The repository's LICENSE (Apache 2.0) and NOTICE, shipped beside the
+ * third-party notices. Apache 2.0 section 4(d) asks a derivative work to carry
+ * the NOTICE text. `.txt` so Windows opens them with a double click.
+ */
+export const PROJECT_LICENSE_FILES: ReadonlyArray<{ source: string; packaged: string }> = [
+  { source: 'LICENSE', packaged: 'LICENSE.txt' },
+  { source: 'NOTICE', packaged: 'NOTICE.txt' },
+];
+
+/** Copies the project LICENSE and NOTICE from `repoRoot` into the packaged resources. */
+export function stageProjectLicense(resourcesDir: string, repoRoot: string): void {
+  if (!fs.existsSync(resourcesDir)) {
+    throw new Error(`[forge:postPackage] packaged resources missing: ${resourcesDir}`);
+  }
+  for (const { source, packaged } of PROJECT_LICENSE_FILES) {
+    const from = path.join(repoRoot, source);
+    if (!fs.existsSync(from)) {
+      throw new Error(`[forge:postPackage] project ${source} missing at ${from}`);
+    }
+    fs.copyFileSync(from, path.join(resourcesDir, packaged));
+  }
+}
+
 // ── Bundled binaries kept in Git LFS ─────────────────────────────────────────
 
 const LFS_POINTER_SPEC = 'git-lfs.github.com/spec/v1';
