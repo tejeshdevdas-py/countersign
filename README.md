@@ -69,7 +69,7 @@ If PowerShell refuses to run `pnpm` because running scripts is disabled on the s
 
 Behind an HTTP proxy (not tested): set `HTTPS_PROXY`, which pnpm, node-gyp and cargo read. The Electron download reads it only when `ELECTRON_GET_USE_PROXY=true` is also set. The engine downloads use Node's built-in `fetch`, which reads it only when `NODE_USE_ENV_PROXY=1` is set; that was not tried with these scripts.
 
-Use PowerShell or cmd, with Windows' own `tar` (`%SystemRoot%\System32\tar.exe`) first on `PATH`. Git Bash's `tar` cannot unpack Pi's zip: `pnpm install` still finishes with only a warning, and packaging then stops because Pi is missing. If that happens, run `pnpm install:pi` from PowerShell.
+Use PowerShell or cmd, with Windows' own `tar` (`%SystemRoot%\System32\tar.exe`) first on `PATH`. Git Bash's `tar` cannot unpack Pi's zip: `pnpm install` still finishes with only a warning, and packaging, which tries Pi again, stops with the same error while that `tar` comes first. If that happens, run `pnpm install:pi` from PowerShell.
 
 ### Steps
 
@@ -89,8 +89,17 @@ pnpm release:package -- --platform win32 --allow-unsigned --skip-smoke
 The installer is written to `apps/desktop/release/artifacts/global/unversioned/win32-x64/Countersign-unversioned-Setup.exe`. It is unsigned.
 
 - Do not add `--region dev`: it needs a git-ignored config file and builds a separate CountersignDev identity.
-- Do not add `--version`: that is the release path, and it fails on a clean checkout.
+- `--version` is refused: a versioned build makes an update package (`-hotfix.zip`) for the upstream in-app updater and, with `major`, `minor` or `patch`, reads the upstream release CDN. Countersign has neither. Leave it out to build the unversioned installer.
 - If `CINDY_WIN_SIGN_CMD` is set (in your shell or in `apps/desktop/.env`), packaging signs with it; `--no-sign` skips signing.
+
+Packaging also checks what it ships:
+
+- Before it copies the engines (Claude Code, Codex, Pi, ripgrep) and Android platform-tools, it checks each against its pin and downloads the pinned version when the copy on disk is missing or differs (see below).
+- It stops when `vec0.dll` is missing or is still a Git LFS pointer, and says to run `git lfs pull`.
+- It copies this repository's `LICENSE` and `NOTICE` into the installer's `resources` folder as `LICENSE.txt` and `NOTICE.txt`.
+- It fails when the packaged app (`app.asar` and `app.asar.unpacked`) holds compiler intermediates (`.obj`, `.pdb`, `.lib`, `.tlog`, `.vcxproj`, `config.gypi` and similar) or this computer's user name. The name is allowed only inside the project's own app IDs and GitHub address. To keep it out, the build compiles `better-sqlite3` with two MSVC options (`/d1trimfile` and `/PDBALTPATH`) that it sets itself.
+
+These checks were added after the last package build, so none of them has run in a real package build yet.
 
 ### Hosts the build downloads from
 
@@ -103,7 +112,17 @@ The installer is written to `apps/desktop/release/artifacts/global/unversioned/w
 - `dl.google.com`: Android platform-tools r32.0.0, checked against a pinned sha256.
 - `index.crates.io` and `static.crates.io`: the Rust crates for the helper programs (seen in the cargo registry of the M1 build machine).
 
-When an engine or platform-tools download fails, the build stops and names the host. It does not fall back to another server. A slow download is not stopped for being slow: the Claude Code, Codex, Pi and platform-tools downloads stop only when they cannot connect, receive no data for 15 to 20 seconds, or run past 30 minutes. `pnpm install:claude`, `pnpm install:codex`, `pnpm install:pi` and `pnpm install:ripgrep` retry an engine at its pinned version.
+`pnpm install` fetches the engines on a best-effort basis: when one fails, it prints a warning that names the host, and `pnpm install` still finishes. Packaging checks them again, as above; when an engine or platform-tools download fails there, packaging stops and its output names the host. No build download falls back to another server. A slow download is not stopped for being slow: the Claude Code, Codex, Pi and platform-tools downloads stop only when they cannot connect, receive no data for 15 to 20 seconds, or run past 30 minutes. `pnpm install:claude`, `pnpm install:codex`, `pnpm install:pi` and `pnpm install:ripgrep` retry an engine at its pinned version.
+
+Some build messages come from upstream scripts and are in Chinese only. The ones on this path, and what to do:
+
+- After `pnpm install`, "agent 二进制未就位（best-effort，不阻断）": an engine did not download. The English line above it names the engine and the host; run `pnpm install:<engine>`.
+- "Electron zip 下载失败", "系统 tar 解压失败" or "Electron 修复后仍不完整": Electron did not download or unpack. Put Windows' own `tar` first on `PATH`, delete the Electron download cache (`%LOCALAPPDATA%\electron\Cache`), and run `pnpm install` again with Node 22.
+- "关键依赖损坏" or "核弹清理后依然损坏": the dependency check that `pnpm release:package` runs first found broken packages and reinstalled them. If it still fails, run `pnpm install` yourself and read its error.
+- "root Node ABI 修复后仍不可用": `better-sqlite3` could not be rebuilt for Node. Check Python 3 and the MSVC build tools, then run `pnpm install` again.
+- "需要一个值" or "未知参数": a `pnpm release:package` option has no value or is unknown; compare with the command under Steps.
+- "Android platform-tools … 未能就位": the platform-tools download failed. The English lines above it name `dl.google.com` and two offline routes; retry with `pnpm --filter desktop install:android-platform-tools`.
+- "注意: 版本无关包(0.0.0)不参与热更新…" at the end of packaging is a note, not an error.
 
 Development mode (`pnpm dev:desktop`) was started once early in M1 and has not been checked since.
 
