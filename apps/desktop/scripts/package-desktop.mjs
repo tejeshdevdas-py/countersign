@@ -542,12 +542,12 @@ async function main() {
   console.log(`    version:  ${versionless ? `(版本无关,占位 ${version},不参与热更新)` : version}`);
   console.log('='.repeat(60));
 
-  // Linux 只校验 sqlite-vec 等原生运行资产。Claude/Codex/Pi 各平台都不进安装包
-  // (forge extraResource 不含它们),由 packaged runtime 首启时复用系统 CLI 或
-  // 从 CDN 安装到 userData(仅 Linux 的 Claude/Codex 另有系统 CLI / 官方下载
-  // fallback),打包阶段无需预下载。ripgrep 是唯一进包的
-  // agent 二进制,这里按 pin 预 ensure(缓存命中即跳过),在昂贵的 forge make
-  // 之前尽早失败;forge prePackage 的 stageRipgrep 仍会兜底校验。
+  // Countersign: Claude Code, Codex and Pi ship in the installer
+  // (resources/agent-bin). forge prePackage runs ensure-agent-binaries for each
+  // at its pin before staging them (forge-countersign.ts stageAgentBinaries), so
+  // nothing is downloaded at first start. ripgrep is ensured here early, before
+  // the expensive forge make, and again by stageRipgrep. Linux checks only the
+  // native runtime assets such as sqlite-vec.
   if (platform === 'linux') {
     // 必须按目标 arch 校验:vec0.so 是 per-arch 的预编译件,缺省的 linux-x64
     // 在 aarch64 机器上通常还是未 pull 的 LFS 指针,校验错了目标既漏检真正要

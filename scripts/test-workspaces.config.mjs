@@ -305,6 +305,8 @@ const desktopGuardInclude = [
   'src/main/countersign/__tests__/agentMarketTools.contract.test.ts',
   // Countersign: build retry hints re-run the committed engine pin, never `pnpm update:<kind>` (M-B3).
   'src/main/countersign/__tests__/buildRetryHints.contract.test.ts',
+  // Countersign: forge.config.ts calls the forge-countersign.ts packaging steps (M-B1, M-B5, M-B6, M-L2).
+  'src/main/countersign/__tests__/forgeCountersignWiring.contract.test.ts',
 ];
 
 export function desktopUnitWorkerCount(
