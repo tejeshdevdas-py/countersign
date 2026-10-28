@@ -6,6 +6,7 @@ import { DefaultOverrideControls } from './DefaultOverrideControls';
 import { VoiceSpeakerFilterCard } from './VoiceSpeakerFilterCard';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Check, ChevronDown, Copy, Keyboard, Loader2, Pencil, Plus, RotateCcw, Search, Sparkles, Trash2, Upload, X } from 'lucide-react';
 
@@ -599,7 +600,8 @@ function VoiceInputServiceSourceCard() {
       <VoiceInputInlineSettingRow
         label={t('settings.voiceInput.serviceSource.label')}
         hint={t(localMode
-          ? 'settings.voiceInput.serviceSource.localHint'
+          // Countersign: no account and no built-in voice service under LOCAL_ONLY.
+          ? LOCAL_ONLY ? 'countersignLocalOnly.voiceHint' : 'settings.voiceInput.serviceSource.localHint'
           : 'settings.voiceInput.serviceSource.hint')}
       >
         <VoiceInputSelect

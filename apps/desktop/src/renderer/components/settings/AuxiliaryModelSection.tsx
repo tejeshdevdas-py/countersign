@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import { Check, ChevronDown } from 'lucide-react';
 import { SelectParts as Select } from '@/components/ui/select';
 
@@ -104,6 +105,10 @@ export function AuxiliaryModelSection() {
     t(`settings.auxiliaryModels.chain.${key}`),
   ).join(' → ');
   const mode: AuxiliaryModelMode = showCustom ? 'custom' : 'automatic';
+  // Countersign: no account to sign in to under LOCAL_ONLY; the automatic chain is hosted only.
+  const signInHintKey = LOCAL_ONLY
+    ? 'countersignLocalOnly.auxiliaryHint'
+    : 'settings.auxiliaryModels.signInHint';
 
   const selectMode = (nextMode: AuxiliaryModelMode): void => {
     if (nextMode === 'custom') {
@@ -296,7 +301,7 @@ export function AuxiliaryModelSection() {
             <p className="px-4 pb-4 text-12 leading-[1.5] text-[var(--text-secondary)]">
               {authMode !== 'cloud' ? (
                 <span className="mb-1 block text-[var(--text-tertiary)]">
-                  {t('settings.auxiliaryModels.signInHint')}
+                  {t(signInHintKey)}
                 </span>
               ) : null}
               {t('settings.auxiliaryModels.customHint')}
@@ -309,7 +314,7 @@ export function AuxiliaryModelSection() {
             </p>
             {authMode !== 'cloud' ? (
               <p className="mt-1 text-12 leading-[1.5] text-[var(--text-tertiary)]">
-                {t('settings.auxiliaryModels.signInHint')}
+                {t(signInHintKey)}
               </p>
             ) : null}
           </div>

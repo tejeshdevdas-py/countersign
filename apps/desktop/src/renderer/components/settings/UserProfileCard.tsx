@@ -86,7 +86,8 @@ export function UserProfileCard() {
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-18 font-medium text-[var(--settings-profile-name)]">
-            {t('settings.userProfile.local.name')}
+            {/* Countersign: no account exists under LOCAL_ONLY, so no "Not signed in". */}
+            {t(LOCAL_ONLY ? 'countersignLocalOnly.profileName' : 'settings.userProfile.local.name')}
           </p>
           <p className="mt-1 text-12 text-[var(--text-tertiary)]">
             {t('settings.userProfile.local.description')}

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
  */
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import { useNavigate } from 'react-router-dom';
 import { BookUser, RefreshCw, ShieldCheck, Sparkles } from 'lucide-react';
 
@@ -256,73 +257,77 @@ export function ContactsSection() {
         </div>
       </div>
 
-      <div
-        className={cn(
-          'flex items-center justify-between gap-3 rounded-xl px-4 py-[14px]',
-          'bg-[var(--settings-theme-card-bg)] border border-[var(--settings-theme-card-border)]',
-        )}
-      >
-        <div className="flex min-w-0 items-center gap-3">
-          <div
-            className={cn(
-              'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
-              'bg-[var(--settings-input-bg)]',
-            )}
-          >
-            <ShieldCheck size={18} className="text-[var(--settings-section-title)]" />
-          </div>
-          <div className="flex min-w-0 flex-col gap-[6px]">
-            <p className="text-14 font-medium leading-none text-[var(--settings-section-title)]">
-              {t('settings.contacts.sync.label')}
-            </p>
-            <p className="text-12 leading-[1.4] text-[var(--settings-section-desc)]">
-              {t('settings.contacts.sync.description')}
-            </p>
-            <p
+      {/* Countersign: syncing between devices needs a signed-in account, so the row is
+          not shown under LOCAL_ONLY. */}
+      {!LOCAL_ONLY && (
+        <div
+          className={cn(
+            'flex items-center justify-between gap-3 rounded-xl px-4 py-[14px]',
+            'bg-[var(--settings-theme-card-bg)] border border-[var(--settings-theme-card-border)]',
+          )}
+        >
+          <div className="flex min-w-0 items-center gap-3">
+            <div
               className={cn(
-                'text-12 leading-[1.4]',
-                syncStatus?.phase === 'error'
-                  ? 'text-[var(--settings-error-text)]'
-                  : 'text-[var(--settings-section-desc)]',
+                'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
+                'bg-[var(--settings-input-bg)]',
               )}
             >
-              {syncSummary}
-              {syncStatus?.enabled && syncStatus.onlineDeviceCount > 0
-                ? ` · ${t('settings.contacts.sync.onlineDevices', {
-                    count: syncStatus.onlineDeviceCount,
-                  })}`
-                : ''}
-            </p>
+              <ShieldCheck size={18} className="text-[var(--settings-section-title)]" />
+            </div>
+            <div className="flex min-w-0 flex-col gap-[6px]">
+              <p className="text-14 font-medium leading-none text-[var(--settings-section-title)]">
+                {t('settings.contacts.sync.label')}
+              </p>
+              <p className="text-12 leading-[1.4] text-[var(--settings-section-desc)]">
+                {t('settings.contacts.sync.description')}
+              </p>
+              <p
+                className={cn(
+                  'text-12 leading-[1.4]',
+                  syncStatus?.phase === 'error'
+                    ? 'text-[var(--settings-error-text)]'
+                    : 'text-[var(--settings-section-desc)]',
+                )}
+              >
+                {syncSummary}
+                {syncStatus?.enabled && syncStatus.onlineDeviceCount > 0
+                  ? ` · ${t('settings.contacts.sync.onlineDevices', {
+                      count: syncStatus.onlineDeviceCount,
+                    })}`
+                  : ''}
+              </p>
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            {syncStatus?.enabled && (
+              <Button
+                variant="secondary"
+                size="md"
+                compact
+                loading={syncPending}
+                type="button"
+                onClick={() => void handleSyncNow()}
+                disabled={syncPending || syncStatus.onlineDeviceCount === 0}
+              >
+                <span
+                  className={cn('inline-flex', syncPending && 'animate-spinner motion-reduce:animate-none')}
+                  aria-hidden="true"
+                >
+                  <RefreshCw size={13} />
+                </span>
+                {t('settings.contacts.sync.syncNow')}
+              </Button>
+            )}
+            <Switch
+              checked={syncStatus?.enabled ?? false}
+              disabled={syncPending || syncStatus === null || !syncStatus.available}
+              onCheckedChange={(value) => void handleSyncToggle(value)}
+              aria-label={t('settings.contacts.sync.toggleAria')}
+            />
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          {syncStatus?.enabled && (
-            <Button
-              variant="secondary"
-              size="md"
-              compact
-              loading={syncPending}
-              type="button"
-              onClick={() => void handleSyncNow()}
-              disabled={syncPending || syncStatus.onlineDeviceCount === 0}
-            >
-              <span
-                className={cn('inline-flex', syncPending && 'animate-spinner motion-reduce:animate-none')}
-                aria-hidden="true"
-              >
-                <RefreshCw size={13} />
-              </span>
-              {t('settings.contacts.sync.syncNow')}
-            </Button>
-          )}
-          <Switch
-            checked={syncStatus?.enabled ?? false}
-            disabled={syncPending || syncStatus === null || !syncStatus.available}
-            onCheckedChange={(value) => void handleSyncToggle(value)}
-            aria-label={t('settings.contacts.sync.toggleAria')}
-          />
-        </div>
-      </div>
+      )}
 
       {/* 唯一常驻入口：不按空库状态隐藏，空库可建库，非空库可继续补充与整理。 */}
       {enabled && (

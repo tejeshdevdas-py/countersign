@@ -17479,6 +17479,10 @@
     "button": "Use Original File"
   },
   "countersignLocalOnly": {
-    "notAvailable": "{{feature}} is not available in {{appName}}: it needs a cloud service that this local-only app does not use."
+    "notAvailable": "{{feature}} is not available in {{appName}}: it needs a cloud service that this local-only app does not use.",
+    "profileName": "Local mode",
+    "auxiliaryHint": "Automatic recommendations use a hosted model service that {{appName}} does not use. Choose a configured model under Custom.",
+    "voiceHint": "{{appName}} has no built-in voice service; connect a realtime ASR service with separate voice credentials.",
+    "remoteControlDescription": "Connect to a remote host over SSH."
   }
 }

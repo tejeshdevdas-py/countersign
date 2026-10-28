@@ -17419,6 +17419,10 @@
     "button": "使用原始檔案"
   },
   "countersignLocalOnly": {
-    "notAvailable": "{{feature}} 在 {{appName}} 中無法使用：它需要雲端服務，而這個僅在本機執行的應用程式不使用雲端服務。"
+    "notAvailable": "{{feature}} 在 {{appName}} 中無法使用：它需要雲端服務，而這個僅在本機執行的應用程式不使用雲端服務。",
+    "profileName": "本機模式",
+    "auxiliaryHint": "自動推薦使用 {{appName}} 不使用的託管模型服務；請在自訂中選擇已設定的模型。",
+    "voiceHint": "{{appName}} 沒有內建語音服務；請連線支援即時 ASR 的服務並配置獨立語音憑證。",
+    "remoteControlDescription": "透過 SSH 連線遠端主機。"
   }
 }

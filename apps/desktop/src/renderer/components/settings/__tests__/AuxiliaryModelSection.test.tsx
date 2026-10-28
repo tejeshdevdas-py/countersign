@@ -20,6 +20,13 @@ const h = vi.hoisted(() => ({
   authMode: 'cloud' as 'signed-out' | 'local' | 'cloud',
 }));
 
+// Countersign: these cases cover upstream's signed-out and cloud wording; the LOCAL_ONLY
+// hint is in AuxiliaryModelSection.localOnly.test.tsx.
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));

@@ -20,6 +20,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 
 import { useDeviceLinkSettings, type DeviceLinkSettings } from '@/hooks/useDeviceLinkSettings';
@@ -261,7 +262,12 @@ export function RemoteControlSection() {
           {t('settings.remoteControl.title')}
         </h2>
         <p className="text-13 leading-[1.5] text-[var(--settings-section-desc)]">
-          {t('settings.remoteControl.description')}
+          {/* Countersign: no other signed-in devices under LOCAL_ONLY; SSH only. */}
+          {t(
+            LOCAL_ONLY
+              ? 'countersignLocalOnly.remoteControlDescription'
+              : 'settings.remoteControl.description',
+          )}
         </p>
       </div>
 

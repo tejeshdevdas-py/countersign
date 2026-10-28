@@ -17419,6 +17419,10 @@
     "button": "원본 파일 사용"
   },
   "countersignLocalOnly": {
-    "notAvailable": "{{feature}}은(는) {{appName}}에서 사용할 수 없습니다. 클라우드 서비스가 필요하지만 이 로컬 전용 앱은 클라우드 서비스를 사용하지 않습니다."
+    "notAvailable": "{{feature}}은(는) {{appName}}에서 사용할 수 없습니다. 클라우드 서비스가 필요하지만 이 로컬 전용 앱은 클라우드 서비스를 사용하지 않습니다.",
+    "profileName": "로컬 모드",
+    "auxiliaryHint": "자동 추천은 {{appName}}에서 사용하지 않는 호스팅 모델 서비스를 사용합니다. 「사용자 지정」에서 설정된 모델을 선택하세요.",
+    "voiceHint": "{{appName}}에는 기본 제공 음성 서비스가 없습니다. 실시간 ASR 지원 서비스와 별도의 음성 인증 정보를 설정하세요.",
+    "remoteControlDescription": "SSH로 원격 호스트에 연결합니다."
   }
 }
