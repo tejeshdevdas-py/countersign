@@ -1,5 +1,7 @@
 blank_issues_enabled: false
 contact_links:
+  # Countersign: this repository's own private vulnerability reporting.
+  # owner: enable on GitHub
   - name: Security vulnerability
-    url: https://github.com/makecindy/cindy/security/advisories/new
+    url: https://github.com/tejeshdevdas-py/countersign/security/advisories/new
     about: Do not disclose security vulnerabilities publicly.

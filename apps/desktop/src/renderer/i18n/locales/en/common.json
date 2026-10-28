@@ -7800,10 +7800,10 @@
       "stepLinuxKeyring": "Unlock your desktop keyring and check that its secret storage service is running.",
       "stepRestartMac": "Quit {{appName}} from its menu (⌘Q), then reopen it. Closing the window alone does not quit the app.",
       "stepRestart": "Quit {{appName}} from its menu or system tray, then reopen it. Closing the window alone may leave it running.",
-      "stepSupport": "If this persists after a full restart, contact feedback@cindy.app with your OS, {{appName}} version, and the error code below. Share logs only privately with support.",
+      "stepSupport": "If this persists after a full restart, note your OS, {{appName}} version, and the error code below when you ask for help. Do not post logs publicly.",
       "preserveData": "Keep the saved credentials and keychain entries. Deleting them can make other connected accounts unusable.",
       "openLogs": "Open Logs Folder",
-      "logsFailed": "The logs folder could not be opened. Try again, or send the error code to feedback@cindy.app.",
+      "logsFailed": "The logs folder could not be opened. Try again, and keep the error code for when you ask for help.",
       "confirm": "Close Help"
     },
     "recheck": "Retry Sign-In"
@@ -7949,7 +7949,7 @@
       "unknownWait": "The server did not provide a waiting time. Please wait before trying again.",
       "intro": "The sign-in service is temporarily limiting requests. This is separate from a local credential-storage error.",
       "guidance": "Wait before requesting another code. Restarting, reinstalling, or changing networks does not guarantee that the limit will be lifted.",
-      "support": "If this continues after waiting, privately send logs to feedback@cindy.app with your OS, {{appName}} version, error time, and the code below. Do not post logs publicly."
+      "support": "If this continues after waiting, note your OS, {{appName}} version, the error time, and the code below when you ask for help. Do not post logs publicly."
     }
   },
   "legacyMigration": {

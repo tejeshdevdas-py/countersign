@@ -10,15 +10,14 @@ chat.
 
 ## Reporting a vulnerability
 
-The preferred channel is GitHub's private vulnerability reporting form:
+Use GitHub private vulnerability reporting on this repository ("Report a
+vulnerability" on the repository's Security tab).
 
-<https://github.com/makecindy/cindy/security/advisories/new>
+<!-- owner: enable on GitHub -->
 
-If that form is unavailable, email **feedback@cindy.app**. We recommend using
-`[Cindy Security]` in the subject. If reproduction materials contain sensitive
-information, tell us in the email and wait for the maintainers to provide an
-appropriate secure transfer method. Do not send sensitive materials through a
-public channel.
+If reproduction materials contain sensitive information, say so in the report
+and wait for the maintainer to provide an appropriate secure transfer method.
+Do not send sensitive materials through a public channel.
 
 ## What to include
 
@@ -42,7 +41,7 @@ report when a fix or mitigation can be disclosed. Our target cadence:
 **acknowledgement with an initial assessment within 5 business days**, and a
 **90-day coordinated disclosure window** for confirmed vulnerabilities
 (adjustable in coordination with the reporter). If you hear nothing for more
-than 7 days, please ping us through the other channel (email or GitHub).
+than 7 days, please add a comment to the report.
 
 ## Contributor notes
 
