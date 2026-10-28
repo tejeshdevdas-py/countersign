@@ -1132,3 +1132,47 @@ test('CLI --history: a private word only in an added or renamed file name is fou
     ].sort(),
   );
 });
+
+// Rename detection: an upstream file the fork only renamed adds no lines. The repository turns
+// git's own rename default off, so only the check's explicit -M keeps the renamed lines upstream.
+
+/** A fork that renames an upstream file holding a path and an email, with diff.renames off. */
+function renamedUpstreamFile(t) {
+  const ctx = forkRepo(t);
+  git(ctx, ['config', 'diff.renames', 'false']);
+  fs.mkdirSync(path.join(ctx.repo, 'docs'));
+  git(ctx, ['mv', 'README.md', 'docs/UPSTREAM-README.md']);
+  ctx.renamed = commitAll(ctx, 'fork: move the upstream readme');
+  return ctx;
+}
+
+test('CLI: a renamed upstream file adds no lines (rename detection does not depend on git config)', (t) => {
+  const ctx = renamedUpstreamFile(t);
+  const { code, out } = run(ctx);
+  assert.equal(code, 0, out);
+  assert.match(out, /^0 findings; /m);
+});
+
+test('CLI --history: a renamed upstream file adds no lines to its commit', (t) => {
+  const ctx = renamedUpstreamFile(t);
+  const { code, out } = run(ctx, ['--history']);
+  assert.equal(code, 0, out);
+  assert.match(out, /^0 findings; 2 commits scanned$/m);
+});
+
+test('CLI --history: a committer address other than the owner fails', (t) => {
+  const ctx = forkRepo(t);
+  write(ctx, 'src/e.ts', 'export const e = 5;\n');
+  const sha = commitAll(ctx, 'fork: e', {
+    GIT_COMMITTER_NAME: 'someone',
+    GIT_COMMITTER_EMAIL: OUTSIDE_EMAIL,
+  });
+  const { code, out } = run(ctx, ['--history']);
+  assert.equal(code, 1, out);
+  const short = sha.slice(0, 9);
+  assert.deepEqual(
+    out.split(/\r?\n/).filter((l) => l.startsWith(short)),
+    [`${short} committer identity`],
+  );
+  assert.equal(out.includes(OUTSIDE_EMAIL), false, 'output must not carry the address');
+});
