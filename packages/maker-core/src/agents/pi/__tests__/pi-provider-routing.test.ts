@@ -607,6 +607,10 @@ describe("Pi provider-aware model routing", () => {
       runtimeBinaryPath: deps.binaryPath,
     });
     expect(descriptorResolver).toHaveBeenCalledWith("openai", "shared-model");
+    // Countersign: the hosted gateway provider entry carries a neutral name.
+    expect(models.providers.cindy).toMatchObject({
+      name: "Hosted model service",
+    });
     expect(
       models.providers.cindy?.models.find(
         (model) => model.id === "shared-model",

@@ -1672,7 +1672,7 @@ describe('花名册 / ghost_list 过滤', () => {
     await expect(makeDeps().getAwakeGhost('account')).resolves.toEqual({
       ok: false,
       errorCode: 'GHOST_NOT_FOUND',
-      message: '该插件需要 Cindy 账号，未登录状态不可用；不要重试，改用本地可用方式。',
+      message: '该插件需要托管账号，当前不可用；不要重试，改用本地可用方式。',
     });
   });
 
@@ -1911,7 +1911,7 @@ describe('ghost_call 兜底拒绝', () => {
     ).resolves.toEqual({
       ok: false,
       errorCode: 'GHOST_NOT_FOUND',
-      message: '该插件需要 Cindy 账号，未登录状态不可用；不要重试，改用本地可用方式。',
+      message: '该插件需要托管账号，当前不可用；不要重试，改用本地可用方式。',
     });
     expect(dispatchMock).not.toHaveBeenCalled();
   });

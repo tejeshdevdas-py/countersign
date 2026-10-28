@@ -513,11 +513,18 @@ export const BASELINE_CATEGORIES = [
   'log', // log or diagnostic text written through a receiver the logger rule does not cover
   'dev-only', // development builds, dev tools or tests helpers that ship no user path
   'third-party', // a third party's own name that happens to be Cindy (a vendor speech voice)
+  'peer-identity', // identity sent to another program (MCP clientInfo name, MCP app userAgent), which may show it
+  'hidden-history', // author name of hidden snapshot commits (refs/cindy/*); shown by git log --all or the reflog
 ];
 
 const LOG_CALLEE =
   /^(?:this\.)?(?:console|log|logger|\w*Logger)\.(?:log|info|warn|error|debug|trace)$/;
 const OLD_NAME_ALL = /\b(?:Cindys?|CINDYS?)\b/g;
+
+const PATH_START = /^(?:\/|\.\.?\/|~\/|[A-Za-z]:[\\/])/;
+// Top-level domain labels: "Cindy.ai" is the product's domain written in prose, not a member access.
+const DOMAIN_LABEL =
+  /^(?:ai|app|cn|com|dev|io|net|org|co|me|so|sh|cc|tv|xyz|chat|site|tech|cloud)$/;
 
 /** True when the old name at [start, end) sits inside an identifier token, a path or a URL. */
 function isIdentifierOccurrence(text, start, end) {
@@ -526,16 +533,13 @@ function isIdentifierOccurrence(text, start, end) {
   let tokenEnd = end;
   while (tokenEnd < text.length && !/\s/.test(text[tokenEnd])) tokenEnd += 1;
   const token = text.slice(tokenStart, tokenEnd);
-  if (token.includes('://')) return true;
-  const isPath =
-    /^(?:~|\.{1,2})?[\\/]/.test(token) ||
-    /^[A-Za-z]:[\\/]/.test(token) ||
-    token.includes('\\') ||
-    (token.match(/\//g) ?? []).length >= 2;
-  if (isPath) return true;
-  const before = text[start - 1];
-  if (before === '.' || before === '@') return true;
-  return /^\.[A-Za-z0-9_]/.test(text.slice(end, end + 2));
+  // A URL, or a path: starts with /, ./, ../, ~/ or a drive letter.
+  if (token.includes('://') || PATH_START.test(token)) return true;
+  // A member of a dotted identifier chain: XDMaker.Cindy, Cindy.begin. A
+  // domain-like Cindy.ai or Cindy.app outside a URL is prose and counts.
+  if (/[\w$]\.$/.test(text.slice(Math.max(0, start - 2), start))) return true;
+  const member = /^\.([a-z_$][\w$]*)/.exec(text.slice(end));
+  return member !== null && !DOMAIN_LABEL.test(member[1]);
 }
 
 /** The first old-name occurrence that is not part of an identifier token, or null. */

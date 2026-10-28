@@ -2435,7 +2435,8 @@ export class PiAgent extends BaseAgent {
     });
     const providers: Record<string, unknown> = {
       [PI_PROVIDER_ID]: {
-        name: 'Cindy AI',
+        // Countersign: the hosted gateway entry carries a neutral name.
+        name: 'Hosted model service',
         baseUrl: endpoint ?? 'http://127.0.0.1:0',
         // Structural provider default for Pi's models.json schema only. Every selectable Cindy
         // gateway model above carries its resolved model-level API.

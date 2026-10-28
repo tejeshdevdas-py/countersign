@@ -240,13 +240,6 @@
       "why": "only market packages carry the upstream review signature"
     },
     {
-      "file": "apps/desktop/src/main/cindy-brain/ghostVisibility.ts",
-      "text": "该插件需要 Cindy 账号，未登录状态不可用；不要重试，改用本地可用方式。",
-      "count": 1,
-      "category": "removed",
-      "why": "account-managed plugins and cloud sign-in exist only in cloud mode, never under LOCAL_ONLY"
-    },
-    {
       "file": "apps/desktop/src/main/cindy-brain/index.ts",
       "text": "Cindy AI",
       "count": 1,
@@ -313,8 +306,8 @@
       "file": "apps/desktop/src/main/cindy-brain/nodeRuntimeBroker.ts",
       "text": "Cindy",
       "count": 1,
-      "category": "not-shown",
-      "why": "client identity sent to MCP servers and apps in the protocol handshake"
+      "category": "peer-identity",
+      "why": "MCP clientInfo name sent to plugin and MCP app servers in the initialize handshake; that program may log or show it"
     },
     {
       "file": "apps/desktop/src/main/cindy-make/completion.ts",
@@ -1013,8 +1006,8 @@
       "file": "apps/desktop/src/main/git-snapshot/gitSnapshotService.ts",
       "text": "Cindy",
       "count": 2,
-      "category": "not-shown",
-      "why": "author identity of hidden snapshot commits on private refs"
+      "category": "hidden-history",
+      "why": "author and committer name of the hidden snapshot commits under refs/cindy/*; a person sees it only with git log --all or the reflog"
     },
     {
       "file": "apps/desktop/src/main/git-snapshot/snapshotTrailers.ts",
@@ -1580,15 +1573,15 @@
       "file": "apps/desktop/src/main/mcp-apps/connection.ts",
       "text": "Cindy",
       "count": 1,
-      "category": "not-shown",
-      "why": "client identity sent to MCP servers and apps in the protocol handshake"
+      "category": "peer-identity",
+      "why": "MCP clientInfo name sent to plugin and MCP app servers in the initialize handshake; that program may log or show it"
     },
     {
       "file": "apps/desktop/src/main/mcp-apps/host.ts",
       "text": "Cindy",
       "count": 1,
-      "category": "not-shown",
-      "why": "client identity sent to MCP servers and apps in the protocol handshake"
+      "category": "peer-identity",
+      "why": "MCP clientInfo name sent to plugin and MCP app servers in the initialize handshake; that program may log or show it"
     },
     {
       "file": "apps/desktop/src/main/mcp-apps/sandboxProtocol.ts",
@@ -2028,8 +2021,8 @@
       "file": "apps/desktop/src/main/worktree/contentSnapshot.ts",
       "text": "Cindy",
       "count": 2,
-      "category": "not-shown",
-      "why": "author identity of hidden snapshot commits on private refs"
+      "category": "hidden-history",
+      "why": "author and committer name of the hidden snapshot commits under refs/cindy/*; a person sees it only with git log --all or the reflog"
     },
     {
       "file": "apps/desktop/src/main/worktree/recycleJournal.ts",
@@ -2049,8 +2042,8 @@
       "file": "apps/desktop/src/renderer/components/chat/McpAppCard.tsx",
       "text": "Cindy",
       "count": 1,
-      "category": "not-shown",
-      "why": "client identity sent to MCP servers and apps in the protocol handshake"
+      "category": "peer-identity",
+      "why": "userAgent in the host context handed to a third-party MCP app page; that page may show it"
     },
     {
       "file": "apps/desktop/src/renderer/components/settings/ImBotSection.settings-search.ts",
@@ -2324,13 +2317,6 @@
       "count": 1,
       "category": "removed",
       "why": "device link, remote agents and remote teammates use the relay, which is off under LOCAL_ONLY"
-    },
-    {
-      "file": "packages/maker-core/src/agents/pi/index.ts",
-      "text": "Cindy AI",
-      "count": 1,
-      "category": "gateway-only",
-      "why": "needs the hosted model gateway or a gateway key, which LOCAL_ONLY never has"
     },
     {
       "file": "packages/maker-core/src/agents/pi/native-provider-adapter-source.ts",

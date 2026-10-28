@@ -420,6 +420,32 @@ test('exempts the old name only inside an identifier token, a path or a URL', ()
   assert.deepEqual(hitLines(MAIN_FILE, text), [8]);
 });
 
+test('a token is a path only when it starts like one or carries a URL scheme', () => {
+  const text = [
+    "const a = './Cindy/data';",
+    "const b = '../Cindy/data';",
+    "const c = 'Cindy/Claude/Codex';",
+    "const d = 'Teams/Cindy/Codex';",
+    "const e = 'Cindy\\\\';",
+    "const f = 'see Cindy/x/y';",
+  ].join('\n');
+  assert.deepEqual(hitLines(MAIN_FILE, text), [3, 4, 5, 6]);
+});
+
+test('flags a domain-like name, a mention and run-on prose, but not a URL or a method id', () => {
+  const text = [
+    "const a = 'Visit Cindy.ai today';",
+    "const b = 'Cindy.app';",
+    "const c = 'https://Cindy.ai/docs';",
+    "const d = '@Cindy';",
+    "const e = 'in...Cindy';",
+    "const f = 'Cindy.Thanks';",
+    "const g = 'Cindy.captureStart';",
+    "const h = 'Cindy.end';",
+  ].join('\n');
+  assert.deepEqual(hitLines(MAIN_FILE, text), [1, 2, 4, 5, 6]);
+});
+
 test('skips real logger calls only', () => {
   const text = [
     "log.info('Cindy started');",
@@ -505,6 +531,41 @@ test('the committed baseline is valid and holds nothing seen in normal Windows u
     assert.notEqual(e.text, 'Cindy Ghost', e.file);
     assert.equal(fs.existsSync(path.join(REPO_ROOT, e.file)), true, e.file);
   }
+});
+
+test('the committed baseline files snapshot authors and client identities under accurate categories', () => {
+  const baseline = loadBaseline(
+    path.join(REPO_ROOT, 'scripts', 'countersign', 'brand-guard-baseline.json'),
+  );
+  const categoryOf = (file) =>
+    baseline.find((e) => e.file === file && e.text === 'Cindy')?.category;
+  // Author of the hidden snapshot commits under refs/cindy/*: shown by git log --all and the reflog.
+  for (const file of [
+    'apps/desktop/src/main/git-snapshot/gitSnapshotService.ts',
+    'apps/desktop/src/main/worktree/contentSnapshot.ts',
+  ]) {
+    assert.equal(categoryOf(file), 'hidden-history', file);
+  }
+  // MCP clientInfo name and the MCP app host userAgent: read by another program, which may show it.
+  for (const file of [
+    'apps/desktop/src/main/cindy-brain/nodeRuntimeBroker.ts',
+    'apps/desktop/src/main/mcp-apps/connection.ts',
+    'apps/desktop/src/main/mcp-apps/host.ts',
+    'apps/desktop/src/renderer/components/chat/McpAppCard.tsx',
+  ]) {
+    assert.equal(categoryOf(file), 'peer-identity', file);
+  }
+  // Fixed rather than listed: model-visible plugin refusal and the Pi gateway provider name.
+  assert.equal(
+    baseline.some((e) => e.file === 'apps/desktop/src/main/cindy-brain/ghostVisibility.ts'),
+    false,
+  );
+  assert.equal(
+    baseline.some(
+      (e) => e.file === 'packages/maker-core/src/agents/pi/index.ts' && e.text === 'Cindy AI',
+    ),
+    false,
+  );
 });
 
 function writeFile(root, rel, text) {
