@@ -26,19 +26,19 @@ During an ordinary Claude Code chat the bundled `claude.exe` (2.1.296) connected
 
 ## Claude Code 2.1.296 (environment variables)
 
-Each name was found in the bundled `apps/desktop/resources/agent-bin/claude-code/claude.exe` with `grep -a`. The code shown is minified CLI source quoted from the binary.
+Each name was found in the bundled `apps/desktop/resources/agent-bin/claude-code/claude.exe` with `grep -a`. The CLI is Anthropic's software under its own terms, so this page does not reproduce its code: the evidence column says in our words what the code near each name does. Short minified function names are given only so the place can be found again with `grep -a`; they change between CLI versions.
 
 | Variable | Evidence in the binary | Effect |
 | --- | --- | --- |
-| `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1` | `function MDt(){if(process.env.CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC)return"essential-traffic";…}`; the auto-updater check `eA()` treats it as disabling updates; claude.ai plugin downloads refuse with "non-essential network traffic is disabled". Upstream's own native tests also set it. | Traffic level "essential-traffic" |
-| `DISABLE_TELEMETRY=1` | Same `MDt()`: `if(process.env.DISABLE_TELEMETRY)return"no-telemetry"`. Upstream already set it. | Telemetry off; feature-flag evaluation off |
-| `DO_NOT_TRACK=1` | Same `MDt()`: `if(Fe(process.env.DO_NOT_TRACK))return"no-telemetry"` | Same as above (belt and braces) |
-| `DISABLE_ERROR_REPORTING=1` | Read: `if(process.env.DISABLE_ERROR_REPORTING)return!1` in the error-reporting gate. Upstream already set it. | Error-sample upload off |
-| `DISABLE_GROWTHBOOK=1` | `if(gg()\|\|a.DISABLE_GROWTHBOOK\|\|…)return!1` in the feature-flag path; the CLI adds `DISABLE_GROWTHBOOK:"1"` to child environments itself | GrowthBook feature-flag fetch off |
-| `DISABLE_AUTOUPDATER=1` | `function VAe(){return eA(Fe(process.env.DISABLE_AUTOUPDATER))}`; plugin auto-update logs "Plugin autoupdate: skipped (auto-updater disabled)" when it is off | CLI self-update and plugin/marketplace `git` refresh off |
-| `CLAUDE_CODE_DISABLE_OFFICIAL_MARKETPLACE_AUTOINSTALL=1` | `function _xo(){return a.CLAUDE_CODE_DISABLE_OFFICIAL_MARKETPLACE_AUTOINSTALL}` … `if(_xo())return t("Official marketplace auto-install disabled via env var, skipping")` | First-run download of `claude-plugins-official` (downloads.claude.ai, then git to GitHub) off |
+| `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1` | The traffic-level function (`MDt`) returns the level `essential-traffic` when it is set; the auto-updater check (`eA`) treats it as disabling updates; claude.ai plugin downloads refuse with an error saying non-essential network traffic is disabled. Upstream's own native tests also set it. | Traffic level "essential-traffic" |
+| `DISABLE_TELEMETRY=1` | The same function (`MDt`) returns the level `no-telemetry` when it is set. Upstream already set it. | Telemetry off; feature-flag evaluation off |
+| `DO_NOT_TRACK=1` | The same function returns `no-telemetry` when it holds a true value | Same as above (belt and braces) |
+| `DISABLE_ERROR_REPORTING=1` | The error-reporting gate returns false when it is set. Upstream already set it. | Error-sample upload off |
+| `DISABLE_GROWTHBOOK=1` | The feature-flag path returns false when it is set; the CLI also puts `DISABLE_GROWTHBOOK=1` into the environment of its own child processes | GrowthBook feature-flag fetch off |
+| `DISABLE_AUTOUPDATER=1` | A small function (`VAe`) passes it to the auto-updater check (`eA`); plugin auto-update logs that it was skipped because the auto-updater is disabled | CLI self-update and plugin/marketplace `git` refresh off |
+| `CLAUDE_CODE_DISABLE_OFFICIAL_MARKETPLACE_AUTOINSTALL=1` | A function (`_xo`) reads it, and the official-marketplace auto-install logs that it is skipping because of this variable | First-run download of `claude-plugins-official` (downloads.claude.ai, then git to GitHub) off |
 | `OTEL_SDK_DISABLED=true` | **Not in the 2.1.296 binary.** Kept only because upstream's env builder set it; harmless. The CLI's own OTel switch is `CLAUDE_CODE_ENABLE_TELEMETRY` (opt-in), handled below | none |
-| removed: `CLAUDE_CODE_ENABLE_TELEMETRY`, `CLAUDE_CODE_ENHANCED_TELEMETRY_BETA`, `ENABLE_ENHANCED_TELEMETRY_BETA` | `QLt(){return Fe(process.env.CLAUDE_CODE_ENABLE_TELEMETRY)&&…}`; `soo(){let n=process.env.CLAUDE_CODE_ENHANCED_TELEMETRY_BETA??process.env.ENABLE_ENHANCED_TELEMETRY_BETA;…}` | Opt-in OTel / session tracing from the user's shell is deleted from the spawn env |
+| removed: `CLAUDE_CODE_ENABLE_TELEMETRY`, `CLAUDE_CODE_ENHANCED_TELEMETRY_BETA`, `ENABLE_ENHANCED_TELEMETRY_BETA` | Two functions (`QLt`, `soo`) read these opt-in variables to turn on OTel export and enhanced session tracing | Opt-in OTel / session tracing from the user's shell is deleted from the spawn env |
 
 Under `LOCAL_ONLY` these are forced and applied last: a value inherited from the user's shell, a host behaviour flag or an auth-adapter env does not win (tested). Upstream set the three telemetry variables only when unset.
 
