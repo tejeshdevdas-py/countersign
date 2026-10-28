@@ -31,6 +31,11 @@ function hookBody(name: string): string {
 }
 
 describe('forge.config.ts Countersign packaging wiring', () => {
+  it('M-F7: imports LOCAL_ONLY by package name, like the app does', () => {
+    expect(occurrences("import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';")).toBe(1);
+    expect(occurrences('packages/maker-shared/src/localOnly')).toBe(0);
+  });
+
   it('M-B5: prePackage stages the engines through the ensure step under LOCAL_ONLY', () => {
     expect(hookBody('prePackage')).toMatch(
       /if \(LOCAL_ONLY\) \{\s*stageCountersignAgentBinaries\(targetPlatform, targetArch\);/,

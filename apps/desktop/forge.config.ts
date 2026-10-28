@@ -3,7 +3,7 @@ import * as fs from 'node:fs';
 import { createRequire } from 'node:module';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { LOCAL_ONLY } from '../../packages/maker-shared/src/localOnly';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
 import { MakerDeb } from '@electron-forge/maker-deb';
 import { rebuild as electronRebuild } from '@electron/rebuild';

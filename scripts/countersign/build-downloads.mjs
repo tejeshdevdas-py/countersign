@@ -19,7 +19,13 @@
  * postinstall and packaging) and apps/desktop/scripts/ensure-android-platform-tools.mjs.
  */
 
-/** False in Countersign: no build-time fallback to the upstream project's CDN. */
+/**
+ * False in Countersign: no build-time fallback to the upstream project's CDN.
+ * This mirrors LOCAL_ONLY (packages/maker-shared/src/localOnly.ts): it is the
+ * build-time side of the same rule, kept as a plain constant so the download
+ * scripts stay independent of the switch's source. build-downloads.test.mjs
+ * fails if the two disagree; flip them together.
+ */
 export const BUILD_CDN_FALLBACK = false;
 
 /**

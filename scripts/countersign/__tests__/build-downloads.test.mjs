@@ -15,6 +15,8 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import { ensureBinary } from '../../ensure-agent-binaries.mjs';
+import { BUILD_CDN_FALLBACK } from '../build-downloads.mjs';
+import { readLocalOnlySwitch } from '../local-only.mjs';
 import {
   TimeoutError,
   downloadToFileWithTimeout,
@@ -150,3 +152,9 @@ for (const [kind, binDir, host] of FAILURE_CASES) {
     assert.equal(fs.existsSync(path.join(ROOT, 'apps', binDir, 'test-fallback-platform')), false);
   });
 }
+
+// Final review M-F7: the build switch mirrors the app's LOCAL_ONLY switch. Build scripts keep
+// their own constant (they never import app code), so this pins that the two agree.
+test('BUILD_CDN_FALLBACK is the opposite of LOCAL_ONLY', () => {
+  assert.equal(BUILD_CDN_FALLBACK, !readLocalOnlySwitch());
+});
