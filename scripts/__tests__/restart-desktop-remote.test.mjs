@@ -302,16 +302,16 @@ test("userData conflict detection matches exact sandbox dirs only", () => {
 });
 
 test("shared production userData path is region-aware", () => {
-	assert.equal(path.basename(productionUserDataDir()), "CindyGlobal");
-	assert.equal(path.basename(productionUserDataDir("global")), "CindyGlobal");
-	assert.equal(path.basename(productionUserDataDir("cn")), "Cindy");
-	assert.equal(path.basename(productionUserDataDir("dev")), "CindyDev");
+	assert.equal(path.basename(productionUserDataDir()), "Countersign");
+	assert.equal(path.basename(productionUserDataDir("global")), "Countersign");
+	assert.equal(path.basename(productionUserDataDir("cn")), "Countersign");
+	assert.equal(path.basename(productionUserDataDir("dev")), "CountersignDev");
 });
 
 test("default isolated userData path is region-aware", () => {
-	assert.equal(path.basename(defaultIsolatedUserDataDir("", "global")), "CindyGlobal-dev2");
-	assert.equal(path.basename(defaultIsolatedUserDataDir("", "cn")), "Cindy-dev2");
-	assert.equal(path.basename(defaultIsolatedUserDataDir("review", "dev")), "CindyDev-dev2-review");
+	assert.equal(path.basename(defaultIsolatedUserDataDir("", "global")), "Countersign-dev2");
+	assert.equal(path.basename(defaultIsolatedUserDataDir("", "cn")), "Countersign-dev2");
+	assert.equal(path.basename(defaultIsolatedUserDataDir("review", "dev")), "CountersignDev-dev2-review");
 });
 
 test("hasIsolationIntent sees argv and ambient XDT_ISOLATED=1", () => {
@@ -377,8 +377,8 @@ test("isOfficialProductionUserDataDir matches every official region profile", ()
 	assert.equal(isOfficialProductionUserDataDir(productionUserDataDir("global")), true);
 	assert.equal(isOfficialProductionUserDataDir(productionUserDataDir("dev")), true);
 	assert.equal(isOfficialProductionUserDataDir(defaultIsolatedUserDataDir("", "cn")), false);
-	assert.ok(officialProductionUserDataDirs().some((dir) => path.basename(dir) === "Cindy"));
-	assert.ok(officialProductionUserDataDirs().some((dir) => path.basename(dir) === "CindyGlobal"));
+	assert.ok(officialProductionUserDataDirs().some((dir) => path.basename(dir) === "Countersign"));
+	assert.ok(officialProductionUserDataDirs().some((dir) => path.basename(dir) === "CountersignDev"));
 });
 
 test("isolated restart target pointing at the other region's official profile is refused", () => {

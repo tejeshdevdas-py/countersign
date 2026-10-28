@@ -11,6 +11,7 @@ import {
   resolveSingleInstanceLockUserDataDir,
   shouldEnforcePassiveMigrationCompatibility,
   shouldRequestSingleInstanceLock,
+  resolveOfficialUserDataDirs,
 } from '../devCliFlags';
 
 
@@ -627,5 +628,12 @@ describe('resolveSingleInstanceLockUserDataDir', () => {
     });
     expect(sandbox).toBe(join('/AppData', 'Cindy-dev-foo', 'dev-single-instance-lock'));
     expect(sandbox).not.toBe(resolveSingleInstanceLockUserDataDir({ isPackaged: false, userDataDir }));
+  });
+});
+
+describe('Countersign official profiles', () => {
+  it('treats the Countersign profiles and those of an installed Cindy as official', () => {
+    const dirs = resolveOfficialUserDataDirs('/AppData').map((dir) => basename(dir));
+    expect(dirs).toEqual(['Countersign', 'CountersignDev', 'Cindy', 'CindyGlobal', 'CindyDev']);
   });
 });
