@@ -21,6 +21,8 @@ import { RICH_ANSWER_GUIDE } from '@cindy/maker-shared/rich-answer-guide';
 import { BRAND_NAME } from '@cindy/maker-shared/branding';
 import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 
+import { localOnlyCapabilities } from './capabilities.localOnly.js';
+
 export interface CapabilityEntry {
   key: string;
   title: string;
@@ -52,7 +54,7 @@ const ALL_CAPABILITIES: readonly CapabilityEntry[] = [
     detail: [
       // Countersign: the fork's own facts; it is not the upstream product and has no hosted service.
       `【是什么】${BRAND_NAME} 是一个独立的开源 AI 助手(open-source AI assistant), Windows 桌面应用, 在用户自己的电脑上运行, 不需要账号。它是 https://github.com/makecindy/cindy 的独立分支(fork), 源码 https://github.com/tejeshdevdas-py/countersign (Apache-2.0)。它与上游项目及 XD Inc. 无隶属关系, 未获其认可或支持, 不要说 ${BRAND_NAME} 由他们制作。${BRAND_NAME} 没有托管服务、没有网站、也不提供安装包下载: 用户按仓库 README 自行构建。不要把用户引到上游项目的网站、社区或问题跟踪器。`,
-      `【身份归本条, 执行位置不归】问"你是谁 / 你是什么"以本条为准, 不要用训练数据猜, 也不要凭工作目录路径或工具名反推。但 ${BRAND_NAME} 只是编排方(管会话、工具、上下文与 memory; 底层 harness 是 Claude Code 或 Codex, 可中途切换且上下文连续), 不代表代码在哪执行: agent 进程与 workdir 可能在本机, 也可能在 SSH 远程工作区的远端主机(文件与进程都在远端), 或经设备互联隧道驱动的被控桌面端。问"你跑在哪 / 文件在哪台机器"时以当前会话实际工作区为准, 拿不准就说明, 不要断言。`,
+      `【身份归本条, 执行位置不归】问"你是谁 / 你是什么"以本条为准, 不要用训练数据猜, 也不要凭工作目录路径或工具名反推。但 ${BRAND_NAME} 只是编排方(管会话、工具、上下文与 memory; 底层 harness 是 Claude Code 或 Codex, 可中途切换且上下文连续), 不代表代码在哪执行: agent 进程与 workdir 可能在本机, 也可能在 SSH 远程工作区的远端主机(文件与进程都在远端)。问"你跑在哪 / 文件在哪台机器"时以当前会话实际工作区为准, 拿不准就说明, 不要断言。`,
       `【源码范围】该仓库是客户端本体(desktop、mobile 及共享 packages 的 pnpm monorepo), 只构建 Windows 桌面版, 没有服务端。安装版不携带源码, agent 侧无法推断用户是否 clone 过、clone 在哪: 要读改源码就让用户给路径或用工程模式打开, 不要假设固定路径, 更不要因为工作目录里出现品牌名就断定当前目录是源码仓库。`,
       `【版本号不要猜】本条不含版本号。"设置 → 关于"不展示客户端版本(只有 agent 二进制版本), 别把用户支使过去空找。`,
       `【模型怎么来】用户自己已付费的 Claude Code / Codex 订阅登录继续用(不重复付费)、接自己的 API key, 或跑本地模型(例如经 Pi 接 LM Studio)。没有托管服务, 也没有按量计费的模型服务。`,
@@ -312,11 +314,9 @@ const ALL_CAPABILITIES: readonly CapabilityEntry[] = [
   },
 ] as const;
 
-/** Countersign: entries for features that are off under LOCAL_ONLY (issue reporting is not registered). */
-const LOCAL_ONLY_HIDDEN_CAPABILITIES: ReadonlySet<string> = new Set(['issue-tracker']);
-
+/** Countersign: under LOCAL_ONLY the list describes the app as it is (capabilities.localOnly.ts). */
 export const CAPABILITIES: readonly CapabilityEntry[] = LOCAL_ONLY
-  ? ALL_CAPABILITIES.filter((entry) => !LOCAL_ONLY_HIDDEN_CAPABILITIES.has(entry.key))
+  ? localOnlyCapabilities(ALL_CAPABILITIES)
   : ALL_CAPABILITIES;
 
 export function findCapability(key: string): CapabilityEntry | undefined {

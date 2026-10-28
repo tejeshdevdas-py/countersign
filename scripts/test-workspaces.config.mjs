@@ -293,6 +293,8 @@ const desktopGuardInclude = [
   'src/renderer/hooks/__tests__/useCCAgentChatHiddenFreeze.test.tsx',
   // Countersign: MainLayout's issue-page commands go through the LOCAL_ONLY gate (O13).
   'src/renderer/__tests__/countersignIssueEntryWiring.contract.test.ts',
+  // Countersign: no prompt or tool tells the model to use the switched-off app updater.
+  'src/main/countersign/__tests__/modelUpdaterText.contract.test.ts',
 ];
 
 export function desktopUnitWorkerCount(

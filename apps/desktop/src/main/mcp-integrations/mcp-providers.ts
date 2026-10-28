@@ -71,6 +71,7 @@ import {
 import { createBotProfile } from '../localDb/ipc/bots.js';
 import { submitGithubIssueForSession } from '../github-issue/index.js';
 import { issueReportingToolDeps } from '../countersign/issueReporting.js';
+import { appUpdateToolDeps } from '../countersign/appUpdateTools.js';
 import {
   listWorkdirsForHistory,
   listSessionsForHistory,
@@ -628,8 +629,9 @@ export function createDesktopMcpProviders(deps: DesktopMcpProvidersDeps): LiziMc
     xdtHelper: {
       runtimeCapabilities: deps.runtimeCapabilities,
       // Install / auto-update requests become owner-only Host cards (see agent-app-update/).
-      appUpdate: createAgentAppUpdateCallbacks((sessionId, sessionInstanceId) =>
-        deps.isCurrentLocalSessionInstance?.(sessionId, sessionInstanceId) === true),
+      // Countersign: not registered while the updater is off (appUpdateToolDeps).
+      ...appUpdateToolDeps(() => createAgentAppUpdateCallbacks((sessionId, sessionInstanceId) =>
+        deps.isCurrentLocalSessionInstance?.(sessionId, sessionInstanceId) === true)),
       logger: createLogger('mcp/cindy_helper'),
       // 代输入: Host-owned card; values never return through this tool.
       inputHandoff: {
