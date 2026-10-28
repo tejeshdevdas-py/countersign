@@ -201,7 +201,7 @@ Engine switches: see [`docs/countersign/engine-telemetry.md`](docs/countersign/e
 
    Add `--task-hosts example.com,https://example.org/page` for hosts a task was asked to reach.
 
-The log records the protocol, the host and whether the request was refused. It never records a path, a query or credentials, and it writes at most one line per host and outcome per minute. The report sorts hosts into allowed, blocked and unexpected. It exits 0 when entries were recorded and none was blocked, unexpected or malformed; 1 when one was, or when the log is empty; 2 on an input error.
+The log records the protocol, the host and whether the request was refused. It never records a path, a query or credentials, and it writes at most one line per host and outcome per minute. The report sorts hosts into allowed, blocked and unexpected. If the app could not wrap `net.request` or `net.fetch` at start-up, the report prints "egress guard not installed" with the function's name, because the app's requests through it were neither checked nor logged. It exits 0 when entries were recorded and none was blocked, unexpected or malformed and every guard was installed; 1 otherwise, or when the log is empty; 2 on an input error.
 
 The engines (Claude Code, Codex, Pi), git and the other programs the app starts (such as Ollama, the cua-driver install script and `gh`) run as separate processes. Their traffic is not in this log; checking it needs a capture of the whole process tree.
 

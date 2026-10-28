@@ -7,7 +7,8 @@
  *
  * Exit codes:
  *   0  at least one entry recorded; none blocked, unexpected or malformed
- *   1  a blocked or unexpected host, a malformed line, or no entries at all
+ *   1  a blocked or unexpected host, a guard that was not installed, a
+ *      malformed line, or no entries at all
  *      (an empty log usually means COUNTERSIGN_EGRESS_LOG was not set)
  *   2  input error: no file argument, unreadable or missing file, bad --task-hosts
  */
@@ -30,15 +31,18 @@ function matchesHost(host, suffixes) {
 
 /**
  * @param {string[]} lines JSON log lines `{host, blocked, ...}`. Blank lines are ignored;
- *   non-blank lines that are not JSON objects with a string `host` are counted as malformed.
+ *   non-blank lines that are not JSON objects with a string `host` are counted as malformed,
+ *   except a guard line `{guard, installed: false}`, which the app writes when it could not
+ *   wrap a request function (such as `net.request`); its name goes into `unguarded`.
  * @param {string[]} [taskHosts] hosts the task itself was asked to reach.
- * @returns {{allowed: string[], blocked: string[], unexpected: string[], malformed: number, entries: number}}
+ * @returns {{allowed: string[], blocked: string[], unexpected: string[], unguarded: string[], malformed: number, entries: number}}
  */
 export function summarizeEgress(lines, taskHosts = []) {
   const allowList = [...ALLOWED_HOSTS, ...taskHosts.map((h) => h.trim().toLowerCase()).filter(Boolean)];
   const allowed = new Set();
   const blocked = new Set();
   const unexpected = new Set();
+  const unguarded = new Set();
   let malformed = 0;
   let entries = 0;
   for (const raw of lines) {
@@ -48,6 +52,10 @@ export function summarizeEgress(lines, taskHosts = []) {
       entry = JSON.parse(raw);
     } catch {
       malformed += 1;
+      continue;
+    }
+    if (entry && typeof entry.guard === 'string' && entry.guard.trim() !== '' && entry.installed === false) {
+      unguarded.add(entry.guard.trim());
       continue;
     }
     if (!entry || typeof entry.host !== 'string' || entry.host.trim() === '') {
@@ -64,6 +72,7 @@ export function summarizeEgress(lines, taskHosts = []) {
     allowed: [...allowed].sort(),
     blocked: [...blocked].sort(),
     unexpected: [...unexpected].sort(),
+    unguarded: [...unguarded].sort(),
     malformed,
     entries,
   };
@@ -113,10 +122,13 @@ function main(argv) {
   }
   const result = summarizeEgress(text.split(/\r?\n/), taskHosts);
   console.log(JSON.stringify(result, null, 2));
+  for (const guard of result.unguarded) {
+    console.error(`egress-report: egress guard not installed: ${guard}; requests through it were not checked or logged`);
+  }
   if (result.malformed > 0) {
     console.error(`egress-report: ${result.malformed} malformed log line(s); the log cannot be trusted`);
-    return 1;
   }
+  if (result.unguarded.length > 0 || result.malformed > 0) return 1;
   if (result.entries === 0) {
     console.error('egress-report: no egress recorded: was COUNTERSIGN_EGRESS_LOG set?');
     return 1;

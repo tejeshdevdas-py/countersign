@@ -67,14 +67,17 @@ describe('installEgressGuard when net cannot be patched', () => {
       { time: expect.any(String), guard: 'net.request', installed: false },
       { time: expect.any(String), guard: 'net.fetch', installed: false },
     ]);
-    // The egress report counts these lines against the log, so it cannot pass.
+    // The egress report names each guard that was not installed and exits 1.
     const report = new URL(
       '../../../../../../scripts/countersign/egress-report.mjs',
       import.meta.url,
     );
     const { summarizeEgress } = (await import(report.href)) as {
-      summarizeEgress: (lines: string[]) => { malformed: number };
+      summarizeEgress: (lines: string[]) => { unguarded: string[]; malformed: number };
     };
-    expect(summarizeEgress(lines).malformed).toBe(2);
+    expect(summarizeEgress(lines)).toMatchObject({
+      unguarded: ['net.fetch', 'net.request'],
+      malformed: 0,
+    });
   });
 });

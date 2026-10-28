@@ -30,6 +30,7 @@ test('sorts hosts into allowed, blocked and unexpected', () => {
     allowed: ['api.anthropic.com'],
     blocked: ['auth.cindy.app'],
     unexpected: ['example.org'],
+    unguarded: [],
     malformed: 0,
     entries: 3,
   });
@@ -65,6 +66,26 @@ test('malformed lines and lines without a host are counted, blank lines are not'
   const result = summarizeEgress([line('localhost', false), '{"host":"trunc', '{"time":1}', '[]', '   ']);
   assert.equal(result.malformed, 3);
   assert.equal(result.entries, 1);
+});
+
+test('a guard line names the guard that is not installed and is not counted as malformed', () => {
+  const guard = (name) => JSON.stringify({ time: 't', guard: name, installed: false });
+  const result = summarizeEgress([line('localhost', false), guard('net.request'), guard('net.fetch'), guard('net.fetch')]);
+  assert.deepEqual(result.unguarded, ['net.fetch', 'net.request']);
+  assert.equal(result.malformed, 0);
+  assert.equal(result.entries, 1);
+});
+
+test('CLI exits 1 and names each guard that was not installed', () => {
+  const guard = (name) => JSON.stringify({ time: 't', guard: name, installed: false });
+  const r = runCli(`${line('localhost', false)}
+${guard('net.request')}
+${guard('net.fetch')}
+`);
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /egress guard not installed: net\.fetch; requests through it were not checked or logged/);
+  assert.match(r.stderr, /egress guard not installed: net\.request; requests through it were not checked or logged/);
+  assert.doesNotMatch(r.stderr, /malformed/);
 });
 
 test('parseTaskHost takes a host or the hostname of a URL and rejects junk', () => {
