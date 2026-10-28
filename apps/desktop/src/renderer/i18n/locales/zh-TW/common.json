@@ -17423,6 +17423,7 @@
     "profileName": "本機模式",
     "auxiliaryHint": "自動推薦使用 {{appName}} 不使用的託管模型服務；請在自訂中選擇已設定的模型。",
     "voiceHint": "{{appName}} 沒有內建語音服務；請連線支援即時 ASR 的服務並配置獨立語音憑證。",
-    "remoteControlDescription": "透過 SSH 連線遠端主機。"
+    "remoteControlDescription": "透過 SSH 連線遠端主機。",
+    "pluginEmptyHint": "可點選右上角匯入插件包"
   }
 }

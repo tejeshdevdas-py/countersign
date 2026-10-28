@@ -17483,6 +17483,7 @@
     "profileName": "Local mode",
     "auxiliaryHint": "Automatic recommendations use a hosted model service that {{appName}} does not use. Choose a configured model under Custom.",
     "voiceHint": "{{appName}} has no built-in voice service; connect a realtime ASR service with separate voice credentials.",
-    "remoteControlDescription": "Connect to a remote host over SSH."
+    "remoteControlDescription": "Connect to a remote host over SSH.",
+    "pluginEmptyHint": "Import a plugin package from the menu above"
   }
 }

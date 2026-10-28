@@ -17423,6 +17423,7 @@
     "profileName": "ローカルモード",
     "auxiliaryHint": "自動おすすめは {{appName}} が使用しないホスト型モデルサービスを使います。「カスタム」で設定済みのモデルを選択してください。",
     "voiceHint": "{{appName}} には内蔵の音声サービスがありません。リアルタイム ASR 対応サービスと専用の音声認証情報を設定してください。",
-    "remoteControlDescription": "SSH でリモートホストに接続します。"
+    "remoteControlDescription": "SSH でリモートホストに接続します。",
+    "pluginEmptyHint": "上のメニューからプラグインパッケージを読み込めます"
   }
 }

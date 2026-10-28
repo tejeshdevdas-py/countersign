@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import { CatalogDeviceScope, type CatalogDeviceControl } from '@/features/plugin/useCatalogDevice';
 import { useSkillhubTarget } from './SkillhubTargetContext';
 /**
@@ -351,6 +352,8 @@ export function SkillhubHomeContent({
             </header>
 
             <div className="flex min-w-0 flex-col gap-3" data-catalog-region="filters">
+              {/* Countersign: no market tabs and no "More" (Market) link under LOCAL_ONLY. */}
+              {LOCAL_ONLY ? null : (
               <div className="flex min-w-0 items-center justify-between gap-2 border-b border-[var(--border-default)]" style={WINDOW_NO_DRAG_STYLE}>
                 <SegmentedControl
                   className="skill-catalog-source-tabs min-w-0"
@@ -384,6 +387,7 @@ export function SkillhubHomeContent({
                   <ChevronRight size={13} strokeWidth={1.8} aria-hidden="true" />
                 </button>
               </div>
+              )}
               {showMarketCatalog && categories.length > 0 ? (
                 <SkillCategoryFilterBar
                   categories={categories}

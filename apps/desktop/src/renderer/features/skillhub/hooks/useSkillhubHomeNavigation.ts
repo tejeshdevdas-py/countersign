@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useLocation, useNavigate, type Location } from 'react-router-dom';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 
 import type { HomeCatalogTab } from '../lib/homeMarketFilter';
 import { skillDetailReturnRoute, withSkillDetailReturn } from '../lib/detailRoutes';
@@ -24,9 +25,12 @@ export function useSkillhubHomeNavigation(navigationLocation?: Location) {
   const navState = location.state as SkillhubNavigationState | null;
   const search = new URLSearchParams(location.search);
   const savedTab = navState?.skillhubHome?.catalogTab ?? search.get('tab');
-  const catalogTab: HomeCatalogTab = savedTab === 'local' || savedTab === 'organization'
-    ? savedTab
-    : 'public';
+  // Countersign: under LOCAL_ONLY the page always opens on local skills (no hosted market).
+  const catalogTab: HomeCatalogTab = LOCAL_ONLY
+    ? 'local'
+    : savedTab === 'local' || savedTab === 'organization'
+      ? savedTab
+      : 'public';
   const query = typeof navState?.skillhubHome?.query === 'string' ? navState.skillhubHome.query : search.get('q') ?? '';
 
   const updateHomeState = useCallback((patch: Partial<HomeViewState>) => {

@@ -1,4 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+// Countersign: these cases cover upstream's public and organization Skill catalogs, which
+// LOCAL_ONLY removes (see ../../__tests__/SkillhubHome.localOnly.test.tsx).
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
 import {
   homeMarketQuery,
   isHomeMarketResponseCurrent,

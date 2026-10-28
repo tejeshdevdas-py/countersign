@@ -23,6 +23,12 @@ const mocks = vi.hoisted(() => ({
   },
 }));
 
+// Countersign: these cases cover upstream's public and organization Skill catalogs, which
+// LOCAL_ONLY removes (see SkillhubHome.localOnly.test.tsx).
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: mocks.t }) }));
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({ user: mocks.user, dataOwnerId: mocks.dataOwnerId, mode: 'cloud' }),

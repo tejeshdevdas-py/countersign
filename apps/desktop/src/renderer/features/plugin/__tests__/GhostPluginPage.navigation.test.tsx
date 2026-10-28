@@ -729,4 +729,12 @@ describe('Countersign: plugin market switched off', () => {
       expect(screen.queryByText('settings.ghosts.market.authenticationRequired')).toBeNull();
     },
   );
+
+  // M-J2: with nothing installed, the empty hint names only the local import.
+  it('gives a local-only empty hint when no plugin is installed', async () => {
+    render(page('/plugins'));
+    expect(await screen.findByText('settings.ghosts.empty')).toBeTruthy();
+    expect(screen.getByText('countersignLocalOnly.pluginEmptyHint')).toBeTruthy();
+    expect(screen.queryByText('settings.ghosts.emptyHint')).toBeNull();
+  });
 });

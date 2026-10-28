@@ -1,3 +1,4 @@
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import type { CatalogScope, SortBy, Visibility } from '../hooks/useMarketList';
 
 export type HomeMarketFilter = 'public' | 'organization';
@@ -12,6 +13,8 @@ export interface HomeMarketQuery {
 export function visibleHomeCatalogTabs(
   showOrganization: boolean,
 ): HomeCatalogTab[] {
+  // Countersign: the public and organization catalogs need the hosted market service.
+  if (LOCAL_ONLY) return ['local'];
   return showOrganization ? ['public', 'organization', 'local'] : ['public', 'local'];
 }
 

@@ -1957,7 +1957,8 @@ function LocalGhostPluginPage({
                   </p>
                   {installedItems.length === 0 ? (
                     <p className="mt-1.5 text-12 text-[var(--text-tertiary)]">
-                      {t('settings.ghosts.emptyHint')}
+                      {/* Countersign: no plugin market under LOCAL_ONLY; only the local import. */}
+                      {t(LOCAL_ONLY ? 'countersignLocalOnly.pluginEmptyHint' : 'settings.ghosts.emptyHint')}
                     </p>
                   ) : null}
                 </div>
