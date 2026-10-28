@@ -6,6 +6,7 @@ import { promises as fsp } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import type { AgentSkillCommand } from '@cindy/maker-core';
+import { BRAND_IDENTITY } from '@cindy/maker-shared/brand-identity';
 import {
   CINDY_LEARN_NAME,
   CINDY_SKILL_CREATOR_NAME,
@@ -27,6 +28,21 @@ const BUILT_IN_SKILL_MUTATION_WAIT_MS = 5_000;
 /** Increment whenever shipped built-in Skill bytes change between releases. */
 export const BUILT_IN_SKILLS_BUNDLE_VERSION = 20;
 const PLUGIN_CREATOR_FIRST_BUNDLE_VERSION = 13;
+/**
+ * Countersign: this identity's own profile folder names under appData. Upstream's
+ * identity gives Cindy, CindyGlobal and CindyDev; an installed Cindy's links are never ours.
+ */
+const OWN_PROFILE_DIR_NAMES = [
+  ...new Set([BRAND_IDENTITY.userDataDirName, ...Object.values(BRAND_IDENTITY.userDataDirNameByRegion)]),
+];
+
+function isOwnProfileDirName(name: string): boolean {
+  return OWN_PROFILE_DIR_NAMES.some((base) => {
+    if (!name.startsWith(base)) return false;
+    const suffix = name.slice(base.length);
+    return suffix === '' || /^[-.][A-Za-z0-9._-]+$/.test(suffix);
+  });
+}
 
 export interface BuiltInSkillDescriptor {
   name: string;
@@ -514,7 +530,7 @@ async function isCindyManagedSystemSkillTarget(
       const profileName = path.basename(profileDir);
       if (
         samePath(path.dirname(profileDir), appDataDir) &&
-        /^Cindy(?:Global|Dev)?(?:[-.][A-Za-z0-9._-]+)?$/.test(profileName)
+        isOwnProfileDirName(profileName)
       ) return true;
     }
 

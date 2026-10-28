@@ -849,9 +849,10 @@ describe('built-in Skills', () => {
     expect(fs.realpathSync(nextDescriptor.nativeClaudePath)).toBe(fs.realpathSync(link));
   });
 
-  it('repairs a broken link left by an earlier Cindy profile', async () => {
+  it('repairs a broken link left by an earlier profile of this identity', async () => {
     const input = fixture();
-    const oldProfile = path.join(input.appDataDir, 'CindyDev-dev2-old-checkout');
+    // Countersign: an own profile name; links into another installed app's profiles are not ours to repair.
+    const oldProfile = path.join(input.appDataDir, `${BRAND_IDENTITY.userDataDirNameByRegion.dev}-dev2-old-checkout`);
     const oldTarget = path.join(oldProfile, 'system-skills', 'cindy-skill-creator');
     const link = path.join(builtInSkillPluginRoot(input.userDataDir), 'skills', 'cindy-skill-creator');
     fs.mkdirSync(path.dirname(link), { recursive: true });
@@ -966,6 +967,29 @@ describe('built-in Skills', () => {
     expect(fs.readdirSync(path.join(input.homeDir, '.agents', 'skills'))).toEqual([]);
     expect(fs.readdirSync(path.join(input.homeDir, '.claude', 'skills'))).toEqual([]);
     for (const descriptor of first.descriptors) expect(fs.existsSync(descriptor.nativeClaudePath)).toBe(true);
+  });
+
+  it('Countersign: leaves global links into an installed Cindy app-data folder alone', async () => {
+    const input = fixture();
+    await prepareBuiltInSkills(input);
+    const link = (home: string, name: string, target: string) => {
+      const entry = path.join(input.homeDir, home, 'skills', name);
+      fs.mkdirSync(path.dirname(entry), { recursive: true });
+      fs.symlinkSync(target, entry, process.platform === 'win32' ? 'junction' : 'dir');
+      return entry;
+    };
+    const foreign = [
+      [link('.claude', 'learn', path.join(input.appDataDir, 'Cindy', 'system-skills', 'learn')), 'Cindy'],
+      [link('.claude', 'cindy-skill-creator', path.join(input.appDataDir, 'CindyGlobal', 'system-skills', 'cindy-skill-creator')), 'CindyGlobal'],
+      [link('.agents', 'cindy-plugin-creator', path.join(input.appDataDir, 'Cindy', 'shared-system-skills', '.active', 'cindy-plugin-creator')), 'shared-system-skills'],
+    ] as const;
+    const ownProfile = `${BRAND_IDENTITY.userDataDirNameByRegion.dev}-old-checkout`;
+    const own = link('.agents', 'learn', path.join(input.appDataDir, ownProfile, 'system-skills', 'learn'));
+
+    expect(await migrateBuiltInGlobalSkillLinks(input)).toEqual([]);
+
+    for (const [entry, marker] of foreign) expect(fs.readlinkSync(entry)).toContain(marker);
+    expect(() => fs.lstatSync(own)).toThrow();
   });
 
   it('preserves user directories and foreign links during the legacy migration', async () => {
