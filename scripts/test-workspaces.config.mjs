@@ -303,6 +303,8 @@ const desktopGuardInclude = [
   'src/renderer/__tests__/countersignLoginBrandArt.contract.test.ts',
   // Countersign: the ghost MCP deps get the plugin market only through pluginMarketToolDeps.
   'src/main/countersign/__tests__/agentMarketTools.contract.test.ts',
+  // Countersign: build retry hints re-run the committed engine pin, never `pnpm update:<kind>` (M-B3).
+  'src/main/countersign/__tests__/buildRetryHints.contract.test.ts',
 ];
 
 export function desktopUnitWorkerCount(

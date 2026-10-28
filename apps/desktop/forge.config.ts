@@ -768,7 +768,7 @@ function stageRipgrep(targetPlatform: string, targetArch: string): void {
   });
   if (r.status !== 0) {
     throw new Error(
-      `[forge] failed to ensure pinned ripgrep ${key}; run "pnpm update:ripgrep" before packaging`,
+      `[forge] failed to ensure pinned ripgrep ${key}; run "pnpm install:ripgrep" before packaging`,
     );
   }
   if (!fs.existsSync(src)) {
