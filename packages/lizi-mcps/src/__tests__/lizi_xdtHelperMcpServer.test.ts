@@ -904,7 +904,10 @@ describe("cindy_helper MCP server", () => {
         (overview.categories as Array<{ name: string; description: string }>).map((c) => [c.name, c.description]),
       );
       for (const description of Object.values(described)) expect(description).toMatch(/\S/);
-      for (const name of ['history', 'handoff', 'bots']) expect(described[name]).toContain('可跨电脑');
+      // Countersign: under LOCAL_ONLY history reads this computer only (journey-3).
+      for (const name of ['handoff', 'bots']) expect(described[name]).toContain('可跨电脑');
+      expect(described.history).not.toContain('可跨电脑');
+      expect(described.history).toMatch(/全部仅本机。$/);
       expect(described.control).toMatch(/本机。$/);
       const controlTools = parsePayload(await client.callTool({ name: 'list_tools', arguments: { category: 'control' } }));
       const controlNames = controlTools.tools as Array<{ name: string; description: string }>;
