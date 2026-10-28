@@ -11,13 +11,15 @@
  *   maker:remote-ssh:disconnect     close the SSH connection
  *   maker:remote-ssh:status-changed (push) host status fan-out
  *
- * Cindy-managed hosts live in ~/.ssh/cindy.conf. The main ~/.ssh/config is
+ * App-managed hosts live in ~/.ssh/<brandHomeStateName()>.conf (Countersign:
+ * ~/.ssh/countersign.conf). The main ~/.ssh/config is
  * only text-spliced to keep one early Include, so terminal `ssh <alias>` and
  * Cindy discover the same aliases without rewriting hand-authored blocks.
  * The pool itself is in-memory; on app restart, hydrate() rebuilds it from disk.
  */
 
 import { BRAND_NAME } from '@cindy/maker-shared/branding';
+import { brandHomeStateName } from '@cindy/maker-shared/brand-identity';
 import { app, ipcMain, BrowserWindow, dialog } from 'electron';
 import { t } from '../i18n.js';
 import { assertTrustedAppRendererEvent } from '../security/trustedAppRenderer.js';
@@ -266,7 +268,8 @@ let pool: ConnectionPool | null = null;
 let initPromise: Promise<void> | null = null;
 let registered = false;
 const sshConfigPath = defaultSshConfigPath();
-const managedSshConfigPath = defaultManagedSshConfigPath();
+// Countersign: ~/.ssh/countersign.conf from BRAND_IDENTITY, never an installed Cindy's cindy.conf.
+const managedSshConfigPath = defaultManagedSshConfigPath(brandHomeStateName());
 const remoteHostHydrationQueue = new RemoteHostHydrationQueue();
 let sshConfigWarnings: string[] = [];
 let sshConfigDiagnostic: SshConfigDiagnostic | null = null;

@@ -161,8 +161,12 @@ export function defaultSshConfigPath(): string {
   return path.join(os.homedir(), '.ssh', 'config');
 }
 
-export function defaultManagedSshConfigPath(): string {
-  return path.join(os.homedir(), '.ssh', 'cindy.conf');
+/**
+ * Countersign: the app-owned file is `~/.ssh/<name>.conf`, named by the caller from
+ * its brand identity, so two installed apps never share one managed file.
+ */
+export function defaultManagedSshConfigPath(name: string): string {
+  return path.join(os.homedir(), '.ssh', `${name}.conf`);
 }
 
 export function expandHome(value: string): string {
@@ -1389,8 +1393,12 @@ async function isSingleExactInclude(
 
 function formatIncludePath(managedConfigPath: string): string {
   const absolute = path.resolve(managedConfigPath);
-  const defaultPath = path.resolve(defaultManagedSshConfigPath());
-  const value = pathsEqual(absolute, defaultPath) ? '~/.ssh/cindy.conf' : absolute;
+  // Countersign: any managed file directly in ~/.ssh is written home-relative, as
+  // upstream wrote ~/.ssh/cindy.conf; the file name comes from the caller.
+  const sshDir = path.resolve(os.homedir(), '.ssh');
+  const value = pathsEqual(path.dirname(absolute), sshDir)
+    ? `~/.ssh/${path.basename(absolute)}`
+    : absolute;
   return formatSshArgument(value);
 }
 

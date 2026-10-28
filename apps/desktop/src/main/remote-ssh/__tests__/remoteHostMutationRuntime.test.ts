@@ -4,6 +4,7 @@ import { mkdtempSync, mkdirSync, symlinkSync, rmSync, realpathSync } from 'node:
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { brandHomeStateName } from '@cindy/maker-shared/brand-identity';
 import type {
   HostConfig,
   ManagedConfigWriteToken,
@@ -24,6 +25,8 @@ const mocks = vi.hoisted(() => ({
   invalidateMcpEndpoint: vi.fn(),
   dbLimit: vi.fn(),
   logWarn: vi.fn(),
+  // Plain array: beforeEach clears vi.fn call records, and this is recorded at module load.
+  managedConfigNames: [] as unknown[],
 }));
 
 vi.mock('../../logger.js', async (importOriginal) => {
@@ -61,7 +64,10 @@ vi.mock('@cindy/maker-remote-ssh', async (importOriginal) => {
   return {
     ...actual,
     defaultSshConfigPath: () => '/virtual/.ssh/config',
-    defaultManagedSshConfigPath: () => '/virtual/.ssh/cindy.conf',
+    defaultManagedSshConfigPath: (...args: unknown[]) => {
+      mocks.managedConfigNames.push(...args);
+      return `/virtual/.ssh/${String(args[0])}.conf`;
+    },
     readSshConfigDetailed: mocks.readSshConfigDetailed,
     addManagedHostWithInclude: mocks.addManagedHostWithInclude,
     updateManagedHostFields: mocks.updateManagedHostFields,
@@ -211,6 +217,11 @@ beforeEach(async () => {
 });
 
 describe('remote SSH mutation runtime semantics', () => {
+  it('Countersign: names the managed SSH config after BRAND_IDENTITY, not cindy.conf', () => {
+    expect(mocks.managedConfigNames).toEqual([brandHomeStateName()]);
+    expect(brandHomeStateName()).not.toMatch(/cindy/i);
+  });
+
   it.each(['\n', '\r', '\r\n'])('rejects injected protocol lines before remote execution (%j)', async (separator) => {
     await getRemoteSshPool().hydrate([host('worker-dir')]);
     const remote = getRemoteSshPool().get('worker-dir')!;

@@ -7,6 +7,7 @@ import SSHConfig from 'ssh-config';
 import {
   addManagedHost,
   addManagedHostWithInclude,
+  defaultManagedSshConfigPath,
   ensureManagedConfigInclude,
   expandHome,
   MANAGED_CONFIG_MARKER,
@@ -1087,6 +1088,30 @@ describe('managed config writers', () => {
       { value: path.normalize(managedConfig), before: '' },
       { value: path.normalize(path.join(scratchDir, '*.conf')), before: '' },
     ]));
+  });
+
+  it('Countersign: writes, then finds, a home-relative Include for the caller-named managed file', async () => {
+    const homeSpy = vi.spyOn(os, 'homedir').mockReturnValue(scratchDir);
+    try {
+      const managed = defaultManagedSshConfigPath('countersign');
+      expect(managed).toBe(path.join(scratchDir, '.ssh', 'countersign.conf'));
+      const main = path.join(scratchDir, '.ssh', 'config');
+      await fs.mkdir(path.dirname(main), { recursive: true });
+      // An installed Cindy's Include stays as it is.
+      await fs.writeFile(main, 'Include ~/.ssh/cindy.conf\nHost other\n  HostName 192.0.2.40\n');
+
+      await ensureManagedConfigInclude(main, managed);
+      const first = await fs.readFile(main, 'utf8');
+      expect(first).toBe(
+        'Include ~/.ssh/countersign.conf\nInclude ~/.ssh/cindy.conf\nHost other\n  HostName 192.0.2.40\n',
+      );
+
+      // A second pass finds its own line and leaves the file unchanged.
+      await ensureManagedConfigInclude(main, managed);
+      expect(await fs.readFile(main, 'utf8')).toBe(first);
+    } finally {
+      homeSpy.mockRestore();
+    }
   });
 
   it('recognizes equivalent exact Include forms, deduplicates them, and preserves comments', async () => {
