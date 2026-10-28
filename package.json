@@ -12,7 +12,7 @@
     "url": "git+https://github.com/makecindy/cindy.git"
   },
   "bugs": {
-    "url": "https://github.com/makecindy/cindy/issues"
+    "url": "https://github.com/tejeshdevdas-py/countersign/issues"
   },
   "engines": {
     "node": ">=22.12",

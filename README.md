@@ -192,7 +192,7 @@ The engines (Claude Code, Codex, Pi) and git run as separate processes. Their tr
 17. Only Windows is built. The mobile app (`apps/mobile`) is in the tree but is not built.
 18. The third-party notices in `docs/legal/notices/` were generated for Cindy. They list the updater, which Countersign does not ship, and say the engines are downloaded at runtime, while Countersign bundles them.
 19. The installer does not contain this repository's `LICENSE` or `NOTICE`. Add them before you share an installer.
-20. `CONTRIBUTING`, `SUPPORT` and the other community files (the issue and pull-request templates, `CODEOWNERS`) are upstream's and describe Cindy's process and services. Only `SECURITY`, `CODE_OF_CONDUCT` and the security link in `.github/ISSUE_TEMPLATE/config.yml` were changed. The root `package.json` still names Cindy's homepage and repository.
+20. `CONTRIBUTING`, `SUPPORT` and the other community files (the issue and pull-request templates, `CODEOWNERS`) are upstream's and describe Cindy's process and services. Only `SECURITY`, `CODE_OF_CONDUCT` and the security link in `.github/ISSUE_TEMPLATE/config.yml` were changed. The root `package.json` still names Cindy's homepage and repository; its issue tracker link (`bugs`) points at this repository.
 21. Not checked live: a start with no network, a build on a clean machine, and a network capture after the final set of engine switches.
 
 ## Verification status
