@@ -3,7 +3,7 @@ import { drainPendingDeepLinks } from '@/lib/pendingDeepLinks';
 import { ChatInviteHost, reportMalformedChatInvite, requestChatInvite } from '@/features/bots/ChatInviteHost';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { buildSharedTaskInvitationLink, isSharedTaskPeer } from '@cindy/device-link';
-import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
+import { openIssuesPage } from '@/lib/countersignIssueEntry';
 import { JoinSharedTaskDialog } from '@/features/device-link/JoinSharedTaskDialog';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useRememberMainEntry } from './MainEntryRedirect';
@@ -1343,7 +1343,7 @@ export function MainLayout() {
           break;
         case 'open-issues':
           // Countersign: no issue page under LOCAL_ONLY (reports would go to the upstream tracker).
-          if (!LOCAL_ONLY) navigate('/issues');
+          openIssuesPage(navigate);
           break;
         case 'new-maker':
           // 与侧栏同口径：继承当前任务电脑，同机保留草稿项目。
@@ -1472,7 +1472,7 @@ export function MainLayout() {
           return true;
         case 'feedback':
           // Countersign: no issue page under LOCAL_ONLY (reports would go to the upstream tracker).
-          if (!LOCAL_ONLY) navigate('/issues');
+          openIssuesPage(navigate);
           return true;
         case 'openFolder':
           navigate('/cc-agent/new', { state: makeFolderPickerNewMakerRouteState() });
