@@ -145,17 +145,74 @@ describe('Countersign packaged output check', () => {
   it('allows the name only inside the public identity, not elsewhere in the same file', async () => {
     const resources = await packaged({
       ...CLEAN,
-      '.vite/build/index.js': `const id = "${APP_IDS[0]}"; const home = "${['', 'home', 'fixturebuilder', 'x'].join('/')}";`,
+      '.vite/build/index.js': `const id = "${APP_IDS[0]}"; const home = ${JSON.stringify(winPath(...PROFILE, 'x'))};`,
     });
     expect(
       findPackagedBuildLeaks(resources, { userName: USER, publicIdentity: PUBLIC }).userName,
     ).toEqual(['app.asar/.vite/build/index.js']);
   });
 
-  it('finds the user name in a file path and masks it in the report', async () => {
-    const resources = await packaged({ ...CLEAN, 'docs/FixtureBuilder-notes.txt': 'x' });
+  it('finds the user name in a profile folder of a file path and masks it in the report', async () => {
+    const resources = await packaged({
+      ...CLEAN,
+      'docs/FixtureBuilder-notes.txt': 'x',
+      'docs/Users/FixtureBuilder/notes.txt': 'x',
+    });
     const findings = findPackagedBuildLeaks(resources, { userName: USER, publicIdentity: PUBLIC });
-    expect(findings.userName).toEqual(['app.asar/docs/<user name>-notes.txt']);
+    expect(findings.userName).toEqual(['app.asar/docs/Users/<user name>/notes.txt']);
+  });
+
+  // build-1 / regression-2: a first name or a common word is ordinary app text.
+  // Only a Windows profile folder (C:\Users\<name>, /c/Users/<name>) names the builder.
+  it.each([
+    ['Mark', 'const doc = "markdown"; // Mark the item as done'],
+    ['max', 'const n = Math.max(a, b); const maxSize = 4;'],
+    ['User', 'const label = "User settings"; const u = "username";'],
+    ['dev', 'const env = "development"; const d = "/dev/null";'],
+    ['Mark', `const p = ${JSON.stringify(winPath('C:', 'Users', 'Markus', 'x'))};`],
+    ['Mark', `const p = "${['C:', 'Users', 'mark.smith', 'x'].join('/')}";`],
+    ['User', `// The full path such as '${['', 'home', 'user', 'dir'].join('/')}'`],
+    ['Peter', `Peter <${['http:', '', 'example.org', 'users', 'peter', ''].join('/')}>`],
+  ])('passes ordinary text that contains the short name %s', async (userName, text) => {
+    const resources = await packaged({ ...CLEAN, '.vite/build/main.js': text });
+    const findings = findPackagedBuildLeaks(resources, { userName, publicIdentity: PUBLIC });
+    expect(findings.userName).toEqual([]);
+  });
+
+  it.each([
+    ['Mark', winPath('C:', 'Users', 'Mark', 'src')],
+    ['Mark', winPath('c:', 'users', 'MARK')],
+    ['Mark', ['', 'c', 'Users', 'mark', 'src'].join('/')],
+    ['max', winPath('', '', '?', 'D:', 'Documents and Settings', 'Max', '.cargo')],
+    ['max', ['C:', 'Users', 'max', 'AppData'].join('/')],
+  ])('fails a profile path that holds the short name %s', async (userName, profilePath) => {
+    const resources = await packaged({
+      ...CLEAN,
+      '.vite/build/main.js': `const p = ${JSON.stringify(profilePath)};`,
+      'node_modules/addon/build/Release/addon.node': Buffer.concat([
+        Buffer.alloc(16),
+        Buffer.from(profilePath, 'utf16le'),
+      ]),
+    });
+    const findings = findPackagedBuildLeaks(resources, { userName, publicIdentity: PUBLIC });
+    expect(findings.userName.sort()).toEqual([
+      'app.asar.unpacked/node_modules/addon/build/Release/addon.node',
+      'app.asar/.vite/build/main.js',
+    ]);
+  });
+
+  it('also checks the profile folder name when it differs from the user name', async () => {
+    // A Microsoft-account profile folder can be shorter than the account's user name.
+    const resources = await packaged({
+      ...CLEAN,
+      '.vite/build/main.js': `const p = ${JSON.stringify(winPath('C:', 'Users', 'fixtu', 'x'))};`,
+    });
+    const options = { userName: USER, profileName: 'fixtu', publicIdentity: PUBLIC };
+    const findings = findPackagedBuildLeaks(resources, options);
+    expect(findings.userName).toEqual(['app.asar/.vite/build/main.js']);
+    expect(
+      findPackagedBuildLeaks(resources, { userName: USER, publicIdentity: PUBLIC }).userName,
+    ).toEqual([]);
   });
 
   it('fails with both kinds of finding and never prints the name', async () => {

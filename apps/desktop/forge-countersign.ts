@@ -260,15 +260,31 @@ export function publicGithubIdentity(appIds: readonly string[]): string[] {
 export interface PackagedLeakFindings {
   /** Build intermediates, as `app.asar/<path>` or `app.asar.unpacked/<path>`. */
   intermediates: string[];
-  /** Files whose name or content holds the user name outside the public identity (name masked). */
+  /** Files whose name or content holds the user name in a profile path outside the public identity (name masked). */
   userName: string[];
   filesChecked: number;
 }
 
+export interface PackagedLeakOptions {
+  /** The builder's account name (`os.userInfo().username`). */
+  userName: string;
+  /** The builder's profile folder name (basename of `os.userInfo().homedir`), when it differs. */
+  profileName?: string;
+  publicIdentity: readonly string[];
+}
+
 interface NameMatcher {
-  lowerName: string;
+  /** Lower-case names, longest first. */
+  names: string[];
+  /** Quick pre-check: a file without any of these bytes cannot hold a profile path with the name. */
   needles: Buffer[];
   allowed: Buffer[];
+  /** A profile path with the name, over the latin1 view of UTF-8 bytes. */
+  utf8Profile: RegExp;
+  /** The same over a UTF-16LE-decoded string. */
+  utf16Profile: RegExp;
+  /** A `Users/<name>` folder in a packaged file path. */
+  profileFolder: RegExp;
 }
 
 /** ASCII-lowercased copy, so a name matches in any case, in UTF-8 and in UTF-16LE. */
@@ -285,13 +301,50 @@ function encodings(text: string): Buffer[] {
   return [Buffer.from(text, 'utf8'), Buffer.from(text, 'utf16le')];
 }
 
-function nameMatcher(userName: string, publicIdentity: readonly string[]): NameMatcher | null {
-  const lowerName = userName.trim().toLowerCase();
-  if (!lowerName) return null;
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * A Windows profile path that names the builder: a drive, then `Users` (or
+ * `Documents and Settings`), then the name as a whole path segment. Any slash
+ * direction, escaped backslashes and the MSYS form (`/c/Users/<name>`) count.
+ * A first name or a common word elsewhere in app text (`markdown`,
+ * `Math.max`, `User settings`) is not a finding, and neither are the
+ * `/home/user` placeholders in documentation or a web address such as
+ * `example.org/users/<name>/`: none of them identifies the builder. The check
+ * runs on Windows packages only, where build paths take this shape.
+ */
+function profilePattern(names: readonly string[]): RegExp {
+  const alternatives = names.map(escapeRegExp).join('|');
+  return new RegExp(
+    `(?:^|[^a-z0-9])[a-z](?::[\\\\/]+|[\\\\/]+)(?:users|documents and settings)[\\\\/]+` +
+      `(?:${alternatives})(?![a-z0-9_.-])`,
+    'g',
+  );
+}
+
+/** A packaged file path (relative, `/`-separated) with a `Users/<name>` folder in it. */
+function profileFolderPattern(names: readonly string[]): RegExp {
+  const alternatives = names.map(escapeRegExp).join('|');
+  return new RegExp(`(?:^|/)(?:users|documents and settings)/(?:${alternatives})(?:/|$)`);
+}
+
+function nameMatcher(options: PackagedLeakOptions): NameMatcher | null {
+  const names = [
+    ...new Set([options.userName, options.profileName ?? ''].map((n) => n.trim().toLowerCase())),
+  ]
+    .filter(Boolean)
+    .sort((a, b) => b.length - a.length);
+  if (names.length === 0) return null;
   return {
-    lowerName,
-    needles: encodings(lowerName),
-    allowed: publicIdentity.flatMap((text) => encodings(text.toLowerCase())),
+    names,
+    needles: names.flatMap(encodings),
+    allowed: options.publicIdentity.flatMap((text) => encodings(text.toLowerCase())),
+    // UTF-8 bytes seen as latin1, one character per byte, so match offsets are byte offsets.
+    utf8Profile: profilePattern(names.map((n) => Buffer.from(n, 'utf8').toString('latin1'))),
+    utf16Profile: profilePattern(names),
+    profileFolder: profileFolderPattern(names),
   };
 }
 
@@ -303,30 +356,53 @@ function rangesOf(haystack: Buffer, needle: Buffer): Array<[number, number]> {
   return ranges;
 }
 
-/** True when the name occurs anywhere except inside an allowed public text. */
+/** Byte ranges of every profile-path match: UTF-8, then UTF-16LE at both byte alignments. */
+function profileMatches(lower: Buffer, matcher: NameMatcher): Array<[number, number]> {
+  const ranges: Array<[number, number]> = [];
+  for (const m of lower.toString('latin1').matchAll(matcher.utf8Profile)) {
+    ranges.push([m.index, m.index + m[0].length]);
+  }
+  for (const alignment of [0, 1]) {
+    const text = lower.subarray(alignment).toString('utf16le').toLowerCase();
+    for (const m of text.matchAll(matcher.utf16Profile)) {
+      const start = alignment + 2 * m.index;
+      ranges.push([start, start + 2 * m[0].length]);
+    }
+  }
+  return ranges;
+}
+
+/** True when a profile path with the name occurs anywhere except inside an allowed public text. */
 function holdsName(content: Buffer, matcher: NameMatcher): boolean {
   const lower = asciiLower(content);
+  if (!matcher.needles.some((needle) => lower.includes(needle))) return false;
   let allowed: Array<[number, number]> | null = null;
-  for (const needle of matcher.needles) {
-    for (const [start, end] of rangesOf(lower, needle)) {
-      allowed ??= matcher.allowed.flatMap((text) => rangesOf(lower, text));
-      if (!allowed.some(([from, to]) => from <= start && end <= to)) return true;
-    }
+  for (const [start, end] of profileMatches(lower, matcher)) {
+    allowed ??= matcher.allowed.flatMap((text) => rangesOf(lower, text));
+    if (!allowed.some(([from, to]) => from <= start && end <= to)) return true;
   }
   return false;
 }
 
+function pathHoldsName(shownPath: string, matcher: NameMatcher): boolean {
+  return matcher.profileFolder.test(shownPath.toLowerCase());
+}
+
 function maskName(shownPath: string, matcher: NameMatcher | null): string {
   if (!matcher) return shownPath;
-  let out = '';
-  let rest = shownPath;
-  let at = rest.toLowerCase().indexOf(matcher.lowerName);
-  while (at !== -1) {
-    out += rest.slice(0, at) + USER_NAME_MASK;
-    rest = rest.slice(at + matcher.lowerName.length);
-    at = rest.toLowerCase().indexOf(matcher.lowerName);
+  let out = shownPath;
+  for (const name of matcher.names) {
+    let masked = '';
+    let rest = out;
+    let at = rest.toLowerCase().indexOf(name);
+    while (at !== -1) {
+      masked += rest.slice(0, at) + USER_NAME_MASK;
+      rest = rest.slice(at + name.length);
+      at = rest.toLowerCase().indexOf(name);
+    }
+    out = masked + rest;
   }
-  return out + rest;
+  return out;
 }
 
 type AsarNode = {
@@ -345,9 +421,9 @@ type AsarNode = {
  */
 export function findPackagedBuildLeaks(
   resourcesDir: string,
-  options: { userName: string; publicIdentity: readonly string[] },
+  options: PackagedLeakOptions,
 ): PackagedLeakFindings {
-  const matcher = nameMatcher(options.userName, options.publicIdentity);
+  const matcher = nameMatcher(options);
   const findings: PackagedLeakFindings = { intermediates: [], userName: [], filesChecked: 0 };
   const visit = (shown: string, name: string, read: (() => Buffer) | null) => {
     const pattern = read ? BUILD_INTERMEDIATE_FILE : BUILD_INTERMEDIATE_DIR;
@@ -355,7 +431,7 @@ export function findPackagedBuildLeaks(
     if (!read) return;
     findings.filesChecked++;
     if (!matcher) return;
-    if (shown.toLowerCase().includes(matcher.lowerName) || holdsName(read(), matcher)) {
+    if (pathHoldsName(shown, matcher) || holdsName(read(), matcher)) {
       findings.userName.push(maskName(shown, matcher));
     }
   };
@@ -419,7 +495,7 @@ function listed(paths: string[]): string {
  */
 export function assertPackagedOutputClean(
   resourcesDir: string,
-  options: { userName: string; publicIdentity: readonly string[] },
+  options: PackagedLeakOptions,
 ): PackagedLeakFindings {
   const findings = findPackagedBuildLeaks(resourcesDir, options);
   const problems: string[] = [];

@@ -752,17 +752,21 @@ function applyMacPackagedDisplayName(buildPath: string, platform: string): void 
 function assertCountersignPackagedOutputClean(buildPath: string, platform: ForgePlatform): void {
   if (platform !== 'win32') return;
   let userName = '';
+  let profileName = '';
   try {
-    userName = os.userInfo().username;
+    const user = os.userInfo();
+    userName = user.username;
+    profileName = path.basename(user.homedir);
   } catch {
     console.warn('[forge:postPackage] no user name available; checking build intermediates only');
   }
   const findings = assertPackagedOutputClean(packagedResourcesPath(buildPath, platform), {
     userName,
+    profileName,
     publicIdentity: publicGithubIdentity(Object.values(BRAND_IDENTITY.appIdByRegion)),
   });
   console.log(
-    `[forge:postPackage] ${findings.filesChecked} packaged files: no build intermediates, no user name`,
+    `[forge:postPackage] ${findings.filesChecked} packaged files: no build intermediates, no user name in a profile path`,
   );
 }
 
