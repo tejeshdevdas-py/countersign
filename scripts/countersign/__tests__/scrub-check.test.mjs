@@ -640,6 +640,70 @@ test('CLI: a bad pattern line exits 2 and names the line, not the pattern', (t) 
   assert.equal(out.includes(PRIVATE_WORD), false);
 });
 
+/** .scrub-patterns written as raw bytes (an editor's encoding choice). */
+function writePatternBytes(ctx, bytes) {
+  fs.writeFileSync(path.join(ctx.repo, '.scrub-patterns'), bytes);
+}
+
+test('CLI: a UTF-16 .scrub-patterns (with or without a BOM) exits 2 and says to save it as UTF-8', (t) => {
+  const ctx = forkRepo(t);
+  write(ctx, 'notes.md', `ship it to ${PRIVATE_WORD}\n`);
+  commitAll(ctx, 'fork: notes');
+  const utf16 = Buffer.from(`${PRIVATE_WORD}\n`, 'utf16le');
+  for (const bytes of [Buffer.concat([Buffer.from([0xff, 0xfe]), utf16]), utf16]) {
+    writePatternBytes(ctx, bytes);
+    const { code, out } = run(ctx);
+    assert.equal(code, 2, out);
+    assert.match(out, /\.scrub-patterns is not UTF-8 text.*save it as UTF-8/);
+    assert.equal(out.includes(PRIVATE_WORD), false);
+  }
+});
+
+test('CLI: a .scrub-patterns that is not valid UTF-8 exits 2', (t) => {
+  const ctx = forkRepo(t);
+  writePatternBytes(ctx, Buffer.from([0x63, 0x61, 0x66, 0xe9, 0x0a])); // "caf" + a Latin-1 e-acute
+  const { code, out } = run(ctx);
+  assert.equal(code, 2, out);
+  assert.match(out, /save it as UTF-8/);
+});
+
+test('CLI: a UTF-8 .scrub-patterns with a BOM is read, its first line included', (t) => {
+  const ctx = forkRepo(t);
+  write(ctx, 'notes.md', `ship it to ${PRIVATE_WORD}\n`);
+  commitAll(ctx, 'fork: notes');
+  writePatternBytes(ctx, Buffer.from(`﻿${PRIVATE_WORD}\n`, 'utf8'));
+  const { code, out } = run(ctx);
+  assert.equal(code, 1, out);
+  assert.match(out, /^notes\.md:1 private:1$/m);
+});
+
+test('CLI: a directory named .scrub-patterns exits 2', (t) => {
+  const ctx = forkRepo(t);
+  fs.mkdirSync(path.join(ctx.repo, '.scrub-patterns'));
+  const { code, out } = run(ctx);
+  assert.equal(code, 2, out);
+  assert.match(out, /\.scrub-patterns is a directory/);
+});
+
+test('CLI: a baseline file with no entries list exits 2 and says so', (t) => {
+  const ctx = forkRepo(t);
+  write(ctx, 'scripts/countersign/scrub-baseline.json', JSON.stringify({ entry: [] }));
+  commitAll(ctx, 'fork: a baseline with a typo');
+  const tree = run(ctx);
+  assert.equal(tree.code, 2, tree.out);
+  assert.match(tree.out, /scripts\/countersign\/scrub-baseline\.json has no "entries" list/);
+
+  write(ctx, 'scripts/countersign/scrub-baseline.json', JSON.stringify({ entries: [] }));
+  write(ctx, 'scripts/countersign/scrub-history-baseline.json', JSON.stringify([]));
+  commitAll(ctx, 'fork: a history baseline with no entries list');
+  const history = run(ctx, ['--history']);
+  assert.equal(history.code, 2, history.out);
+  assert.match(
+    history.out,
+    /scripts\/countersign\/scrub-history-baseline\.json has no "entries" list/,
+  );
+});
+
 test('CLI: an unresolved base exits 2', (t) => {
   const ctx = forkRepo(t);
   const { code, out } = run(ctx, ['--base', 'f'.repeat(40)]);

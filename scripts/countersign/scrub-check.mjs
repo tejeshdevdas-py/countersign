@@ -48,11 +48,15 @@
  *
  * .scrub-patterns (git-ignored; see .scrub-patterns.example): one regular
  * expression per line, case-insensitive; # comments and blank lines ignored.
+ * It must be UTF-8 text (a UTF-8 byte order mark is fine); UTF-16, NUL bytes or
+ * invalid UTF-8 stop the check, so a mis-saved file never silently matches nothing.
  *
  * Exit codes:
  *   0  no findings
  *   1  findings, or a stale or invalid baseline entry
- *   2  input error: base unresolved, git failing, no tracked files, a bad pattern line
+ *   2  input error: base unresolved, git failing, no tracked files, a bad pattern
+ *      line, a .scrub-patterns that is not UTF-8 text or is a directory, a baseline
+ *      file that cannot be read or has no "entries" list
  */
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -479,12 +483,52 @@ function readAttributes(root, files) {
   return attrs;
 }
 
+/**
+ * The text of a .scrub-patterns file, or null when it is not UTF-8: a UTF-16 or
+ * UTF-32 byte order mark, a NUL byte, or bytes that are not valid UTF-8 (a file
+ * saved in a legacy code page). A UTF-8 byte order mark is dropped.
+ */
+export function decodePatternsFile(bytes) {
+  const utf16Bom =
+    bytes.length >= 2 &&
+    ((bytes[0] === 0xff && bytes[1] === 0xfe) || (bytes[0] === 0xfe && bytes[1] === 0xff));
+  if (utf16Bom || bytes.includes(0)) {
+    return null;
+  }
+  let text;
+  try {
+    text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  } catch {
+    return null;
+  }
+  return text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+}
+
 function loadPatterns(root, error) {
   const file = path.join(root, '.scrub-patterns');
-  if (!fs.existsSync(file)) {
-    return { patterns: [], present: false };
+  const failed = { patterns: [], present: true, failed: true };
+  let stat;
+  try {
+    stat = fs.statSync(file);
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      return { patterns: [], present: false };
+    }
+    error(`scrub: cannot read .scrub-patterns (${err.code})`);
+    return failed;
   }
-  const { patterns, errors } = parsePatterns(fs.readFileSync(file, 'utf8'));
+  if (stat.isDirectory()) {
+    error('scrub: .scrub-patterns is a directory; it must be a UTF-8 text file');
+    return failed;
+  }
+  const text = decodePatternsFile(fs.readFileSync(file));
+  if (text === null) {
+    error(
+      'scrub: .scrub-patterns is not UTF-8 text (a UTF-16 byte order mark, NUL bytes or invalid UTF-8); save it as UTF-8',
+    );
+    return failed;
+  }
+  const { patterns, errors } = parsePatterns(text);
   for (const line of errors) {
     error(`.scrub-patterns:${line}: not a valid regular expression`);
   }
@@ -509,14 +553,20 @@ function resolveBase(root, explicitBase, error) {
   return verified.stdout.trim();
 }
 
-function loadBaselineFile(baselinePath, error) {
+/** The entries of a baseline file (repo-relative `rel`), or null after reporting why not. */
+function loadBaselineFile(root, rel, error) {
+  let parsed;
   try {
-    const parsed = JSON.parse(fs.readFileSync(baselinePath, 'utf8'));
-    return Array.isArray(parsed.entries) ? parsed.entries : null;
+    parsed = JSON.parse(fs.readFileSync(path.join(root, rel), 'utf8'));
   } catch {
-    error(`scrub: cannot read the baseline ${normalize(baselinePath)}`);
+    error(`scrub: cannot read the baseline ${rel}`);
     return null;
   }
+  if (parsed === null || typeof parsed !== 'object' || !Array.isArray(parsed.entries)) {
+    error(`scrub: the baseline ${rel} has no "entries" list`);
+    return null;
+  }
+  return parsed.entries;
 }
 
 function runTree({ root, base, patterns, baseline, log, error }) {
@@ -814,8 +864,10 @@ export function main({
   if (loaded.failed) {
     return 2;
   }
-  const baselinePath = path.join(root, 'scripts', 'countersign', 'scrub-baseline.json');
-  const baseline = fs.existsSync(baselinePath) ? loadBaselineFile(baselinePath, error) : [];
+  const baselineRel = 'scripts/countersign/scrub-baseline.json';
+  const baseline = fs.existsSync(path.join(root, baselineRel))
+    ? loadBaselineFile(root, baselineRel, error)
+    : [];
   if (baseline === null) {
     return 2;
   }
@@ -828,8 +880,10 @@ export function main({
   }
   let historyBaseline = [];
   if (history) {
-    const historyPath = path.join(root, 'scripts', 'countersign', 'scrub-history-baseline.json');
-    historyBaseline = fs.existsSync(historyPath) ? loadBaselineFile(historyPath, error) : [];
+    const historyRel = 'scripts/countersign/scrub-history-baseline.json';
+    historyBaseline = fs.existsSync(path.join(root, historyRel))
+      ? loadBaselineFile(root, historyRel, error)
+      : [];
     if (historyBaseline === null) {
       return 2;
     }
