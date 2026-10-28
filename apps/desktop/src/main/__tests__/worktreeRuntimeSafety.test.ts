@@ -27,6 +27,7 @@ import {
 import { physicalWorktreeKey, withWorktreeResourceLock } from '../worktree/resourceLock';
 import { createLinkedWorktreeMetadata } from './fixtures/linkedWorktree';
 import { seedLegacySharedRuntimeLease } from './fixtures/legacySharedRuntimeLease';
+import { BRAND_IDENTITY } from '@cindy/maker-shared/brand-identity';
 
 // Registrations in identity tests start after boot, so only process identity decides.
 const t0 = Date.now();
@@ -64,8 +65,17 @@ describe('worktree runtime evidence and physical locks', () => {
     expect(await readWorktreeRuntimePaths()).toEqual(new Set());
     expect(notify).toHaveBeenCalledOnce();
     expect(await hasGitLock()).toBe(false);
-    await expect(fs.stat(path.join(state.root, 'app-data', 'Cindy', 'shared-worktree-runtime-leases')))
+    await expect(fs.stat(path.join(state.root, 'app-data', BRAND_IDENTITY.userDataDirName, 'shared-worktree-runtime-leases')))
       .rejects.toMatchObject({ code: 'ENOENT' });
+  });
+
+  it('Countersign: reads shared leases only from its own app-data folder, not Cindy', async () => {
+    const appData = path.join(state.root, 'app-data');
+    await seedLegacySharedRuntimeLease(appData, worktree, gitLock, 'Cindy');
+    expect(await readWorktreeRuntimePaths()).toEqual(new Set());
+    await seedLegacyLease();
+    expect(await readWorktreeRuntimePaths()).toEqual(new Set([await physicalWorktreeKey(worktree)]));
+    expect(BRAND_IDENTITY.userDataDirName).not.toMatch(/cindy/i);
   });
 
   it('keeps the replacement runtime protected when an older close finishes late', async () => {

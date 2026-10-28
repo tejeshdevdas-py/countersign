@@ -11,10 +11,24 @@ vi.mock('electron', () => ({ app: { getPath: (name: string) => {
   return root;
 } } }));
 vi.mock('../../logger', () => ({ createLogger: () => ({ warn: vi.fn(), info: vi.fn(), debug: vi.fn(), error: vi.fn() }) }));
+import { BRAND_IDENTITY } from '@cindy/maker-shared/brand-identity';
 import { acquireSharedSkillMutationLease, withSkillMutation } from '../sharedMutationLease';
 afterAll(() => fs.rmSync(root, { recursive: true, force: true }));
 
 describe('shared Skill mutation lease', () => {
+  it('Countersign: keeps lock files under its own app-data folder, not Cindy', async () => {
+    const lease = (await acquireSharedSkillMutationLease(['countersign-root']))!;
+    try {
+      const key = createHash('sha256').update('countersign-root').digest('hex');
+      const lockPath = path.join(root, BRAND_IDENTITY.userDataDirName, 'shared-skill-mutation-locks', `${key}.lock`);
+      expect(fs.existsSync(lockPath)).toBe(true);
+      expect(fs.readdirSync(root)).toEqual([BRAND_IDENTITY.userDataDirName]);
+      expect(BRAND_IDENTITY.userDataDirName).not.toMatch(/cindy/i);
+    } finally {
+      await lease();
+    }
+  });
+
   it('borrows only the current call chain and keeps an unawaited child locked until it finishes', async () => {
     const lease = (await acquireSharedSkillMutationLease(['parent']))!;
     let finishChild!: () => void;
@@ -60,7 +74,7 @@ describe('shared Skill mutation lease', () => {
   ])('$outcome', async ({ elapsedMs, releaseOwner }) => {
     const first = (await acquireSharedSkillMutationLease(['startup-projection']))!;
     const key = createHash('sha256').update('startup-projection').digest('hex');
-    const lockPath = path.join(root, 'Cindy', 'shared-skill-mutation-locks', `${key}.lock`);
+    const lockPath = path.join(root, BRAND_IDENTITY.userDataDirName, 'shared-skill-mutation-locks', `${key}.lock`);
     const ownerRecord = fs.readFileSync(lockPath, 'utf8');
     // Real filesystem exclusion, controlled deadline: Windows CI I/O can exceed
     // 500 ms even when the owner's release is scheduled after only 50 ms.
@@ -101,7 +115,7 @@ describe('shared Skill mutation lease', () => {
   it('contains a damaged durable barrier to its own resource name', async () => {
     const token = randomUUID();
     const key = createHash('sha256').update('damaged-receipt').digest('hex');
-    const file = path.join(root, 'Cindy', 'shared-skill-mutation-locks', 'pending', key, `${token}.json`);
+    const file = path.join(root, BRAND_IDENTITY.userDataDirName, 'shared-skill-mutation-locks', 'pending', key, `${token}.json`);
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, '{');
     try {

@@ -7,6 +7,7 @@ const state = vi.hoisted(() => ({ root: '', userData: '' }));
 vi.mock('electron', () => ({ app: { getPath: (name: string) => name === 'appData' ? path.join(state.root, 'app-data') : (state.userData || state.root) } }));
 import { newRecycleRecord, recycleJournalRoot, watchRecycleJournal, writeRecycleRecord } from '../worktree/recycleJournal';
 import { withWorktreeResourceLock } from '../worktree/resourceLock';
+import { BRAND_IDENTITY } from '@cindy/maker-shared/brand-identity';
 
 describe('native worktree journal watcher', () => {
   let stop: (() => void) | undefined;
@@ -18,7 +19,7 @@ describe('native worktree journal watcher', () => {
 
   // Emulate an older client's existing locator format without keeping its reader in production.
   const readPublishedRecords = async (id: string) => {
-    const directory = path.join(state.root, 'app-data', 'Cindy', 'shared-worktree-recycle-journals');
+    const directory = path.join(state.root, 'app-data', BRAND_IDENTITY.userDataDirName, 'shared-worktree-recycle-journals');
     return Promise.all((await fs.readdir(directory)).map(async (name) => {
       const { root } = JSON.parse(await fs.readFile(path.join(directory, name), 'utf8'));
       return JSON.parse(await fs.readFile(path.join(root, id + '.json'), 'utf8'));
@@ -71,6 +72,14 @@ describe('native worktree journal watcher', () => {
     state.userData = path.join(state.root, 'borrower');
     expect(await readPublishedRecords(record.id)).toEqual(expect.arrayContaining([record, other]));
     expect(await readPublishedRecords(record.id)).toHaveLength(2);
+  });
+
+  it('Countersign: publishes journal locations under its own app-data folder, not Cindy', async () => {
+    const record = await recordFor();
+    await withWorktreeResourceLock(record.meta.path, () => writeRecycleRecord(record));
+    expect(await readPublishedRecords(record.id)).toEqual([record]);
+    expect(await fs.readdir(path.join(state.root, 'app-data'))).toEqual([BRAND_IDENTITY.userDataDirName]);
+    expect(BRAND_IDENTITY.userDataDirName).not.toMatch(/cindy/i);
   });
 
   it('does not commit a recycle intent if publishing its location fails', async () => {

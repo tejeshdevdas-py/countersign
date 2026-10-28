@@ -1430,13 +1430,6 @@
       "why": "needs the hosted model gateway or a gateway key, which LOCAL_ONLY never has"
     },
     {
-      "file": "apps/desktop/src/main/maker-host/built-in-skill-activation.ts",
-      "text": "Cindy",
-      "count": 1,
-      "category": "not-shown",
-      "why": "on-disk directory or executable name shared with installed Cindy builds; code reads it, never shown"
-    },
-    {
       "file": "apps/desktop/src/main/maker-host/claude-auto-permission-fallback.ts",
       "text": "auto permission classifier unavailable; session kept on Auto with Cindy fallback",
       "count": 1,
@@ -1892,13 +1885,6 @@
       "why": "Skill Hub needs the cloud service"
     },
     {
-      "file": "apps/desktop/src/main/skillhub/sharedMutationLease.ts",
-      "text": "Cindy",
-      "count": 1,
-      "category": "not-shown",
-      "why": "on-disk directory or executable name shared with installed Cindy builds; code reads it, never shown"
-    },
-    {
       "file": "apps/desktop/src/main/smoke/computerUseSmoke.ts",
       "text": "<!doctype html><html><head><title>Cindy Computer Use Smoke</title><meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; script-src 'sha256-",
       "count": 1,
@@ -2023,20 +2009,6 @@
       "count": 2,
       "category": "hidden-history",
       "why": "author and committer name of the hidden snapshot commits under refs/cindy/*; a person sees it only with git log --all or the reflog"
-    },
-    {
-      "file": "apps/desktop/src/main/worktree/recycleJournal.ts",
-      "text": "Cindy",
-      "count": 1,
-      "category": "not-shown",
-      "why": "on-disk directory or executable name shared with installed Cindy builds; code reads it, never shown"
-    },
-    {
-      "file": "apps/desktop/src/main/worktree/runtimeLeases.ts",
-      "text": "Cindy",
-      "count": 1,
-      "category": "not-shown",
-      "why": "on-disk directory or executable name shared with installed Cindy builds; code reads it, never shown"
     },
     {
       "file": "apps/desktop/src/renderer/components/chat/McpAppCard.tsx",

@@ -3,14 +3,17 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { WorktreeRuntimeLease } from '../../worktree/runtimeLeases';
 import { physicalWorktreeKey } from '../../worktree/resourceLock';
+import { BRAND_IDENTITY } from '@cindy/maker-shared/brand-identity';
 
 /** Seed persisted shared evidence with an exact identity; production no longer creates shared leases or Git locks. */
 export async function seedLegacySharedRuntimeLease(
   appData: string,
   worktree: string,
   gitLock: string,
+  // Countersign: the shared folder follows BRAND_IDENTITY; tests pass another name to seed a foreign app's.
+  appDataChild: string = BRAND_IDENTITY.userDataDirName,
 ): Promise<WorktreeRuntimeLease> {
-  const directory = path.join(appData, 'Cindy', 'shared-worktree-runtime-leases');
+  const directory = path.join(appData, appDataChild, 'shared-worktree-runtime-leases');
   await fs.mkdir(directory, { recursive: true });
   await fs.writeFile(gitLock, JSON.stringify({ kind: 'cindy-runtime-lock', version: 1, nonce: 'legacy-fixture' }), { flag: 'wx' })
     .catch((error) => { if (error.code !== 'EEXIST') throw error; });

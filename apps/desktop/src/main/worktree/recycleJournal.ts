@@ -4,6 +4,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { setImmediate } from 'node:timers/promises';
 import { app } from 'electron';
+import { BRAND_IDENTITY } from '@cindy/maker-shared/brand-identity';
 
 import { physicalWorktreeKey, worktreeResourceId } from './resourceLock';
 import type { WorktreeRecyclePolicy } from './recyclePolicy';
@@ -48,7 +49,8 @@ export function recycleJournalRoot(): string {
 }
 
 function sharedJournalLocationsRoot(): string {
-  return path.join(app.getPath('appData'), 'Cindy', 'shared-worktree-recycle-journals');
+  // Countersign: under this identity's own app-data folder, never an installed Cindy's.
+  return path.join(app.getPath('appData'), BRAND_IDENTITY.userDataDirName, 'shared-worktree-recycle-journals');
 }
 
 /** Keep publishing locators for older clients that may still borrow across profiles. */

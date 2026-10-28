@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { canonicalBuiltInSkillActivationPath } from '../built-in-skill-activation';
+import { BRAND_IDENTITY } from '@cindy/maker-shared/brand-identity';
+import { canonicalBuiltInSkillActivationPath, sharedBuiltInSkillsRoot } from '../built-in-skill-activation';
 
 // Exercise Windows path semantics on every CI host, without real filesystem I/O.
 vi.mock('node:path', async (importOriginal) => {
@@ -32,7 +33,7 @@ describe('Windows built-in Skill activation identity', () => {
       vi.mocked(fs.realpathSync).mockImplementation(resolve);
       vi.mocked(fs.realpathSync.native).mockImplementation(resolve);
       const appData = path.join('C:\\', 'Users', 'Example', 'AppData', 'Roaming');
-      const sourceRoot = path.join(appData.toLowerCase(), 'cindy', 'shared-system-skills');
+      const sourceRoot = path.join(appData.toLowerCase(), BRAND_IDENTITY.userDataDirName.toLowerCase(), 'shared-system-skills');
       const sources = [
         'v6-0123456789abcdef-11111111-1111-1111-1111-111111111111',
         'v7-fedcba9876543210-22222222-2222-2222-2222-222222222222',
@@ -49,7 +50,7 @@ describe('Windows built-in Skill activation identity', () => {
     const appData = kind === 'drive'
       ? path.join('C:\\', 'Users', 'Example', 'AppData')
       : path.join('\\\\server\\share', 'Users', 'Example', 'AppData');
-    const root = path.join(appData, 'Cindy', 'shared-system-skills');
+    const root = path.join(appData, BRAND_IDENTITY.userDataDirName, 'shared-system-skills');
     const resolve = (value: fs.PathLike) => path.normalize(String(value));
     vi.mocked(fs.realpathSync).mockImplementation(resolve);
     vi.mocked(fs.realpathSync.native).mockImplementation(resolve);
@@ -61,5 +62,12 @@ describe('Windows built-in Skill activation identity', () => {
     const foreignSource = path.join(foreignRoot, '.active', 'learn');
     expect(canonicalBuiltInSkillActivationPath(foreignSource, path.join(appData, 'CindyGlobal'), appData))
       .toBe(foreignSource);
+  });
+
+  it('Countersign: puts the shared bundle under its own app-data folder, not Cindy', () => {
+    const appData = path.join('C:\\', 'Users', 'Example', 'AppData', 'Roaming');
+    const root = sharedBuiltInSkillsRoot(appData);
+    expect(root).toBe(path.join(appData, BRAND_IDENTITY.userDataDirName, 'shared-system-skills'));
+    expect(root).not.toMatch(/cindy/i);
   });
 });

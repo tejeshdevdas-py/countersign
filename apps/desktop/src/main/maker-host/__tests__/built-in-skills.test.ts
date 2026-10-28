@@ -26,7 +26,10 @@ import {
   refreshBuiltInClaudeSkillLinks,
   resolveBundledSystemSkillsRoot,
 } from '../built-in-skills';
+import { BRAND_IDENTITY } from '@cindy/maker-shared/brand-identity';
 
+// Countersign: the profile-independent bundle sits under this identity's own app-data folder.
+const SHARED_APP_DATA_DIR = BRAND_IDENTITY.userDataDirName;
 const roots: string[] = [];
 
 function fixture() {
@@ -136,7 +139,7 @@ describe('built-in Skills', () => {
     const input = fixture();
     const previous = await prepareBuiltInSkills({ ...input, bundleVersion: 12 });
     const plugin = previous.descriptors.find((item) => item.name === 'cindy-plugin-creator')!;
-    const root = path.join(input.appDataDir, 'Cindy', 'shared-system-skills');
+    const root = path.join(input.appDataDir, SHARED_APP_DATA_DIR, 'shared-system-skills');
     const manifestPath = path.join(root, '.cindy-system-skills.json');
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
     // Model the previous shipped bundle, which did not contain this Skill.
@@ -179,7 +182,7 @@ describe('built-in Skills', () => {
     const input = fixture();
     const first = await prepareAndProjectBuiltInSkills(input);
     const descriptor = builtInSkillDescriptors(input.userDataDir, input.appDataDir)[0]!;
-    const root = path.join(input.appDataDir, 'Cindy', 'shared-system-skills');
+    const root = path.join(input.appDataDir, SHARED_APP_DATA_DIR, 'shared-system-skills');
     const manifest = JSON.parse(
       fs.readFileSync(path.join(root, '.cindy-system-skills.json'), 'utf8'),
     );
@@ -267,7 +270,7 @@ describe('built-in Skills', () => {
     const input = fixture();
     const newer = await prepareBuiltInSkills({ ...input, bundleVersion: 5 });
     const descriptor = newer.descriptors[0]!;
-    const manifestPath = path.join(input.appDataDir, 'Cindy', 'shared-system-skills', '.cindy-system-skills.json');
+    const manifestPath = path.join(input.appDataDir, SHARED_APP_DATA_DIR, 'shared-system-skills', '.cindy-system-skills.json');
     const installed = fs.readFileSync(path.join(descriptor.absolutePath, 'SKILL.md'), 'utf8');
     fs.writeFileSync(manifestPath, '{ invalid json');
     fs.writeFileSync(
@@ -292,7 +295,7 @@ describe('built-in Skills', () => {
     const claudeTarget = fs.realpathSync(claudeLink);
     const manifestPath = path.join(
       input.appDataDir,
-      'Cindy',
+      SHARED_APP_DATA_DIR,
       'shared-system-skills',
       '.cindy-system-skills.json',
     );
@@ -315,7 +318,7 @@ describe('built-in Skills', () => {
     const input = fixture();
     const newer = await prepareBuiltInSkills({ ...input, bundleVersion: 5 });
     const descriptor = newer.descriptors[0]!;
-    const manifestPath = path.join(input.appDataDir, 'Cindy', 'shared-system-skills', '.cindy-system-skills.json');
+    const manifestPath = path.join(input.appDataDir, SHARED_APP_DATA_DIR, 'shared-system-skills', '.cindy-system-skills.json');
     const installed = fs.readFileSync(path.join(descriptor.absolutePath, 'SKILL.md'), 'utf8');
     fs.unlinkSync(manifestPath);
 
@@ -330,7 +333,7 @@ describe('built-in Skills', () => {
     const input = fixture();
     const newer = await prepareBuiltInSkills({ ...input, bundleVersion: 5 });
     const descriptor = newer.descriptors[0]!;
-    const manifestPath = path.join(input.appDataDir, 'Cindy', 'shared-system-skills', '.cindy-system-skills.json');
+    const manifestPath = path.join(input.appDataDir, SHARED_APP_DATA_DIR, 'shared-system-skills', '.cindy-system-skills.json');
     const installed = fs.readFileSync(path.join(descriptor.absolutePath, 'SKILL.md'), 'utf8');
     fs.renameSync(manifestPath, `${manifestPath}.bak`);
     fs.writeFileSync(
@@ -360,7 +363,7 @@ describe('built-in Skills', () => {
       ...input,
       bundleVersion: BUILT_IN_SKILLS_BUNDLE_VERSION + 1,
     });
-    const manifestPath = path.join(input.appDataDir, 'Cindy', 'shared-system-skills', '.cindy-system-skills.json');
+    const manifestPath = path.join(input.appDataDir, SHARED_APP_DATA_DIR, 'shared-system-skills', '.cindy-system-skills.json');
     expect(JSON.parse(fs.readFileSync(manifestPath, 'utf8')).bundleVersion).toBe(
       BUILT_IN_SKILLS_BUNDLE_VERSION,
     );
@@ -397,7 +400,7 @@ describe('built-in Skills', () => {
     const initial = await prepareBuiltInSkills(input);
     const creator = initial.descriptors.find((descriptor) => descriptor.name === 'cindy-skill-creator')!;
     const learn = initial.descriptors.find((descriptor) => descriptor.name === 'learn')!;
-    const root = path.join(input.appDataDir, 'Cindy', 'shared-system-skills');
+    const root = path.join(input.appDataDir, SHARED_APP_DATA_DIR, 'shared-system-skills');
     const manifestPath = path.join(root, '.cindy-system-skills.json');
     const initialManifest = fs.readFileSync(manifestPath, 'utf8');
     const initialActiveBundle = JSON.parse(initialManifest).activeBundle as string;
@@ -439,7 +442,7 @@ describe('built-in Skills', () => {
     const input = fixture();
     const initial = await prepareBuiltInSkills(input);
     const creator = initial.descriptors.find((descriptor) => descriptor.name === 'cindy-skill-creator')!;
-    const root = path.join(input.appDataDir, 'Cindy', 'shared-system-skills');
+    const root = path.join(input.appDataDir, SHARED_APP_DATA_DIR, 'shared-system-skills');
     const versionsRoot = path.join(root, '.versions');
     const manifestPath = path.join(root, '.cindy-system-skills.json');
     const initialManifest = fs.readFileSync(manifestPath, 'utf8');
@@ -472,7 +475,7 @@ describe('built-in Skills', () => {
   it('keeps every managed projection on one stable target across bundle upgrades', async () => {
     const input = fixture();
     const initial = await prepareBuiltInSkills(input);
-    const root = path.join(input.appDataDir, 'Cindy', 'shared-system-skills');
+    const root = path.join(input.appDataDir, SHARED_APP_DATA_DIR, 'shared-system-skills');
     const initialCreator = initial.descriptors.find(
       (descriptor) => descriptor.name === 'cindy-skill-creator',
     )!;
@@ -512,7 +515,7 @@ describe('built-in Skills', () => {
   it('finishes a committed active-pointer switch after an interrupted upgrade', async () => {
     const input = fixture();
     const initial = await prepareBuiltInSkills(input);
-    const root = path.join(input.appDataDir, 'Cindy', 'shared-system-skills');
+    const root = path.join(input.appDataDir, SHARED_APP_DATA_DIR, 'shared-system-skills');
     const activePath = path.join(root, '.active');
     const oldActiveTarget = fs.readlinkSync(activePath);
     const oldCreatorBytes = fs.realpathSync(initial.descriptors[0]!.absolutePath);
@@ -545,7 +548,7 @@ describe('built-in Skills', () => {
   it('repairs a committed active pointer redirected outside the managed versions directory', async () => {
     const input = fixture();
     const initial = await prepareBuiltInSkills(input);
-    const root = path.join(input.appDataDir, 'Cindy', 'shared-system-skills');
+    const root = path.join(input.appDataDir, SHARED_APP_DATA_DIR, 'shared-system-skills');
     const activePath = path.join(root, '.active');
     const manifest = JSON.parse(
       fs.readFileSync(path.join(root, '.cindy-system-skills.json'), 'utf8'),
@@ -577,7 +580,7 @@ describe('built-in Skills', () => {
     async (damage) => {
       const input = fixture();
       const prepared = await prepareBuiltInSkills(input);
-      const root = path.join(input.appDataDir, 'Cindy', 'shared-system-skills');
+      const root = path.join(input.appDataDir, SHARED_APP_DATA_DIR, 'shared-system-skills');
       const active = path.join(root, '.active');
       const target = fs.realpathSync(active);
       const skillPath = path.join(active, 'cindy-skill-creator');
@@ -627,7 +630,7 @@ describe('built-in Skills', () => {
   it('does not overwrite a non-link active pointer placeholder', async () => {
     const input = fixture();
     await prepareBuiltInSkills(input);
-    const root = path.join(input.appDataDir, 'Cindy', 'shared-system-skills');
+    const root = path.join(input.appDataDir, SHARED_APP_DATA_DIR, 'shared-system-skills');
     const activePath = path.join(root, '.active');
     fs.unlinkSync(activePath);
     fs.mkdirSync(path.join(activePath, 'cindy-skill-creator'), { recursive: true });
@@ -651,7 +654,7 @@ describe('built-in Skills', () => {
   it('restores the previous manifest and active pointer when publication fails', async () => {
     const input = fixture();
     const initial = await prepareBuiltInSkills(input);
-    const root = path.join(input.appDataDir, 'Cindy', 'shared-system-skills');
+    const root = path.join(input.appDataDir, SHARED_APP_DATA_DIR, 'shared-system-skills');
     const manifestPath = path.join(root, '.cindy-system-skills.json');
     const activePath = path.join(root, '.active');
     const initialManifest = fs.readFileSync(manifestPath, 'utf8');
@@ -683,7 +686,7 @@ describe('built-in Skills', () => {
   it('repairs projections left on an unpublished bundle before another activation', async () => {
     const input = fixture();
     const initial = await prepareBuiltInSkills(input);
-    const root = path.join(input.appDataDir, 'Cindy', 'shared-system-skills');
+    const root = path.join(input.appDataDir, SHARED_APP_DATA_DIR, 'shared-system-skills');
     const orphanBundle = 'v10-aaaaaaaaaaaaaaaa-00000000-0000-0000-0000-000000000000';
     const orphanRoot = path.join(root, '.versions', orphanBundle);
     // Copy the immutable bundle, not its .active junction/symlink. The orphan
@@ -719,7 +722,7 @@ describe('built-in Skills', () => {
   it('migrates direct current-version links onto the stable active path', async () => {
     const input = fixture();
     const initial = await prepareBuiltInSkills(input);
-    const root = path.join(input.appDataDir, 'Cindy', 'shared-system-skills');
+    const root = path.join(input.appDataDir, SHARED_APP_DATA_DIR, 'shared-system-skills');
     const descriptor = initial.descriptors[0]!;
     const immutableTarget = fs.realpathSync(descriptor.absolutePath);
     const sharedLink = path.join(builtInSkillPluginRoot(input.userDataDir), 'skills', descriptor.name);
@@ -740,7 +743,7 @@ describe('built-in Skills', () => {
 
   it('removes first-install projections when no bundle was ever activated', async () => {
     const input = fixture();
-    const root = path.join(input.appDataDir, 'Cindy', 'shared-system-skills');
+    const root = path.join(input.appDataDir, SHARED_APP_DATA_DIR, 'shared-system-skills');
     const orphanBundle = 'v8-bbbbbbbbbbbbbbbb-00000000-0000-0000-0000-000000000000';
     const orphanRoot = path.join(root, '.versions', orphanBundle);
     const sharedLink = path.join(builtInSkillPluginRoot(input.userDataDir), 'skills', 'cindy-skill-creator');
@@ -782,7 +785,7 @@ describe('built-in Skills', () => {
 
   it('creates a durable empty manifest before publishing the first version', async () => {
     const input = fixture();
-    const root = path.join(input.appDataDir, 'Cindy', 'shared-system-skills');
+    const root = path.join(input.appDataDir, SHARED_APP_DATA_DIR, 'shared-system-skills');
     const manifestPath = path.join(root, '.cindy-system-skills.json');
     const originalRename = fs.renameSync.bind(fs);
     let manifestWrites = 0;
@@ -870,7 +873,7 @@ describe('built-in Skills', () => {
     expect(result.changed).toBe(false);
     expect(result.warnings.join('\n')).toContain('another Skill mutation is in progress');
     expect(result.descriptors).toEqual([]);
-    expect(fs.existsSync(path.join(input.appDataDir, 'Cindy', 'shared-system-skills', '.active'))).toBe(false);
+    expect(fs.existsSync(path.join(input.appDataDir, SHARED_APP_DATA_DIR, 'shared-system-skills', '.active'))).toBe(false);
     expect(fs.existsSync(path.join(input.homeDir, '.agents', 'skills', 'cindy-skill-creator'))).toBe(false);
   });
 

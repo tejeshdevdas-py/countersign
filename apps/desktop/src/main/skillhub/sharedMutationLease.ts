@@ -3,6 +3,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import fs from 'node:fs';
 import path from 'node:path';
 import { app } from 'electron';
+import { BRAND_IDENTITY } from '@cindy/maker-shared/brand-identity';
 import { withCrossProcessLock } from '../device-link/crossProcessLock';
 import { createLogger } from '../logger';
 import { skillInstallLockKey } from './installLock';
@@ -95,7 +96,8 @@ export async function acquireSharedSkillMutationLease(
 ): Promise<SkillMutationRelease | null> {
   let root: string;
   try {
-    root = path.join(app.getPath('appData'), 'Cindy', 'shared-skill-mutation-locks');
+    // Countersign: under this identity's own app-data folder, never an installed Cindy's.
+    root = path.join(app.getPath('appData'), BRAND_IDENTITY.userDataDirName, 'shared-skill-mutation-locks');
     fs.mkdirSync(root, { recursive: true });
   } catch {
     log.warn('Skill mutation lock directory is unavailable');

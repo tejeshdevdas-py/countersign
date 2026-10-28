@@ -4,6 +4,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { app } from 'electron';
+import { BRAND_IDENTITY } from '@cindy/maker-shared/brand-identity';
 
 import { physicalWorktreeKey, withWorktreeResourceLock } from './resourceLock';
 import { isManagedWorktreeDirectoryName } from '../../shared/managedWorktreePaths';
@@ -19,7 +20,8 @@ function runtimeRoot(): string {
 
 /** Older clients may still hold cross-profile leases; keep reading/retrying them. */
 function sharedRuntimeRoot(): string {
-  return path.join(app.getPath('appData'), 'Cindy', 'shared-worktree-runtime-leases');
+  // Countersign: under this identity's own app-data folder, never an installed Cindy's.
+  return path.join(app.getPath('appData'), BRAND_IDENTITY.userDataDirName, 'shared-worktree-runtime-leases');
 }
 
 /** Map a local cwd (including descendants) to its managed resource. SSH callers skip this helper. */
