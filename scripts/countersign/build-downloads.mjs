@@ -9,6 +9,12 @@
  * runs. When the upstream download fails, the build stops and names the
  * upstream host.
  *
+ * With no other host to try, a slow download is not cut off for being slow:
+ * ensure-agent-binaries passes throughputGuard = BUILD_CDN_FALLBACK to each
+ * tools/<kind>/update.mjs, so only the connect, stall (no bytes) and hard total
+ * timeouts of tools/shared/fetch-with-timeout.mjs apply. Platform-tools already
+ * turns the speed limit off for its last (here: only) source.
+ *
  * Used by scripts/ensure-agent-binaries.mjs (also behind `pnpm install:*`,
  * postinstall and packaging) and apps/desktop/scripts/ensure-android-platform-tools.mjs.
  */

@@ -264,13 +264,15 @@ export function readPinnedVersion() {
  * 确保单个平台的二进制就位：下载到 updates/ 并 promote 到 apps/claude-code-bin/<platformKey>/。
  * 已存在合法文件时 downloadBinary 会自动跳过（除非 force）。
  */
-export async function ensurePlatform({ version, platformKey, force = false }) {
+// Countersign: throughputGuard is false when the caller has no fallback host
+// (ensure-agent-binaries passes BUILD_CDN_FALLBACK), so a slow download is not cut off.
+export async function ensurePlatform({ version, platformKey, force = false, throughputGuard = true }) {
   const entry = PLATFORMS.find((p) => p.key === platformKey);
   if (!entry) throw new Error(`Unknown platform key for claude: ${platformKey}`);
   // install 链路（ensure-agent-binaries）有 CDN 兜底，开启吞吐守卫尽早切换
   await downloadBinary(version, platformKey, entry.file, {
     force,
-    throughputGuard: true,
+    throughputGuard,
     resolveExpectedSha256: makeChecksumResolver(version),
   });
   promoteOnePlatform(version, platformKey, entry.file);

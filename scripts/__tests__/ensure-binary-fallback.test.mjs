@@ -81,11 +81,16 @@ test('ensureBinary(claude): upstream failure stops the build, names downloads.cl
   assert.equal(fs.existsSync(path.join('apps', 'claude-code-bin', PLATFORM, 'claude')), false);
 });
 
-test('ensureBinary(codex): 完整目录包拒绝单二进制 CDN 回退', async () => {
-  await assert.rejects(
-    ensureBinary('codex', PLATFORM, { force: true }),
-    /directory distribution.*pnpm update:codex-package/s,
-  );
+// Countersign: the directory distribution stops with the same no-fallback error as the other kinds.
+test('ensureBinary(codex): upstream failure stops the build, names the GitHub hosts, no CDN request', async () => {
+  const before = cdnRequests;
+  await assert.rejects(ensureBinary('codex', PLATFORM, { force: true }), (err) => {
+    assert.match(err.message, /api\.github\.com and github\.com/);
+    assert.match(err.message, /do not fall back/);
+    assert.match(err.message, /pnpm install:codex/);
+    return true;
+  });
+  assert.equal(cdnRequests, before);
   assert.equal(fs.existsSync(path.join('apps', 'codex-package-bin', PLATFORM)), false);
 });
 

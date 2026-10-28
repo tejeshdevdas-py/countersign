@@ -441,12 +441,14 @@ export function readPinnedVersion() {
 /**
  * 确保单个平台的产物就位：解析对应 release tag、下载并 promote 到 apps/pi-bin/<platformKey>/。
  */
-export async function ensurePlatform({ version, platformKey, force = false }) {
+// Countersign: throughputGuard is false when the caller has no fallback host
+// (ensure-agent-binaries passes BUILD_CDN_FALLBACK), so a slow download is not cut off.
+export async function ensurePlatform({ version, platformKey, force = false, throughputGuard = true }) {
   const entry = PLATFORMS.find((p) => p.key === platformKey);
   if (!entry) throw new Error(`Unknown platform key for pi: ${platformKey}`);
   const meta = await fetchReleaseMeta(`v${version}`);
   assertPinnedRuntimeAsset(readCache(), meta, version, platformKey, entry.asset);
-  await downloadAsset(meta, version, platformKey, entry.asset, entry.binFile, { force, throughputGuard: true });
+  await downloadAsset(meta, version, platformKey, entry.asset, entry.binFile, { force, throughputGuard });
   promoteOnePlatform(version, platformKey, entry.binFile);
 }
 

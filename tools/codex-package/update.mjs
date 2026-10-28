@@ -494,12 +494,14 @@ export function readPinnedVersion() {
   return readCachedVersion();
 }
 
-export async function ensurePlatform({ version, platformKey, force = false }) {
+// Countersign: throughputGuard is false when the caller has no fallback host
+// (ensure-agent-binaries passes BUILD_CDN_FALLBACK), so a slow download is not cut off.
+export async function ensurePlatform({ version, platformKey, force = false, throughputGuard = true }) {
   const platform = CODEX_PACKAGE_PLATFORMS.find((candidate) => candidate.key === platformKey);
   if (!platform) throw new Error(`Unknown platform key for codex-package: ${platformKey}`);
   const meta = await fetchReleaseMeta(`rust-v${version}`);
   assertPinnedRuntimeAsset(readCache(), meta, version, platform);
-  await downloadAsset(meta, version, platform, { force, throughputGuard: true });
+  await downloadAsset(meta, version, platform, { force, throughputGuard });
   promoteOnePlatform(version, platform);
 }
 

@@ -12,7 +12,8 @@
  * 的本地二进制（copy-on-write clone，秒级、不占双倍磁盘）→ 都没有才走网络下载。
  *
  * Countersign: an upstream download failure stops the build and names the upstream
- * host; there is no CDN fallback (scripts/countersign/build-downloads.mjs).
+ * host; there is no CDN fallback, so no speed limit either
+ * (scripts/countersign/build-downloads.mjs).
  *
  * 既可 CLI 跑，也可被 import：
  *   CLI:    node scripts/ensure-agent-binaries.mjs --kinds=claude,codex,ripgrep,pi --platform=current
@@ -34,7 +35,9 @@ const MIN_EXPECTED_BYTES = 1024;
 
 // kind → 本地落点 + 提供 ensurePlatform/readPinnedVersion 的下载模块
 // dirDist: 产物是"目录 + 主执行文件"，复用时必须复制并校验完整目录。
-// upstreamHost: named in the Countersign error when the upstream download fails.
+// upstreamHost: named in the Countersign error when the upstream download fails (the release
+// data and the file both come from it; GitHub kinds use api.github.com, then github.com).
+const GITHUB_HOSTS = 'api.github.com and github.com';
 const KINDS = {
   claude: {
     binDir: 'claude-code-bin',
@@ -46,7 +49,7 @@ const KINDS = {
     binDir: 'codex-package-bin',
     base: 'codex',
     module: '../tools/codex-package/update.mjs',
-    upstreamHost: 'github.com',
+    upstreamHost: GITHUB_HOSTS,
     pinDir: 'codex-package',
     updateScript: 'codex-package',
     dirDist: true,
@@ -61,13 +64,13 @@ const KINDS = {
     binDir: 'ripgrep-bin',
     base: 'rg',
     module: '../tools/ripgrep/update.mjs',
-    upstreamHost: 'github.com',
+    upstreamHost: GITHUB_HOSTS,
   },
   pi: {
     binDir: 'pi-bin',
     base: 'pi',
     module: '../tools/pi/update.mjs',
-    upstreamHost: 'github.com',
+    upstreamHost: GITHUB_HOSTS,
     dirDist: true,
     requiredDirDistFiles: ['theme/dark.json', 'theme/light.json', 'theme/theme-schema.json'],
   },
@@ -371,24 +374,27 @@ export async function ensureBinary(kind, platformKey = currentPlatformKey(), { f
   if (!reusedFrom) {
     log(`${kind} ${platformKey}: ensuring pinned version ${version}...`);
     try {
-      await mod.ensurePlatform({ version, platformKey, force });
+      // Countersign: with no fallback host, a slow download is not cut off by the speed limit
+      // (the hard total timeout still applies); the tools enable it only where a fallback exists.
+      await mod.ensurePlatform({ version, platformKey, force, throughputGuard: BUILD_CDN_FALLBACK });
     } catch (upstreamErr) {
-      if (!supportsCdnFallback(kind)) {
-        throw new Error(
-          `Failed to download ${kind} ${platformKey}@${version} from upstream: ${upstreamErr.message}. ` +
-            `This runtime is a directory distribution, so the single-binary CDN fallback is unsafe. ` +
-            `Run "pnpm update:${updateScript}" manually or check network availability.`,
-        );
-      }
-      // Countersign: no fallback to the upstream project's CDN; stop and name the upstream host.
+      // Countersign: no fallback to the upstream project's CDN for any kind; stop and name the
+      // upstream host. `pnpm install:<kind>` retries the same pinned version.
       if (!BUILD_CDN_FALLBACK) {
         throw new Error(
           upstreamDownloadFailure({
             what: `${kind} ${platformKey}@${version}`,
             host: cfg.upstreamHost,
             reason: upstreamErr.message,
-            retry: `pnpm update:${updateScript}`,
+            retry: `pnpm install:${kind}`,
           }),
+        );
+      }
+      if (!supportsCdnFallback(kind)) {
+        throw new Error(
+          `Failed to download ${kind} ${platformKey}@${version} from upstream: ${upstreamErr.message}. ` +
+            `This runtime is a directory distribution, so the single-binary CDN fallback is unsafe. ` +
+            `Run "pnpm update:${updateScript}" manually or check network availability.`,
         );
       }
       // claude / ripgrep：上游慢/失败（含 fetch-with-timeout 的 connect/stall/total/throughput 超时）→
