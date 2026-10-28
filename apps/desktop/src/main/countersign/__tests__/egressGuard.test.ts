@@ -54,6 +54,8 @@ describe('isBlockedHost', () => {
     'auth.cindy.app',
     'cindy.app',
     'x.cindy.com.cn',
+    'cindy.cn',
+    'www.cindy.cn',
     'e.tapdb.com',
     'e.tapdb.ap-sg.tapapis.com',
     'p.cn-hangzhou.log.aliyuncs.com',
@@ -75,6 +77,8 @@ describe('isBlockedHost', () => {
     'github.com',
     'notcindy.app',
     'cindy.app.example.com',
+    'notcindy.cn',
+    'cindy.cn.example.com',
     'aliyuncs.com',
     '',
   ])('allows %s', (host) => {

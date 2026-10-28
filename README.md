@@ -9,7 +9,7 @@ This is milestone 1 (M1): the renamed, local-only app. Read [Known limits](#know
 ## What this version does (M1)
 
 - Starts in local mode. There is no sign-in screen and no account.
-- Refuses requests to `cindy.app`, `cindy.com.cn`, `tapdb.com`, `tapapis.com` and `log.aliyuncs.com` (and their subdomains) that the app makes through its own network calls and windows. Every other host is allowed; see [Network](#network).
+- Refuses requests to `cindy.app`, `cindy.cn`, `cindy.com.cn`, `tapdb.com`, `tapapis.com` and `log.aliyuncs.com` (and their subdomains) that the app makes through its own network calls and windows. Every other host is allowed; see [Network](#network).
 - Does not start upstream's background services: analytics, the usage heartbeat, log upload, the app updater, the engine update check, and the chat-app (IM) bot connectors.
 - Starts the bundled Claude Code and Codex engines with the switches each offers for telemetry, error reports, feature flags and self-update turned off. Each switch, and where its name comes from, is in [`docs/countersign/engine-telemetry.md`](docs/countersign/engine-telemetry.md).
 - Ships Pi with the app. Settings > About shows the installed Pi version only; the app does not check for or download Pi updates.

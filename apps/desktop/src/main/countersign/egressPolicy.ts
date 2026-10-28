@@ -10,6 +10,7 @@ import { LOCAL_ONLY, LocalOnlyError } from '@cindy/maker-shared/local-only';
 /** Hosts (and all their subdomains) that Countersign never contacts. */
 export const BLOCKED_HOST_SUFFIXES: readonly string[] = [
   'cindy.app',
+  'cindy.cn',
   'cindy.com.cn',
   'tapdb.com',
   'tapapis.com',
