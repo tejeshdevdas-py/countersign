@@ -194,6 +194,8 @@ refresh 与 relay 自救节流。在途 refresh 尚未返回时收到的恢复�
 
 ## 路径与生命周期
 
+> Countersign fork note: in Countersign the four cross-profile roots in this table that name `app.getPath('appData')/Cindy/` (`shared-system-skills`, `shared-skill-mutation-locks`, `shared-worktree-runtime-leases` and `shared-worktree-recycle-journals`) follow `BRAND_IDENTITY.userDataDirName`, so they are under `app.getPath('appData')/Countersign/` and never in an installed Cindy's folder. See `maker-host/built-in-skill-activation.ts`, `skillhub/sharedMutationLease.ts`, `worktree/runtimeLeases.ts` and `worktree/recycleJournal.ts`.
+
 | 数据性质                            | 正确位置                                                                                                                                                                                                                                                                                                                                                                                                        |
 | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Codex 包内 shell 入口 | `<userData>/codex-package/<版本>/codex-path/codex`，打包版 macOS/Linux 在 `getMaker()` 选定实际运行的 Codex 后由主进程原子写入，转发到同包的 `bin/codex`；只更新带 Cindy 标记的旧脚本，不覆盖外来文件。随旧版本目录整体删除，不含凭证。实现见 `agent-binaries/codex-cli-launcher.ts` |
