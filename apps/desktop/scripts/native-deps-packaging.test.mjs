@@ -212,4 +212,40 @@ describe('native dependency packaging', () => {
     ]);
     expect(fs.existsSync(path.join(modules, 'better-sqlite3', 'bin'))).toBe(false);
   });
+
+  // Countersign (residual round, build-2): every node-gyp package's build folder loses
+  // the MSVC leftovers the packaged-output check fails on; addons and DLLs stay.
+  it('removes MSVC build leftovers from the build folder of every node-gyp package', () => {
+    const f = fixture();
+    const modules = path.join(f.buildPath, 'node_modules');
+    const removed = [
+      ['node-pty', 'build', 'Release', 'pty.ilk'],
+      ['node-pty', 'build', 'Release', 'vc143.idb'],
+      ['node-pty', 'build', 'Release', 'pty.pch'],
+      ['node-pty', 'build', 'Release', 'pty.res'],
+      ['node-pty', 'build', 'Release', 'pty.recipe'],
+      ['node-pty', 'build', 'Release', '.forge-meta'],
+      ['node-pty', 'build', 'Release', 'pty.pdb'],
+      ['node-pty', 'build', 'Release', 'obj', 'pty', 'pty.tlog', 'pty.lastbuildstate'],
+      ['node-pty', 'build', 'config.gypi'],
+      ['@scope', 'addon', 'build', 'Release', 'addon.exp'],
+    ];
+    const kept = [
+      ['node-pty', 'build', 'Release', 'pty.node'],
+      ['node-pty', 'build', 'Release', 'conpty', 'conpty.dll'],
+      ['node-pty', 'build', 'Release', 'conpty', 'OpenConsole.exe'],
+      ['@scope', 'addon', 'build', 'Release', 'addon.node'],
+      // Not a node-gyp package: its build folder is ordinary JavaScript output.
+      ['plain-js', 'build', 'src', 'index.res'],
+    ];
+    for (const parts of [['node-pty', 'binding.gyp'], ['@scope', 'addon', 'binding.gyp'], ...removed, ...kept]) {
+      const file = path.join(modules, ...parts);
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file, 'fixture');
+    }
+    prunePackagedRuntime(f.buildPath);
+    for (const parts of removed) expect(fs.existsSync(path.join(modules, ...parts)), parts.join('/')).toBe(false);
+    for (const parts of kept) expect(fs.readFileSync(path.join(modules, ...parts), 'utf8')).toBe('fixture');
+    expect(fs.existsSync(path.join(modules, 'node-pty', 'build', 'Release', 'obj'))).toBe(false);
+  });
 });

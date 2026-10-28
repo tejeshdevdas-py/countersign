@@ -233,11 +233,15 @@ export async function withEnv<T>(vars: Record<string, string>, run: () => Promis
 
 // ── Packaged output: no build intermediates, no builder user name ────────────
 
-/** File names only a node-gyp/MSVC build leaves behind (objects, symbols, logs, projects). */
-const BUILD_INTERMEDIATE_FILE =
-  /\.(?:obj|iobj|pdb|ipdb|lib|exp|tlog|sln)$|\.vcxproj(?:\.[^\\/]+)?$|^config\.gypi$/i;
+/**
+ * File names only a node-gyp/MSVC build leaves behind: objects, symbols, logs,
+ * projects, incremental-link and precompiled-header files, compiled resources,
+ * build-state and recipe files, and @electron/rebuild's `.forge-meta` marker.
+ */
+export const BUILD_INTERMEDIATE_FILE =
+  /\.(?:obj|iobj|pdb|ipdb|lib|exp|tlog|sln|ilk|idb|pch|res|lastbuildstate|recipe|forge-meta)$|\.vcxproj(?:\.[^\\/]+)?$|^config\.gypi$/i;
 /** Compiler output folders. */
-const BUILD_INTERMEDIATE_DIR = /^obj(?:\.target)?$/i;
+export const BUILD_INTERMEDIATE_DIR = /^obj(?:\.target)?$/i;
 const USER_NAME_MASK = '<user name>';
 const REPORT_LIMIT = 20;
 

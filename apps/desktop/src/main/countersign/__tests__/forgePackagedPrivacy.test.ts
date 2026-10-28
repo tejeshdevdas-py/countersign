@@ -239,4 +239,34 @@ describe('Countersign packaged output check', () => {
     const findings = findPackagedBuildLeaks(resources, { userName: '', publicIdentity: PUBLIC });
     expect(findings).toMatchObject({ intermediates: ['app.asar/build/x.pdb'], userName: [] });
   });
+
+  // Residual round, build-2: more MSVC/node-gyp leftovers seen in a real package build.
+  it('finds incremental-link, precompiled-header, resource and rebuild-marker files', async () => {
+    const resources = await packaged({
+      ...CLEAN,
+      'node_modules/addon/build/Release/addon.ilk': 'x',
+      'node_modules/addon/build/Release/vc143.idb': 'x',
+      'node_modules/addon/build/Release/addon.pch': 'x',
+      'node_modules/addon/build/Release/addon.res': 'x',
+      'node_modules/addon/build/Release/addon.tlog/addon.lastbuildstate': 'x',
+      'node_modules/addon/build/Release/addon.recipe': 'x',
+      'node_modules/addon/build/Release/.forge-meta': 'x',
+    });
+    const { intermediates } = findPackagedBuildLeaks(resources, {
+      userName: USER,
+      publicIdentity: PUBLIC,
+    });
+    const asar = (relative: string) => `app.asar/node_modules/addon/build/Release/${relative}`;
+    expect(intermediates).toEqual(
+      expect.arrayContaining([
+        asar('addon.ilk'),
+        asar('vc143.idb'),
+        asar('addon.pch'),
+        asar('addon.res'),
+        asar('addon.tlog/addon.lastbuildstate'),
+        asar('addon.recipe'),
+        asar('.forge-meta'),
+      ]),
+    );
+  });
 });
