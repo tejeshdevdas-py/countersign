@@ -85,6 +85,24 @@ export function hostFromRequestArgs(args: readonly unknown[]): EgressTarget | nu
   return null;
 }
 
+/**
+ * Protocol and host of a Node `http(s).request` / `get` call. Node merges an
+ * options object given after a URL or string over that URL, so a non-empty
+ * `options.hostname` there is where the request goes (`options.host` does not
+ * override a URL's hostname).
+ */
+export function hostFromHttpRequestArgs(args: readonly unknown[]): EgressTarget | null {
+  const target = hostFromRequestArgs(args);
+  const [first, second] = args;
+  if ((typeof first === 'string' || first instanceof URL) && second && typeof second === 'object') {
+    const hostname = (second as { hostname?: unknown }).hostname;
+    if (typeof hostname === 'string' && hostname) {
+      return { protocol: target?.protocol ?? 'https:', host: hostname };
+    }
+  }
+  return target;
+}
+
 export function guardFetch<F extends (...args: never[]) => Promise<unknown>>(
   original: F,
   recorder?: EgressRecorder,
@@ -100,9 +118,10 @@ export function guardFetch<F extends (...args: never[]) => Promise<unknown>>(
 export function guardRequestFunction<F extends (...args: never[]) => unknown>(
   original: F,
   recorder?: EgressRecorder,
+  hostOf: (args: readonly unknown[]) => EgressTarget | null = hostFromRequestArgs,
 ): F {
   const guarded = function (this: unknown, ...args: Parameters<F>) {
-    const refused = checkEgressTarget(hostFromRequestArgs(args), recorder ?? getEgressRecorder());
+    const refused = checkEgressTarget(hostOf(args), recorder ?? getEgressRecorder());
     if (refused) throw blockedError(refused.host);
     return original.apply(this, args);
   };
@@ -194,7 +213,11 @@ export function installEgressGuard(opts: { logFile: string | null }): void {
     for (const name of ['request', 'get'] as const) {
       const fn = mod[name];
       if (typeof fn === 'function') {
-        mod[name] = guardRequestFunction(fn as (...args: never[]) => unknown);
+        mod[name] = guardRequestFunction(
+          fn as (...args: never[]) => unknown,
+          undefined,
+          hostFromHttpRequestArgs,
+        );
       }
     }
   }

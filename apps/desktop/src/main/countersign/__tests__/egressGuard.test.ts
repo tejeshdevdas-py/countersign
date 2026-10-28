@@ -44,6 +44,7 @@ import {
   guardFetch,
   guardRequestFunction,
   guardWebRequest,
+  hostFromHttpRequestArgs,
   hostFromRequestArgs,
   isBlockedHost,
   type EgressRecorder,
@@ -104,6 +105,31 @@ describe('hostFromRequestArgs', () => {
     expect(hostFromRequestArgs([{ host: 'cindy.app:443' }])?.host).toBe('cindy.app');
     expect(hostFromRequestArgs([{ url: 'https://api.openai.com/v1' }])?.host).toBe('api.openai.com');
     expect(hostFromRequestArgs([])).toBeNull();
+  });
+});
+
+describe('hostFromHttpRequestArgs', () => {
+  // Node merges an options object over a URL first argument, and the request
+  // then goes to options.hostname (options.host does not override a URL's).
+  it('lets options.hostname override a URL or string first argument', () => {
+    expect(hostFromHttpRequestArgs(['https://github.com/', { hostname: 'auth.cindy.app' }])).toEqual({
+      protocol: 'https:',
+      host: 'auth.cindy.app',
+    });
+    expect(hostFromHttpRequestArgs([new URL('http://localhost/x'), { hostname: 'e.tapdb.com' }])).toEqual({
+      protocol: 'http:',
+      host: 'e.tapdb.com',
+    });
+  });
+
+  it('otherwise reads the request like hostFromRequestArgs', () => {
+    expect(hostFromHttpRequestArgs(['https://github.com/', { host: 'cindy.app:443' }])?.host).toBe('github.com');
+    expect(hostFromHttpRequestArgs(['https://github.com/', () => {}])?.host).toBe('github.com');
+    expect(hostFromHttpRequestArgs(['https://github.com/', { hostname: '' }])?.host).toBe('github.com');
+    expect(hostFromHttpRequestArgs([{ hostname: 'cindy.com.cn' }, { hostname: 'github.com' }])?.host).toBe(
+      'cindy.com.cn',
+    );
+    expect(hostFromHttpRequestArgs([])).toBeNull();
   });
 });
 
@@ -281,6 +307,13 @@ describe('installEgressGuard wiring', () => {
   });
 
   it('guards main-process fetch, net, http(s) and every session', async () => {
+    // Fakes stand in for Node's http(s) functions, so a request the guard lets
+    // through never reaches the network from this test.
+    const passed = vi.fn(() => 'node-request');
+    http.request = passed as unknown as typeof http.request;
+    http.get = passed as unknown as typeof http.get;
+    https.request = passed as unknown as typeof https.request;
+    https.get = passed as unknown as typeof https.get;
     const { installEgressGuard } = await import('../egressGuard');
     installEgressGuard({ logFile: null });
 
@@ -289,6 +322,12 @@ describe('installEgressGuard wiring', () => {
     expect(() => http.get({ hostname: 'cindy.com.cn' })).toThrow(LocalOnlyError);
     expect(() => https.request({ host: 'auth.cindy.app:443', path: '/' })).toThrow(LocalOnlyError);
     expect(() => https.get('https://p.cn-hangzhou.log.aliyuncs.com/')).toThrow(LocalOnlyError);
+    expect(() => https.get('https://github.com/', { hostname: 'auth.cindy.app' })).toThrow(LocalOnlyError);
+    expect(() => http.request('http://localhost/', { hostname: 'e.tapdb.com' }, () => {})).toThrow(
+      LocalOnlyError,
+    );
+    expect(passed).not.toHaveBeenCalled();
+    expect(https.get('https://github.com/', { headers: {} })).toBe('node-request');
     expect(() => (net.request as (url: string) => unknown)('https://cindy.app/')).toThrow(LocalOnlyError);
     await expect((net.fetch as (url: string) => Promise<unknown>)('https://cindy.app/')).rejects.toBeInstanceOf(
       LocalOnlyError,
