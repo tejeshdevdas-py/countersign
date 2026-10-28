@@ -85,13 +85,18 @@ describe('forge.config.ts Countersign packaging wiring', () => {
     const start = forge.indexOf('function assertCountersignPackagedOutputClean(');
     const body = forge.slice(start, forge.indexOf('\nfunction ', start + 1));
     expect(body).toContain("if (platform !== 'win32') return;");
-    expect(body).toContain('userName = os.userInfo().username;');
+    expect(body).toContain('const user = os.userInfo();');
+    expect(body).toContain('userName = user.username;');
+    // build-1: the profile folder name is checked too (a Microsoft-account folder can differ).
+    expect(body).toContain('profileName = path.basename(user.homedir);');
     expect(body).toContain(
       'publicIdentity: publicGithubIdentity(Object.values(BRAND_IDENTITY.appIdByRegion)),',
     );
     // The name is only handed to the check: never logged or written.
     expect(body.split('userName').length - 1).toBe(3);
+    expect(body.split('profileName').length - 1).toBe(3);
     expect(/console\.\w+\([^;]*userName/.test(body)).toBe(false);
+    expect(/console\.\w+\([^;]*profileName/.test(body)).toBe(false);
     expect(/writeFile|appendFile/.test(body)).toBe(false);
   });
 });
