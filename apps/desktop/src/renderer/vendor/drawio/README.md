@@ -2,6 +2,8 @@
 
 用于在工作区文件浏览里预览 `.drawio` 文件的官方 viewer 脚本,直接 vendor 进仓库以避免运行时从外网拉取。
 
+Countersign: vendoring keeps the script itself local, but the viewer does use the network by default. With its location globals unset it loads stencil and shape libraries, styles, images, the math renderer and a proxy from `https://viewer.diagrams.net`, and it loads the web fonts a diagram names (usually `fonts.googleapis.com`). Under `LOCAL_ONLY`, `DrawioPreview.tsx` sets those globals to a local folder that does not exist before the script runs, and drops remote font URLs once it has loaded (`src/renderer/lib/countersignDrawioOffline.ts`). Library shapes (AWS, Cisco, electrical and others) then draw as placeholders, and text uses an installed font. Remote JavaScript is never run: the viewer sets `mxStencilRegistry.allowEval = false` when it loads.
+
 - **来源**: https://github.com/jgraph/drawio (发布产物 `viewer-static.min.js`)
 - **版本**: `30.0.4`(以 min.js 内嵌的 `VERSION` 字符串为准,`pnpm licenses:generate` 会自动解析)
 - **License**: Apache-2.0(见同目录 `LICENSE`,Copyright (c) JGraph Ltd)

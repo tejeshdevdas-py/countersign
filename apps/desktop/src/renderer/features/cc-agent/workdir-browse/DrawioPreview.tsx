@@ -5,7 +5,12 @@
  *   - drawio viewer-static.min.js 是 ~3.6MB 第三方脚本,不进 main bundle —
  *     首次打开 .drawio 文件时动态注入 <script>,后续打开同类文件直接复用
  *     已加载的 window.GraphViewer。
- *   - viewer 离线工作 (vendor 目录里有,Vite 通过 ?url 出 URL),不联网。
+ *   - viewer 脚本在 vendor 目录里 (Vite 通过 ?url 出 URL)。Countersign: the
+ *     script is local, but by default it fetches stencils, styles, images and
+ *     math from viewer.diagrams.net and diagram fonts from fonts.googleapis.com.
+ *     Under LOCAL_ONLY those locations are set to a missing local folder before
+ *     the script runs (lib/countersignDrawioOffline.ts): library shapes draw as
+ *     placeholders and remote fonts are skipped.
  *   - 文件内容(XML 文本)由父层 FileBodyView 经 useFileContent 已读好,
  *     直接传 xmlContent prop。不走 fetch(xdt-file://...) —— 该协议
  *     `corsEnabled: false`,fetch API 会被跨源拦掉(TypeError: Failed to fetch),
@@ -16,6 +21,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
+
+import { applyDrawioOfflineGlobals } from '@/lib/countersignDrawioOffline';
 import { createLogger } from '@/lib/logger';
 
 import viewerUrl from '@/vendor/drawio/viewer-static.min.js?url';
@@ -45,6 +53,8 @@ function loadViewerOnce(): Promise<DrawioGraphViewer> {
   if (window.GraphViewer) return Promise.resolve(window.GraphViewer);
   if (viewerLoadPromise) return viewerLoadPromise;
   viewerLoadPromise = new Promise<DrawioGraphViewer>((resolve, reject) => {
+    // Countersign: the viewer reads its location globals when it loads.
+    if (LOCAL_ONLY) applyDrawioOfflineGlobals(window);
     const script = document.createElement('script');
     script.src = viewerUrl;
     script.async = true;
