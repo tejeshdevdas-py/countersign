@@ -35,16 +35,18 @@ export {
 } from '../../shared/locale';
 export type { LocalePreference, SupportedLocale } from '../../shared/locale';
 
-// 凭证写入逃生口必须在五语里共用同一条安全命令；集中覆盖防止某个 locale 又退回
-// “手动设置环境变量”的危险指引。对应跨 locale 契约由 devOAuthWritePolicy.test 锁住。
-type CommonResource = typeof enCommon;
+/** The part of a locale's common.json that the LOCAL_ONLY overlay reads. */
+type RemoteErrorOverlaySource = {
+  chat: { remoteError: Record<string, string> };
+  countersignLocalOnly: { remoteError: Record<string, string> };
+};
 
 /**
  * Countersign: under LOCAL_ONLY the remote-task errors that offered the hosted "<app> AI"
  * gateway are replaced by `countersignLocalOnly.remoteError`, which names only options
  * that exist. Every renderer path that shows `chat.remoteError.<code>` gets the local text.
  */
-function countersignCommon<T extends CommonResource>(common: T): T {
+function countersignCommon<T extends RemoteErrorOverlaySource>(common: T): T {
   if (!LOCAL_ONLY) return common;
   return {
     ...common,
@@ -52,9 +54,11 @@ function countersignCommon<T extends CommonResource>(common: T): T {
       ...common.chat,
       remoteError: { ...common.chat.remoteError, ...common.countersignLocalOnly.remoteError },
     },
-  };
+  } as T;
 }
 
+// 凭证写入逃生口必须在五语里共用同一条安全命令；集中覆盖防止某个 locale 又退回
+// “手动设置环境变量”的危险指引。对应跨 locale 契约由 devOAuthWritePolicy.test 锁住。
 const resources = {
   en: {
     common: {
