@@ -3110,7 +3110,8 @@ export function ProvidersSection() {
   // 「分享 {供应商}」管理页：设置内的子页面，返回回到该供应商的详情。只替换主体内容，
   // 下方的添加 / 编辑 / 导入弹窗层保持挂载，不会因打开管理页而丢失正在填写的内容。
   const shareManageProvider = shareManageRemote?.provider ?? (shareManageProviderId ? byId.get(shareManageProviderId) ?? null : null);
-  const shareManagePage = shareManageProviderId ? (
+  // Countersign: provider sharing needs the device link, which LOCAL_ONLY switches off.
+  const shareManagePage = shareManageProviderId && !LOCAL_ONLY ? (
     <ProviderShareManagePage
       key={`${shareManageRemote?.deviceId ?? 'local'}:${shareManageProviderId}`}
       providerId={shareManageProviderId}
@@ -3413,7 +3414,9 @@ export function ProvidersSection() {
                   {/* 允许被远程调用 + 「远程与分享」入口(含供应商组)：供应商已连接且能跑 Agent 时出现。
                       本机未允许远程控制时整行仍显示，但开关不可用(provider-sharing.md §3)；入口始终可用，
                       只给本机用时也可以建组(provider-groups.md §10)。 */}
-                  {remoteControlEnabled !== null &&
+                  {/* Countersign: no remote use or sharing under LOCAL_ONLY. */}
+                  {!LOCAL_ONLY &&
+                    remoteControlEnabled !== null &&
                     !effectiveSelected.suspended &&
                     effectiveSelected.connected &&
                     effectiveSelected.agents.length > 0 &&

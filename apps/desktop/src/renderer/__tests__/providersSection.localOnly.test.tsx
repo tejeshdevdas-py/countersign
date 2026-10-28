@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -8,7 +8,7 @@ import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import type { ProviderView } from '@cindy/model-providers';
 
 // I-7, under the real LOCAL_ONLY switch: no pinned hosted-service row with the upstream
-// company's mark.
+// company's mark. I-5: no "Remote & Sharing" row or page.
 
 const { wizardSpy, providersState } = vi.hoisted(() => ({
   wizardSpy: vi.fn(),
@@ -149,6 +149,12 @@ afterEach(() => {
   localProviderGroupsTesting.reset();
 });
 
+async function settle() {
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+}
+
 describe('ProvidersSection under the real LOCAL_ONLY switch', () => {
   it('runs under the real switch', () => {
     expect(LOCAL_ONLY).toBe(true);
@@ -167,5 +173,29 @@ describe('ProvidersSection under the real LOCAL_ONLY switch', () => {
     expect(await screen.findByTestId('wizard-stub')).toBeTruthy();
     expect(document.querySelector(UPSTREAM_MARK)).toBeNull();
     expect(screen.queryByText('settings.providers.xd.title')).toBeNull();
+  });
+
+  it('shows no remote-access row and no Remote & Sharing button for a connected provider', async () => {
+    providersState.providers = [
+      makeProvider('anthropic', {
+        name: 'Anthropic',
+        connected: true,
+        remoteInvocationEnabled: false,
+      }),
+    ];
+    renderAt('?tab=providers&connect=anthropic');
+    expect(await screen.findAllByText('Anthropic')).not.toHaveLength(0);
+    await settle();
+    await settle();
+    expect(screen.queryByTestId('provider-remote-access')).toBeNull();
+    expect(screen.queryByTestId('provider-share-entry')).toBeNull();
+  });
+
+  it('does not open the provider sharing page from a shareProvider link', async () => {
+    providersState.providers = [makeProvider('anthropic', { name: 'Anthropic', connected: true })];
+    renderAt('?tab=providers&shareProvider=anthropic');
+    await settle();
+    await waitFor(() => expect(screen.queryByTestId('provider-share-manage')).toBeNull());
+    expect(await screen.findAllByText('Anthropic')).not.toHaveLength(0);
   });
 });
