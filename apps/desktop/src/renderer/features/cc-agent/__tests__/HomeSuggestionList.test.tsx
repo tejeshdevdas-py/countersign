@@ -8,6 +8,12 @@ import { HomeSuggestionList } from '../HomeSuggestionList';
 import { HOME_SUGGESTION_CATALOG, HOME_SUGGESTION_IDS } from '../homeSuggestions';
 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
+// Countersign: these upstream cases cover the full catalog;
+// homeSuggestions.localOnly.test.tsx covers the LOCAL_ONLY set.
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
 
 beforeEach(() => localStorage.clear());
 afterEach(() => {

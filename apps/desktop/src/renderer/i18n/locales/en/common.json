@@ -10737,7 +10737,7 @@
       },
       "readOwnSource": {
         "label": "Explore {{appName}}'s own source code",
-        "prompt": "Show me {{appName}}'s source code (github.com/makecindy/cindy), explain how you're built, and explore some interesting parts with me."
+        "prompt": "Show me {{appName}}'s source code (github.com/tejeshdevdas-py/countersign), explain how you're built, and explore some interesting parts with me."
       },
       "whatCindyCanDo": {
         "label": "Find a few things you can help me with",

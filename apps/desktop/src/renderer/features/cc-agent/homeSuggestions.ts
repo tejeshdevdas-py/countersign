@@ -1,3 +1,5 @@
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
+
 export const HOME_SUGGESTION_BATCH_SIZE = 4;
 export const HOME_SUGGESTIONS_HIDDEN_KEY = 'cindy.homeSuggestions.hidden';
 
@@ -32,6 +34,15 @@ export const HOME_SUGGESTION_CATALOG = [
 
 export type HomeSuggestionId = (typeof HOME_SUGGESTION_CATALOG)[number]['id'];
 export const HOME_SUGGESTION_IDS = HOME_SUGGESTION_CATALOG.map(({ id }) => id);
+
+// Countersign: suggestions for features that are off under LOCAL_ONLY. "Send
+// feedback" prepares an issue for the issue reporter, which is not registered.
+const LOCAL_ONLY_HIDDEN_HOME_SUGGESTIONS: ReadonlySet<HomeSuggestionId> = new Set(['sendFeedback']);
+
+/** False for a built-in suggestion whose feature is off in this build. */
+export function isHomeSuggestionShown(id: HomeSuggestionId): boolean {
+  return !LOCAL_ONLY || !LOCAL_ONLY_HIDDEN_HOME_SUGGESTIONS.has(id);
+}
 
 export interface HomeSuggestionCandidate {
   /** Globally unique identity and broad category assigned by the host. */

@@ -10,6 +10,7 @@ import {
   HOME_SUGGESTION_CATALOG,
   homeSuggestionLabelKey,
   homeSuggestionPromptKey,
+  isHomeSuggestionShown,
   randomCategoryOrder,
   selectHomeSuggestionBatch,
   shuffled,
@@ -67,7 +68,10 @@ export function buildHomeTaskCatalog(
   t: (key: string) => string,
   includePlugins = true,
 ): HomeTaskSuggestion[] {
-  const builtins: HomeTaskSuggestion[] = HOME_SUGGESTION_CATALOG.map(({ id, category }) => ({
+  // Countersign: built-ins whose feature is off in this build are left out.
+  const builtins: HomeTaskSuggestion[] = HOME_SUGGESTION_CATALOG.filter(({ id }) =>
+    isHomeSuggestionShown(id),
+  ).map(({ id, category }) => ({
     id,
     category,
     builtinId: id,

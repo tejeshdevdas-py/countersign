@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { HomePluginRecommendationsSnapshot } from '../../../../shared/homePluginRecommendations';
 import {
   buildHomeTaskCatalog,
@@ -8,6 +8,13 @@ import {
   pluginSuggestionDisplayText,
   type HomeTaskBatch,
 } from '../pluginHomeSuggestions';
+
+// Countersign: these upstream cases count the full built-in catalog;
+// homeSuggestions.localOnly.test.tsx covers the LOCAL_ONLY set.
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
 
 const empty: HomePluginRecommendationsSnapshot = {
   ownerId: 'a',

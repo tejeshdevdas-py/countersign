@@ -10702,7 +10702,7 @@
       },
       "readOwnSource": {
         "label": "看看 {{appName}} 自己的源码",
-        "prompt": "带我看看 {{appName}} 的源码（github.com/makecindy/cindy），讲讲你是怎么实现的，再挑有趣的部分深入看看。"
+        "prompt": "带我看看 {{appName}} 的源码（github.com/tejeshdevdas-py/countersign），讲讲你是怎么实现的，再挑有趣的部分深入看看。"
       },
       "whatCindyCanDo": {
         "label": "找出几件你能帮我的事",

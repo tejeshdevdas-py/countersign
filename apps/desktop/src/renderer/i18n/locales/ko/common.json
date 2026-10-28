@@ -10702,7 +10702,7 @@
       },
       "readOwnSource": {
         "label": "{{appName}}의 소스 코드를 보여 줘",
-        "prompt": "{{appName}} 소스 코드(github.com/makecindy/cindy)를 보면서 네가 어떻게 구현되었는지 알려줘. 그런 다음 재미있는 부분을 골라 더 깊이 살펴보자."
+        "prompt": "{{appName}} 소스 코드(github.com/tejeshdevdas-py/countersign)를 보면서 네가 어떻게 구현되었는지 알려줘. 그런 다음 재미있는 부분을 골라 더 깊이 살펴보자."
       },
       "whatCindyCanDo": {
         "label": "지금 도와줄 수 있는 일을 제안해 줘",
