@@ -11,6 +11,9 @@
  * 解析 pin 版本 → 校验本地是否已就位 → 先尝试从兄弟 git worktree 复用同 pin 版本
  * 的本地二进制（copy-on-write clone，秒级、不占双倍磁盘）→ 都没有才走网络下载。
  *
+ * Countersign: an upstream download failure stops the build and names the upstream
+ * host; there is no CDN fallback (scripts/countersign/build-downloads.mjs).
+ *
  * 既可 CLI 跑，也可被 import：
  *   CLI:    node scripts/ensure-agent-binaries.mjs --kinds=claude,codex,ripgrep,pi --platform=current
  *   import: import { ensureBinary } from './ensure-agent-binaries.mjs'
@@ -22,6 +25,7 @@ import { randomUUID } from 'node:crypto';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { downloadFromCdn } from './agent-binary-cdn-fallback.mjs';
+import { BUILD_CDN_FALLBACK, upstreamDownloadFailure } from './countersign/build-downloads.mjs';
 import { verifyDirDistManifest, writeDirDistManifest } from '../tools/shared/dir-dist-manifest.mjs';
 
 const ROOT = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
@@ -30,12 +34,19 @@ const MIN_EXPECTED_BYTES = 1024;
 
 // kind → 本地落点 + 提供 ensurePlatform/readPinnedVersion 的下载模块
 // dirDist: 产物是"目录 + 主执行文件"，复用时必须复制并校验完整目录。
+// upstreamHost: named in the Countersign error when the upstream download fails.
 const KINDS = {
-  claude: { binDir: 'claude-code-bin', base: 'claude', module: '../tools/claude/update.mjs' },
+  claude: {
+    binDir: 'claude-code-bin',
+    base: 'claude',
+    module: '../tools/claude/update.mjs',
+    upstreamHost: 'downloads.claude.ai',
+  },
   codex: {
     binDir: 'codex-package-bin',
     base: 'codex',
     module: '../tools/codex-package/update.mjs',
+    upstreamHost: 'github.com',
     pinDir: 'codex-package',
     updateScript: 'codex-package',
     dirDist: true,
@@ -46,11 +57,17 @@ const KINDS = {
       path.join('codex-path', binFileFor('rg', platformKey)),
     ],
   },
-  ripgrep: { binDir: 'ripgrep-bin', base: 'rg', module: '../tools/ripgrep/update.mjs' },
+  ripgrep: {
+    binDir: 'ripgrep-bin',
+    base: 'rg',
+    module: '../tools/ripgrep/update.mjs',
+    upstreamHost: 'github.com',
+  },
   pi: {
     binDir: 'pi-bin',
     base: 'pi',
     module: '../tools/pi/update.mjs',
+    upstreamHost: 'github.com',
     dirDist: true,
     requiredDirDistFiles: ['theme/dark.json', 'theme/light.json', 'theme/theme-schema.json'],
   },
@@ -361,6 +378,17 @@ export async function ensureBinary(kind, platformKey = currentPlatformKey(), { f
           `Failed to download ${kind} ${platformKey}@${version} from upstream: ${upstreamErr.message}. ` +
             `This runtime is a directory distribution, so the single-binary CDN fallback is unsafe. ` +
             `Run "pnpm update:${updateScript}" manually or check network availability.`,
+        );
+      }
+      // Countersign: no fallback to the upstream project's CDN; stop and name the upstream host.
+      if (!BUILD_CDN_FALLBACK) {
+        throw new Error(
+          upstreamDownloadFailure({
+            what: `${kind} ${platformKey}@${version}`,
+            host: cfg.upstreamHost,
+            reason: upstreamErr.message,
+            retry: `pnpm update:${updateScript}`,
+          }),
         );
       }
       // claude / ripgrep：上游慢/失败（含 fetch-with-timeout 的 connect/stall/total/throughput 超时）→

@@ -13,6 +13,7 @@ import path from 'node:path';
 import {
   currentPlatformKey,
   downloadUrlFor,
+  ensureAndroidPlatformTools,
   expectedHashesFor,
   isSupportedPlatformKey,
   ossZipUrlFor,
@@ -119,6 +120,54 @@ test('resolveOssBaseUrl: 优先 XDT_CDN_BASE_URL，否则回落端点清单的 c
   const fromManifest = resolveOssBaseUrl();
   assert.match(fromManifest, /^https:\/\//);
   assert.doesNotMatch(fromManifest, /\/$/);
+});
+
+// Countersign: builds never fall back to the upstream project's CDN (spec: no request to
+// *.cindy.app). An upstream failure stops the build and names dl.google.com, even when the
+// OSS-first preference and a CDN base are set.
+test('Countersign: an upstream failure is not retried on the CDN and names dl.google.com', async (t) => {
+  const saved = {
+    prefer: process.env.CINDY_ANDROID_PLATFORM_TOOLS_PREFER_OSS,
+    cdn: process.env.XDT_CDN_BASE_URL,
+    zip: process.env.CINDY_ANDROID_PLATFORM_TOOLS_ZIP,
+  };
+  const root = tmpBinRoot('win32-x64', { 'source.properties': 'Pkg.Revision=32.0.0\n' });
+  t.after(() => {
+    for (const [name, value] of [
+      ['CINDY_ANDROID_PLATFORM_TOOLS_PREFER_OSS', saved.prefer],
+      ['XDT_CDN_BASE_URL', saved.cdn],
+      ['CINDY_ANDROID_PLATFORM_TOOLS_ZIP', saved.zip],
+    ]) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+  process.env.CINDY_ANDROID_PLATFORM_TOOLS_PREFER_OSS = '1';
+  process.env.XDT_CDN_BASE_URL = 'https://cdn.invalid/base';
+  delete process.env.CINDY_ANDROID_PLATFORM_TOOLS_ZIP;
+
+  const urls = [];
+  await assert.rejects(
+    ensureAndroidPlatformTools({
+      platformKey: 'win32-x64',
+      force: true,
+      binRoot: root,
+      download: async (url) => {
+        urls.push(url);
+        throw new Error('offline');
+      },
+    }),
+    (err) => {
+      assert.match(err.message, /dl\.google\.com/);
+      assert.match(err.message, /do not fall back/);
+      return true;
+    },
+  );
+  assert.deepEqual(
+    urls.map((url) => new URL(url).host),
+    ['dl.google.com'],
+  );
 });
 
 test('verifyInstalled: 缺少 source.properties 时不算就位', () => {

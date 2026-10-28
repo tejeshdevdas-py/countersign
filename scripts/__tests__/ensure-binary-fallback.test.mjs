@@ -1,4 +1,7 @@
 // ensureBinary 兜底编排的集成测试：单文件分发回退 CDN，目录分发 fail closed。
+// Countersign: builds never fall back to the upstream project's CDN (spec: no request to
+// *.cindy.app). The single-file cases now assert that the build stops, names the upstream
+// host and sends nothing to the mock CDN.
 //
 // 关键技巧：用假 platformKey 'test-fallback-platform'。各 update.mjs 的 ensurePlatform 会先
 // `PLATFORMS.find(...)` 找不到而立即抛 "Unknown platform key"——**不打真实网络、不碰任何真实
@@ -31,9 +34,11 @@ const dirsToClean = [
 
 let server;
 let savedCdnBase;
+let cdnRequests = 0;
 
 before(async () => {
   server = http.createServer((req, res) => {
+    cdnRequests += 1;
     const u = req.url.split('?')[0];
     if (u === `/manifest-${PLATFORM}-canary.json`) {
       res.end(JSON.stringify({
@@ -64,11 +69,16 @@ after(async () => {
   await new Promise((r) => server.close(r));
 });
 
-test('ensureBinary(claude): 上游失败 → 回退 CDN，落地正确二进制 + .version==pin', async () => {
-  const binPath = await ensureBinary('claude', PLATFORM, { force: true });
-  assert.ok(fs.readFileSync(binPath).equals(BIN), 'binary content == mock CDN binary');
-  const ver = fs.readFileSync(path.join(path.dirname(binPath), '.version'), 'utf8').trim();
-  assert.equal(ver, CLAUDE_PIN);
+test('ensureBinary(claude): upstream failure stops the build, names downloads.claude.ai, no CDN request', async () => {
+  const before = cdnRequests;
+  await assert.rejects(ensureBinary('claude', PLATFORM, { force: true }), (err) => {
+    assert.match(err.message, /downloads\.claude\.ai/);
+    assert.match(err.message, /do not fall back/);
+    assert.doesNotMatch(err.message, /cindy/i);
+    return true;
+  });
+  assert.equal(cdnRequests, before);
+  assert.equal(fs.existsSync(path.join('apps', 'claude-code-bin', PLATFORM, 'claude')), false);
 });
 
 test('ensureBinary(codex): 完整目录包拒绝单二进制 CDN 回退', async () => {
@@ -79,11 +89,16 @@ test('ensureBinary(codex): 完整目录包拒绝单二进制 CDN 回退', async 
   assert.equal(fs.existsSync(path.join('apps', 'codex-package-bin', PLATFORM)), false);
 });
 
-test('ensureBinary(ripgrep): 上游失败 → 回退 CDN，落地正确二进制 + .version==pin', async () => {
-  const binPath = await ensureBinary('ripgrep', PLATFORM, { force: true });
-  assert.ok(fs.readFileSync(binPath).equals(BIN), 'binary content == mock CDN binary');
-  const ver = fs.readFileSync(path.join(path.dirname(binPath), '.version'), 'utf8').trim();
-  assert.equal(ver, RIPGREP_PIN);
+test('ensureBinary(ripgrep): upstream failure stops the build, names github.com, no CDN request', async () => {
+  const before = cdnRequests;
+  await assert.rejects(ensureBinary('ripgrep', PLATFORM, { force: true }), (err) => {
+    assert.match(err.message, /github\.com/);
+    assert.match(err.message, /do not fall back/);
+    assert.doesNotMatch(err.message, /cindy/i);
+    return true;
+  });
+  assert.equal(cdnRequests, before);
+  assert.equal(fs.existsSync(path.join('apps', 'ripgrep-bin', PLATFORM, 'rg')), false);
 });
 
 // Official release asset retries, without network access or real timers.

@@ -29,6 +29,8 @@
 //      路径约定。国内打包机可设 CINDY_ANDROID_PLATFORM_TOOLS_PREFER_OSS=1 让 OSS
 //      先行,免得每次先吃一轮 Google 的连接超时。
 // 无论来自哪个来源,校验都是本文件里硬 pin 的 sha256,不因来源放宽。
+// Countersign: only source 1 (dl.google.com) is used; there is no OSS/CDN fallback
+// (scripts/countersign/build-downloads.mjs, BUILD_CDN_FALLBACK).
 //
 // 两个来源都不通时还有两条出路:
 //   1) CINDY_ANDROID_PLATFORM_TOOLS_ZIP=<本地 platform-tools-*.zip 路径> 走本地解压;
@@ -55,6 +57,10 @@ import { sha256File, sha256Hex, assertSha256 } from '../../../tools/shared/verif
 // OSS 兜底的基址与 agent 二进制那条链路同源:同一份 config/endpoint*.json 的
 // cdnBaseUrl,同一套 region 切换(cn → hotfix.cindy.com.cn,global → hotfix.cindy.app)。
 import { loadEndpointManifestBaseUrl } from '../../../scripts/shared/client-endpoint-build-env.mjs';
+import {
+  BUILD_CDN_FALLBACK,
+  upstreamDownloadFailure,
+} from '../../../scripts/countersign/build-downloads.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
@@ -228,6 +234,7 @@ export async function ensureAndroidPlatformTools({
   platformKey = currentPlatformKey(),
   force = false,
   binRoot = BIN_ROOT,
+  download = downloadToFileWithTimeout,
 } = {}) {
   if (!platformKey || !isSupportedPlatformKey(platformKey)) {
     throw new Error(
@@ -275,7 +282,9 @@ export async function ensureAndroidPlatformTools({
   const preferOss = /^(1|true|yes)$/i.test(
     process.env.CINDY_ANDROID_PLATFORM_TOOLS_PREFER_OSS?.trim() ?? '',
   );
-  const order = preferOss ? ['oss', 'upstream'] : ['upstream', 'oss'];
+  // Countersign: no OSS/CDN source at all (spec: no request to *.cindy.app).
+  const fallbackOrder = preferOss ? ['oss', 'upstream'] : ['upstream', 'oss'];
+  const order = BUILD_CDN_FALLBACK ? fallbackOrder : ['upstream'];
 
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cindy-platform-tools-'));
   const tmpZip = path.join(tmpDir, 'platform-tools.zip');
@@ -302,7 +311,7 @@ export async function ensureAndroidPlatformTools({
           // 最后一个来源(无论名字是 oss 还是 upstream)没有退路:给宽松超时并
           // 禁用吞吐下限,避免把"慢但能成"变成失败。非末位来源用默认值快速失败
           // 以便尽快尝试下一个。
-          await downloadToFileWithTimeout(
+          await download(
             url,
             tmpZip,
             {},
@@ -328,6 +337,18 @@ export async function ensureAndroidPlatformTools({
         attempts.push(`${source} (${url}): ${err.message}`);
         try { fs.rmSync(tmpZip, { force: true }); } catch { /* ignore */ }
       }
+    }
+    if (!BUILD_CDN_FALLBACK) {
+      throw new Error(
+        upstreamDownloadFailure({
+          what: `Android platform-tools ${platformKey}@${version}`,
+          host: new URL(downloadUrlFor(platformKey, version)).host,
+          reason: attempts.join('; '),
+        }) +
+          ` Offline builds: set CINDY_ANDROID_PLATFORM_TOOLS_ZIP=<path to the platform-tools zip>,` +
+          ` or place ${Object.keys(PINNED[platformKey].files).join(', ')} in` +
+          ` apps/android-platform-tools-bin/${platformKey}/ (sha256 must match).`,
+      );
     }
     throw new Error(
       `无法就位 Android platform-tools ${platformKey}@${version}:所有来源均失败\n` +
