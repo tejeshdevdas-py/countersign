@@ -14,7 +14,7 @@ This is milestone 1 (M1): the renamed, local-only app. Read [Known limits](#know
 - Starts the bundled Claude Code and Codex engines with the switches each offers for telemetry, error reports, feature flags and self-update turned off. Each switch, and where its name comes from, is in [`docs/countersign/engine-telemetry.md`](docs/countersign/engine-telemetry.md).
 - Ships Pi with the app. Settings > About shows the installed Pi version only; the app does not check for or download Pi updates.
 - Can write an egress log of the hosts the app itself contacts, for you to check (see [Network](#network)).
-- Has its own identity: app id `io.github.tejeshdevdas-py.countersign`, user data in `%APPDATA%\Countersign`, link scheme `countersign://`.
+- Has its own identity: app id `io.github.tejeshdevdas-py.countersign`, user data in `%APPDATA%\Countersign`, link scheme `countersign://`. What its own profiles share (the skill bundle, skill locks and worktree records) is in `%APPDATA%\Countersign` too, and its files outside that folder carry its own name: `%USERPROFILE%\.countersign\` (local themes and a skill-folder lock), `%USERPROFILE%\.ssh\countersign.conf` for the SSH hosts it manages (adding a host also adds an `Include ~/.ssh/countersign.conf` line to `%USERPROFILE%\.ssh\config`), and new SSH keys default to `%USERPROFILE%\.ssh\countersign`. Inside your project folders it uses Cindy's folder names on purpose (see [Known limits](#known-limits)).
 
 ## Planned, not built yet
 
@@ -221,12 +221,16 @@ The engines (Claude Code, Codex, Pi), git and the other programs the app starts 
 12. Pi cannot be installed or updated from inside the app. It ships with the app; a new Pi needs a rebuild.
 13. A chat's folder is fixed when the chat is created. A chat with no project works in a private per-chat folder under `%APPDATA%\Countersign`.
 14. Teammates imported from a pre-release Countersign build keep their old text. Fresh installs are not affected.
-15. Pre-release builds wrote `.cindy` file-type keys to the current user's registry. Current builds no longer write them but do not remove them.
+15. Pre-release builds wrote `.cindy` file-type keys to the current user's registry. Current builds no longer write them but do not remove them. Pre-release builds also wrote to places named for Cindy: `shared-system-skills`, `shared-skill-mutation-locks`, `shared-worktree-recycle-journals` and `shared-worktree-runtime-leases` in `%APPDATA%\Cindy`, themes in `%USERPROFILE%\.cindy\themes`, a lock in `%USERPROFILE%\.cindy`, and SSH hosts in `%USERPROFILE%\.ssh\cindy.conf`. Current builds neither use nor remove them. SSH hosts added with a pre-release build are not carried over; while `%USERPROFILE%\.ssh\config` includes `cindy.conf`, they still show up as hosts from your own SSH config.
 16. The installer is unsigned. How Windows SmartScreen treats it has not been checked.
 17. Only Windows is built. The mobile app (`apps/mobile`) is in the tree but is not built.
 18. The third-party notices in `docs/legal/notices/` were generated for Cindy. They list the updater, which Countersign does not ship, and say the engines are downloaded at runtime, while Countersign bundles them.
 19. `CONTRIBUTING`, `SUPPORT` and the other community files (the issue and pull-request templates, `CODEOWNERS`) are upstream's and describe Cindy's process and services. Only `SECURITY`, `CODE_OF_CONDUCT` and the security link in `.github/ISSUE_TEMPLATE/config.yml` were changed. The root `package.json` still names Cindy's homepage and repository; its issue tracker link (`bugs`) points at this repository.
-20. Not checked live: a start with no network, a build on a clean machine, and a network capture after the final set of engine switches.
+20. Inside a project folder, Countersign uses the same `.cindy\` folder (project knowledge, project automations, per-project plugin switches) and `.cindy-worktrees\` folder as Cindy, on purpose: with both apps installed, both read and write the same files there. A project's old `.xdmaker\` folder is moved into `.cindy\` on first use.
+21. Both apps write skills and skill links into `%USERPROFILE%\.agents\skills`, `.claude\skills` and `.codex\skills`. Their locks are separate, so the two apps do not wait for each other there: do not change the same skill in both apps at the same time.
+22. Countersign's managed Chrome uses debugging port 18800, as Cindy's does. While one app's managed browser runs, the other app's browser tool cannot start its own and reports the browser as unavailable. This is read from the code; it was not tried with both apps installed.
+23. Two more places are shared with an installed Cindy (read from the code): on an SSH host that both apps connect to, both install their remote agents in `$HOME/.xdt-server/v1`, so one app's clean-up there can affect the other's; and a web image opened with the default app is saved in `%TEMP%\xdt-maker-remote-images`, which quitting either app deletes.
+24. Not checked live: a start with no network, a build on a clean machine, and a network capture after the final set of engine switches.
 
 ## Verification status
 
