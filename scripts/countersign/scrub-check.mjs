@@ -50,11 +50,11 @@
  * the sha256 of the matched text (never the text). A finding not in the
  * baseline fails, and so does a baseline entry found fewer times than listed.
  *
- * --history also reads scrub-history-baseline.json: reviewed email findings in
- * commits, each named by commit subject, location, rule and the sha256 of the
- * address. Only the email rule can be listed there; identity, keys, paths and
- * private words are fixed by rewriting history. An entry that matches no finding
- * fails as stale.
+ * --history also reads scrub-history-baseline.json: reviewed email and local-path
+ * findings in commits, each named by commit subject, location, rule and the sha256
+ * of the match. Only those two rules can be listed there; identity, keys, Windows
+ * user folders and private words are fixed by rewriting history. An entry that
+ * matches no finding fails as stale.
  *
  * Output names path:line and rule only. It never prints the matched text, the
  * line, or a private pattern's source; the one exception is a file-name finding,
@@ -928,8 +928,13 @@ export function scrubHistory(commits, extraPatterns = []) {
   return findings;
 }
 
-/** Rule ids a history baseline entry may name; anything else is fixed by rewriting history. */
-export const HISTORY_BASELINE_RULES = ['email'];
+/**
+ * Rule ids a history baseline entry may name; anything else (identity, keys, user
+ * folders, private words) is fixed by rewriting history. local-path covers a drive
+ * path or a path shape that names no person, such as a placeholder or a comment
+ * describing the shape.
+ */
+export const HISTORY_BASELINE_RULES = ['email', 'local-path'];
 
 function historyKey(subject, where, rule, hash) {
   return `${subject}\u0000${where}\u0000${rule}\u0000${hash}`;
@@ -952,7 +957,7 @@ export function validateHistoryBaseline(entries) {
       problems.push(`${label}: where must be <path>:<line> or message:<line>`);
     }
     if (!HISTORY_BASELINE_RULES.includes(e.rule)) {
-      problems.push(`${label}: only the email rule can be accepted in history`);
+      problems.push(`${label}: only the email and local-path rules can be accepted in history`);
     }
     if (typeof e.sha256 !== 'string' || !/^[0-9a-f]{64}$/.test(e.sha256)) {
       problems.push(`${label}: sha256 must be 64 lower-case hex characters`);
@@ -971,7 +976,7 @@ export function validateHistoryBaseline(entries) {
 
 /**
  * Splits history findings into fresh ones and ones a history baseline entry accepts.
- * An entry accepts the email findings at its location and hash in the commit whose
+ * An entry accepts the email or local-path findings at its location and hash in the commit whose
  * subject (first message line) it names, so it survives re-authoring but not a change
  * to that line. An entry that accepts nothing is stale.
  * @returns {{fresh: object[], accepted: number, stale: {index: number, entry: object}[]}}

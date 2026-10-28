@@ -1,5 +1,5 @@
 {
-  "note": "Reviewed scrub-check --history exceptions. Email rule only: identity, keys, paths and private words are fixed by rewriting history, never listed. Each entry names the commit by its subject line (which survives re-authoring), the location as --history prints it, and the sha256 of the matched address (never the address). An entry that matches no finding fails as stale.",
+  "note": "Reviewed scrub-check --history exceptions. Email and local-path rules only: identity, keys, Windows user folders and private words are fixed by rewriting history, never listed. Each entry names the commit by its subject line (which survives re-authoring), the location as --history prints it, and the sha256 of the matched text (never the text). An entry that matches no finding fails as stale.",
   "entries": [
     {
       "commit": "Countersign: rebrand user-visible text, add brand guard",
@@ -84,6 +84,27 @@
       "rule": "email",
       "sha256": "9f9370a579d5ba7ba63f42c22163bd633f9f8c2f07f83bd4076c26a91d3a2646",
       "reason": "A made-up recipient on a public mailbox domain in a new test fixture (the upstream mail test uses the same form). A later commit (\"Countersign: the mail avatar test uses a reserved example domain\") replaced it with a reserved example domain. No real person is meant."
+    },
+    {
+      "commit": "Countersign: scrub check for keys, personal paths, emails and private words",
+      "where": "scripts/countersign/__tests__/scrub-check.test.mjs:170",
+      "rule": "local-path",
+      "sha256": "3ea0e0e238717debe16df6141ac2f52053bb4bd534db98dd7db26f51ae507176",
+      "reason": "A placeholder drive path (a tools folder) in a test's list of strings. It names no person. The tree builds this literal from parts now. Accepted by the final-review controller ruling instead of rewriting this commit's content."
+    },
+    {
+      "commit": "Countersign: scrub check for keys, personal paths, emails and private words",
+      "where": "scripts/countersign/scrub-check.mjs:10",
+      "rule": "local-path",
+      "sha256": "ca2a2b2a031ca6a4480606586db64ef438e735d9b1e97a6fc8d8158782ef1562",
+      "reason": "A header comment describing the Git Bash user-folder shape with a literal <name> placeholder. It names no person. The tree words it differently now. Accepted by the final-review controller ruling instead of rewriting this commit's content."
+    },
+    {
+      "commit": "Countersign: scrub check for keys, personal paths, emails and private words",
+      "where": "scripts/countersign/scrub-check.mjs:74",
+      "rule": "local-path",
+      "sha256": "ca2a2b2a031ca6a4480606586db64ef438e735d9b1e97a6fc8d8158782ef1562",
+      "reason": "A code comment describing the Git Bash user-folder shape with a literal <name> placeholder. It names no person. The tree words it differently now. Accepted by the final-review controller ruling instead of rewriting this commit's content."
     }
   ]
 }

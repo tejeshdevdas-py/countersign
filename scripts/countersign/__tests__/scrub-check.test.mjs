@@ -630,8 +630,12 @@ const HISTORY_ENTRY = {
   reason: 'public upstream address',
 };
 
-test('history baseline entries: email only, with commit subject, location, hash and reason', () => {
+test('history baseline entries: email or local-path, with commit subject, location, hash and reason', () => {
   assert.deepEqual(validateHistoryBaseline([HISTORY_ENTRY]), []);
+  assert.deepEqual(
+    validateHistoryBaseline([{ ...HISTORY_ENTRY, where: 'src/c.ts:1', rule: 'local-path' }]),
+    [],
+  );
   const invalid = validateHistoryBaseline([
     { ...HISTORY_ENTRY, commit: ' ' },
     { ...HISTORY_ENTRY, where: 'message' },
@@ -647,8 +651,8 @@ test('history baseline entries: email only, with commit subject, location, hash 
     [
       'no commit subject',
       'where must be <path>:<line> or message:<line>',
-      'only the email rule can be accepted in history',
-      'only the email rule can be accepted in history',
+      'only the email and local-path rules can be accepted in history',
+      'only the email and local-path rules can be accepted in history',
       'sha256 must be 64 lower-case hex characters',
       'no reason',
       'listed twice',
@@ -684,6 +688,64 @@ test('history baseline: an entry accepts its one line in its one commit; unmatch
   assert.deepEqual(
     stale.map((s) => s.index),
     [3, 4],
+  );
+});
+
+test('history baseline: a local-path entry accepts its path finding; a stale or unknown one does not', () => {
+  const commits = [
+    {
+      sha: 'e'.repeat(40),
+      an: 'owner',
+      ae: OWNER_EMAIL,
+      cn: 'owner',
+      ce: OWNER_EMAIL,
+      body: 'fork: tools\n',
+      added: new Map([
+        [
+          'src/t.ts',
+          [
+            { line: 1, text: `const a = '${TOOLS_PATH}';` },
+            { line: 2, text: `// ${USER_PATH}x` },
+          ],
+        ],
+      ]),
+    },
+  ];
+  const findings = scrubHistory(commits);
+  assert.deepEqual(
+    findings.map((f) => `${f.where} ${f.rule}`),
+    ['src/t.ts:1 local-path', 'src/t.ts:2 windows-user-path'],
+  );
+  const pathEntry = {
+    commit: 'fork: tools',
+    where: 'src/t.ts:1',
+    rule: 'local-path',
+    sha256: findings[0].matchHash,
+    reason: 'a placeholder tools folder',
+  };
+  const accepted = compareWithHistoryBaseline(findings, [pathEntry], commits);
+  assert.deepEqual(
+    accepted.fresh.map((f) => `${f.where} ${f.rule}`),
+    ['src/t.ts:2 windows-user-path'],
+  );
+  assert.equal(accepted.accepted, 1);
+  assert.deepEqual(accepted.stale, []);
+
+  // A user folder is never accepted, even when listed under local-path.
+  const userEntry = { ...pathEntry, where: 'src/t.ts:2', sha256: findings[1].matchHash };
+  const unknown = compareWithHistoryBaseline(
+    findings,
+    [{ ...pathEntry, sha256: sha256('another path') }, userEntry],
+    commits,
+  );
+  assert.equal(unknown.accepted, 0);
+  assert.deepEqual(
+    unknown.fresh.map((f) => `${f.where} ${f.rule}`),
+    ['src/t.ts:1 local-path', 'src/t.ts:2 windows-user-path'],
+  );
+  assert.deepEqual(
+    unknown.stale.map((st) => st.index),
+    [1, 2],
   );
 });
 
@@ -1129,10 +1191,50 @@ test('CLI --history: listed email findings pass; a stale or invalid history entr
   assert.equal(invalid.code, 1, invalid.out);
   assert.match(
     invalid.out,
-    /scrub history baseline: entry 1 \(message:3 identity\): only the email rule can be accepted in history/,
+    /scrub history baseline: entry 1 \(message:3 identity\): only the email and local-path rules can be accepted in history/,
   );
   for (const out of [ok.out, stale.out, invalid.out]) {
     assert.equal(out.includes(OUTSIDE_EMAIL), false, 'output must not carry the matched text');
+  }
+});
+
+test('CLI --history: a listed local-path finding passes; a stale or unknown entry fails', (t) => {
+  const ctx = forkRepo(t);
+  write(ctx, 'src/t.ts', `const tools = '${TOOLS_PATH}';\n`);
+  const sha = commitAll(ctx, 'fork: tools');
+  const short = sha.slice(0, 9);
+  const baselinePath = 'scripts/countersign/scrub-history-baseline.json';
+  const entry = {
+    commit: 'fork: tools',
+    where: 'src/t.ts:1',
+    rule: 'local-path',
+    sha256: sha256(TOOLS_PATH),
+    reason: 'a placeholder tools folder',
+  };
+  const before = run(ctx, ['--history']);
+  assert.equal(before.code, 1, before.out);
+  assert.match(before.out, new RegExp(`^${short} src/t\\.ts:1 local-path$`, 'm'));
+
+  write(ctx, baselinePath, JSON.stringify({ entries: [entry] }));
+  const ok = run(ctx, ['--history']);
+  assert.equal(ok.code, 0, ok.out);
+  assert.match(ok.out, /^1 finding accepted by the history baseline$/m);
+  assert.match(ok.out, /^0 findings; 2 commits scanned$/m);
+
+  write(
+    ctx,
+    baselinePath,
+    JSON.stringify({ entries: [{ ...entry, sha256: sha256('another path') }] }),
+  );
+  const unknown = run(ctx, ['--history']);
+  assert.equal(unknown.code, 1, unknown.out);
+  assert.match(unknown.out, new RegExp(`^${short} src/t\\.ts:1 local-path$`, 'm'));
+  assert.match(
+    unknown.out,
+    /^history baseline entry 1 \(src\/t\.ts:1 local-path\): matches no finding; remove it$/m,
+  );
+  for (const out of [before.out, ok.out, unknown.out]) {
+    assert.equal(out.includes(TOOLS_PATH), false, 'output must not carry the matched text');
   }
 });
 
