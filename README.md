@@ -96,7 +96,7 @@ pnpm release:package -- --platform win32 --allow-unsigned --skip-smoke
 The installer is written to `apps/desktop/release/artifacts/global/unversioned/win32-x64/Countersign-unversioned-Setup.exe`. It is unsigned.
 
 - Do not add `--region dev`: it needs a git-ignored config file and builds a separate CountersignDev identity.
-- `--version` is refused: a versioned build makes an update package (`-hotfix.zip`) for the upstream in-app updater and, with `major`, `minor` or `patch`, reads the upstream release CDN. Countersign has neither. Leave it out to build the unversioned installer.
+- `--version` is refused before any step runs, including the dependency check: a versioned build makes an update package (`-hotfix.zip`) for the upstream in-app updater and, with `major`, `minor` or `patch`, reads the upstream release CDN. Countersign has neither. Leave it out to build the unversioned installer.
 - If `CINDY_WIN_SIGN_CMD` is set (in your shell or in `apps/desktop/.env`), packaging signs with it; `--no-sign` skips signing.
 
 Packaging also checks what it ships:

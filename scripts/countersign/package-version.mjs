@@ -6,8 +6,9 @@
  * adds an update package (`<name>-<version>-hotfix.zip`) for its in-app
  * updater, and for major/minor/patch reads the current version from its
  * release CDN. Countersign has no updater and no release channel, so under
- * LOCAL_ONLY apps/desktop/scripts/package-desktop.mjs refuses --version before
- * any packaging step.
+ * LOCAL_ONLY release-package.mjs (the `pnpm release:package` entry) refuses
+ * --version before ensure-deps runs, and apps/desktop/scripts/package-desktop.mjs
+ * refuses it again before any packaging step.
  */
 import { readLocalOnlySwitch } from './local-only.mjs';
 
