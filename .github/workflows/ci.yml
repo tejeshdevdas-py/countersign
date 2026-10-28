@@ -102,6 +102,15 @@ jobs:
       - name: Check i18n glossary
         run: pnpm check:i18n-glossary
 
+      - name: Check Countersign brand
+        run: pnpm check:countersign-brand
+
+      - name: Scrub tracked files
+        run: pnpm check:scrub
+
+      - name: Check undici calls go through the egress guard
+        run: pnpm check:countersign-egress
+
       # desktop 的 tsc 峰值内存已经贴着全局 4096MB 上限(2026-08-03 本地实测
       # 约 4.2GB,`--extendedDiagnostics` 下 Types ~125 万、Instantiations ~277 万),
       # 在 runner 上会随机 OOM(FATAL ERROR: Ineffective mark-compacts near heap
