@@ -22,6 +22,7 @@ import crypto from 'node:crypto';
 import os from 'node:os';
 
 import { app } from 'electron';
+import { brandHomeStateName } from '@cindy/maker-shared/brand-identity';
 
 import { withSecurityBoundaryLock } from './device-link/crossProcessLock.js';
 import { createLogger } from './logger.js';
@@ -102,7 +103,9 @@ function lockPath(): string {
 function sharedSkillRootsLockPath(): string {
   // Same path as the former machine-wide marker lock, so builds that still use
   // the home-level marker keep serializing their shared-root writes with ours.
-  return path.join(os.homedir(), '.cindy', `${FILE_NAME}.lock`);
+  // Countersign: the folder follows BRAND_IDENTITY (~/.countersign), so an installed
+  // Cindy keeps its own lock and the two apps do not serialize with each other.
+  return path.join(os.homedir(), `.${brandHomeStateName()}`, `${FILE_NAME}.lock`);
 }
 
 function normalizeOwnerId(value: unknown): string | null | undefined {

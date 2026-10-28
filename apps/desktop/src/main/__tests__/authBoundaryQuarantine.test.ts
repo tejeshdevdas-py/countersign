@@ -55,6 +55,7 @@ import {
 } from '../authBoundaryQuarantine.js';
 
 import { removeGhostSkillLinksForRoots } from '../cindy-brain/skillSlot.js';
+import { brandHomeStateName } from '@cindy/maker-shared/brand-identity';
 
 function readPersistedState(): unknown {
   return JSON.parse(
@@ -100,11 +101,12 @@ describe('Ghost skill projection boundary state', () => {
       path.join(pathMock.userDataDir, 'ghost-skill-projection-boundary.quarantine.json'),
     );
     expect(__testing.lockPath()).toBe(`${__testing.filePath()}.lock`);
-    // Same path as the former machine-wide marker lock, so older builds still
-    // serialize their shared-root writes with this one.
+    // Countersign: the machine-wide lock follows BRAND_IDENTITY (~/.countersign),
+    // never the ~/.cindy folder an installed Cindy uses.
     expect(__testing.sharedSkillRootsLockPath()).toBe(
-      path.join(pathMock.homeDir, '.cindy', 'ghost-skill-projection-boundary.json.lock'),
+      path.join(pathMock.homeDir, `.${brandHomeStateName()}`, 'ghost-skill-projection-boundary.json.lock'),
     );
+    expect(path.relative(pathMock.homeDir, __testing.sharedSkillRootsLockPath())).not.toMatch(/cindy/i);
   });
 
   it('keeps one instance stable while another instance commits a different owner', async () => {
