@@ -1,10 +1,10 @@
 /**
- * Countersign guard contract (final review M-N7): bootstrap-electron.ts starts
- * each upstream background service only behind its isServiceDisabled guard.
- * Under LOCAL_ONLY every guard is true (services.test.ts), so analytics, log
- * upload, the updater and the heartbeat never start. bootstrap-electron.ts
- * cannot be imported in a unit test (it starts Electron), so this guard-tier
- * test pins the wiring in its source.
+ * Countersign guard contract (final review M-N7, M-N1): bootstrap-electron.ts
+ * starts each upstream background service only behind its isServiceDisabled
+ * guard. Under LOCAL_ONLY every guard is true (services.test.ts), so analytics,
+ * log upload (and its startup backfill), the updater and the heartbeat never
+ * start. bootstrap-electron.ts cannot be imported in a unit test (it starts
+ * Electron), so this guard-tier test pins the wiring in its source.
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -36,6 +36,8 @@ describe('bootstrap upstream service guards in Countersign', () => {
     ['initLogUploadService();', 'logUpload'],
     ['initUpdateService();', 'updater'],
     ['initHeartbeatService();', 'heartbeat'],
+    // M-N1: the startup backfill writes crash markers and runs the uploader.
+    ['scheduleStartupBackfill();', 'logUpload'],
   ])('%s runs only when %s is not disabled', (call, service) => {
     expectGuarded(call, service);
   });

@@ -4180,7 +4180,11 @@ const createWindow = () => {
     resourceUsagePrewarmTimer.unref?.();
     // 日志上报的启动补传:采集 + 脱敏是同步的重活,必须让主窗口先出来(内部再延迟 15s,
     // 避开首帧的 IO 争用)。没有待补传标记时是零成本 no-op。
-    scheduleStartupBackfill();
+    // Countersign: log upload is off under LOCAL_ONLY, so no backfill either
+    // (it writes crash markers and runs the uploader).
+    if (!isServiceDisabled('logUpload')) {
+      scheduleStartupBackfill();
+    }
     // `open` may successfully start the updated process while macOS refuses
     // frontmost activation at the lock/login window. Presentation is not an
     // installation-health signal; retain a one-shot focus grant for unlock.
