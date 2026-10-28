@@ -51,7 +51,7 @@ Also off:
 
 Local Android automation over adb stays; only the cloud phone link is off.
 
-## Build on Windows 10/11 x64
+## Build on Windows 11 x64 (Windows 10 untested)
 
 There are no binary releases. You build the installer yourself.
 
@@ -59,10 +59,15 @@ There are no binary releases. You build the installer yourself.
 
 - Git and [Git LFS](https://git-lfs.com). A native library is stored in LFS.
 - Node.js 22. Version 22.22.3 was used (`.nvmrc`). `package.json` allows newer versions, but they are untested.
-- pnpm 10.33.2, the version in `package.json` `packageManager`. pnpm 11 is not supported.
+- pnpm 10.33.2, the version in `package.json` `packageManager`. pnpm 11 is not supported. M1 installed it with `npm install -g pnpm@10.33.2`.
 - Rust stable for `x86_64-pc-windows-msvc`, with `cargo` and `rustc` on `PATH`. Packaging builds several small Windows helper programs with cargo. Rust 1.99.1 was used.
 - Visual Studio Build Tools with the C++ workload (MSVC x64 tools and a Windows SDK). M1 was built with Build Tools 2026 (18.10) and Windows SDK 10.0.26100.
 - Python 3. Packaging compiles the `better-sqlite3` native module for Electron from source with node-gyp, which needs Python 3 and the MSVC C++ build tools above; without them packaging stops. The M1 build machine had Python 3.14.7.
+- About 12 GB of free disk space. On the M1 build machine the checkout measured about 11 GB after a package build, about 5 GB of it `node_modules`. The pnpm store added about 0.3 GB more, because pnpm hard-links packages when its store is on the same drive; on another drive it copies them, which needs about 5 GB more. The Electron and cargo download caches in the user profile added about 0.6 GB.
+
+If PowerShell refuses to run `pnpm` because running scripts is disabled on the system, run `pnpm.cmd` instead, or allow local scripts for your account with `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`: `npm install -g` puts a `pnpm.ps1` next to `pnpm.cmd`, and PowerShell's default policy on Windows 11 (`Restricted`) refuses `.ps1` files.
+
+Behind an HTTP proxy (not tested): set `HTTPS_PROXY`, which pnpm, node-gyp and cargo read. The Electron download reads it only when `ELECTRON_GET_USE_PROXY=true` is also set. The engine downloads use Node's built-in `fetch`, which reads it only when `NODE_USE_ENV_PROXY=1` is set; that was not tried with these scripts.
 
 Use PowerShell or cmd, with Windows' own `tar` (`%SystemRoot%\System32\tar.exe`) first on `PATH`. Git Bash's `tar` cannot unpack Pi's zip: `pnpm install` still finishes with only a warning, and packaging then stops because Pi is missing. If that happens, run `pnpm install:pi` from PowerShell.
 
