@@ -62,7 +62,7 @@ There are no binary releases. You build the installer yourself.
 - pnpm 10.33.2, the version in `package.json` `packageManager`. pnpm 11 is not supported.
 - Rust stable for `x86_64-pc-windows-msvc`, with `cargo` and `rustc` on `PATH`. Packaging builds several small Windows helper programs with cargo. Rust 1.99.1 was used.
 - Visual Studio Build Tools with the C++ workload (MSVC x64 tools and a Windows SDK). M1 was built with Build Tools 2026 (18.10) and Windows SDK 10.0.26100.
-- Python 3, needed only if a prebuilt native module is not available for your setup. The M1 build used prebuilt downloads.
+- Python 3. Packaging compiles the `better-sqlite3` native module for Electron from source with node-gyp, which needs Python 3 and the MSVC C++ build tools above; without them packaging stops. The M1 build machine had Python 3.14.7.
 
 Use PowerShell or cmd, with Windows' own `tar` (`%SystemRoot%\System32\tar.exe`) first on `PATH`. Git Bash's `tar` cannot unpack Pi's zip: `pnpm install` still finishes with only a warning, and packaging then stops because Pi is missing. If that happens, run `pnpm install:pi` from PowerShell.
 
@@ -92,9 +92,11 @@ The installer is written to `apps/desktop/release/artifacts/global/unversioned/w
 - `registry.npmjs.org`: npm packages.
 - `downloads.claude.ai`: Claude Code (its release manifest with the checksums, then the program).
 - `api.github.com` and `github.com`: Codex, Pi and ripgrep (release data from `api.github.com`, the release file from `github.com`).
-- `github.com`: Electron, which `pnpm install` downloads, and the NSIS installer tooling, which packaging downloads.
+- `github.com`: Electron and the `better-sqlite3` prebuilt binary for Node, which `pnpm install` downloads, and the NSIS installer tooling, which packaging downloads.
+- `release-assets.githubusercontent.com`: GitHub redirects release downloads to this host (seen on 2026-10-28), so every download from `github.com` above also reaches it.
+- `www.electronjs.org`: the Electron headers that packaging needs to compile `better-sqlite3` (cached in `%USERPROFILE%\.electron-gyp`).
 - `dl.google.com`: Android platform-tools r32.0.0, checked against a pinned sha256.
-- crates.io for the Rust helpers: assumed, not seen in the build logs.
+- `index.crates.io` and `static.crates.io`: the Rust crates for the helper programs (seen in the cargo registry of the M1 build machine).
 
 When an engine or platform-tools download fails, the build stops and names the host. It does not fall back to another server. A slow download is not stopped for being slow: the Claude Code, Codex, Pi and platform-tools downloads stop only when they cannot connect, receive no data for 15 to 20 seconds, or run past 30 minutes. `pnpm install:claude`, `pnpm install:codex`, `pnpm install:pi` and `pnpm install:ripgrep` retry an engine at its pinned version.
 
