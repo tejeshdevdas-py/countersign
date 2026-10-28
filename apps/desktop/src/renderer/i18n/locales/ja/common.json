@@ -17427,6 +17427,7 @@
     "remoteControlDescription": "SSH でリモートホストに接続します。",
     "pluginEmptyHint": "上のメニューからプラグインパッケージを読み込めます",
     "importBotsNote": "{{appName}} ではチャットアプリを利用できません。これらのボットは {{source}} に残り、仲間には接続されません。",
+    "localSessionFailed": "{{appName}} はローカルセッションを開始できませんでした。ローカルデータを開き直して、もう一度お試しください。",
     "remoteError": {
       "REMOTE_COMPAT_MODE_UNSUPPORTED": "リモートのタスクでは、このパソコン側の互換経路を使えません。API キーを設定したモデルプロバイダーを選ぶか、このパソコン上のタスクで続けてください。",
       "REMOTE_GATEWAY_ENDPOINT_UNAVAILABLE": "リモートのタスクでは、{{appName}} が使用しないホスト型モデルゲートウェイを使えません。API キーを設定したモデルプロバイダーを選ぶか、このパソコン上のタスクで続けてください。",

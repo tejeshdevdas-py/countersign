@@ -17427,6 +17427,7 @@
     "remoteControlDescription": "通过 SSH 连接远端主机。",
     "pluginEmptyHint": "可点击右上角导入插件包",
     "importBotsNote": "{{appName}} 不支持聊天应用：这些机器人会留在 {{source}} 里，不会接给伙伴。",
+    "localSessionFailed": "{{appName}} 未能启动本地会话。请重新打开本地数据再试。",
     "remoteError": {
       "REMOTE_COMPAT_MODE_UNSUPPORTED": "远端任务不能使用本机兼容通道。请选择已配置密钥的模型供应商，或在本机任务里继续。",
       "REMOTE_GATEWAY_ENDPOINT_UNAVAILABLE": "远端任务不能使用托管模型网关，{{appName}} 不使用该服务。请选择已配置密钥的模型供应商，或在本机任务里继续。",

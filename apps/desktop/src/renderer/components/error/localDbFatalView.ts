@@ -13,11 +13,14 @@ export type LocalDbFatalView =
 
 export type UpdateStatusValue = UpdateStatusPayload['status'];
 
+/** Countersign: start-up left no local session under LOCAL_ONLY; Retry re-enters local mode. */
+export const LOCAL_SESSION_UNAVAILABLE = 'LOCAL_SESSION_UNAVAILABLE';
+
 export function resolveLocalDbFatalView(
   status: UpdateStatusValue | undefined,
   code?: string,
 ): LocalDbFatalView {
-  if (code === 'DB_SCHEMA_LOCKED') return 'retry-local-db';
+  if (code === 'DB_SCHEMA_LOCKED' || code === LOCAL_SESSION_UNAVAILABLE) return 'retry-local-db';
   switch (status) {
     case 'ready':
       return 'install-update';

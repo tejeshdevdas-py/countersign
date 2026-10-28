@@ -17487,6 +17487,7 @@
     "remoteControlDescription": "Connect to a remote host over SSH.",
     "pluginEmptyHint": "Import a plugin package from the menu above",
     "importBotsNote": "Chat apps are not available in {{appName}}: these bots stay in {{source}} and are not connected to the teammate.",
+    "localSessionFailed": "{{appName}} could not start its local session. Reopen the local data to try again.",
     "remoteError": {
       "REMOTE_COMPAT_MODE_UNSUPPORTED": "Remote tasks cannot use this computer’s compatibility route. Pick a provider with an API key, or continue in a local task.",
       "REMOTE_GATEWAY_ENDPOINT_UNAVAILABLE": "Remote tasks cannot use the hosted model gateway, which {{appName}} does not use. Pick a provider with an API key, or continue in a local task.",

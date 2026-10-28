@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppShellCover } from '@/contexts/AppShellCoverContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { LocalDbFatalScreen } from '@/components/error/LocalDbFatalScreen';
+import { LOCAL_SESSION_UNAVAILABLE } from '@/components/error/localDbFatalView';
 import { createLogger } from '@/lib/logger';
 import { toast } from '@/lib/toast';
 import { formatBytes } from '@/features/cc-agent/workdir-browse/lib/fileMeta';
@@ -42,7 +43,11 @@ const DECISION_RETRY_DELAY_MS = 1_000;
 
 export function LocalDbGate() {
   const { t } = useTranslation();
-  const { dataOwnerId, mode, logout, exitLocalMode } = useAuth();
+  const { dataOwnerId, mode, logout, exitLocalMode, enterLocalMode, canEnterApp, isInitializing } =
+    useAuth();
+  // Countersign: there is no login page to redirect to under LOCAL_ONLY, so a finished start-up
+  // that left no session shows the recovery screen instead of waiting forever.
+  const localSessionMissing = LOCAL_ONLY && isInitializing === false && canEnterApp === false;
   const { reportLocalDbGate } = useAppShellCover();
   const navigate = useNavigate();
   const [decision, setDecision] = useState<GateDecision>({ phase: 'checking' });
@@ -149,7 +154,9 @@ export function LocalDbGate() {
   }, [dataOwnerId, retryNonce, t]);
 
   useEffect(() => {
-    if (!dataOwnerId || decision.phase === 'checking') {
+    if (localSessionMissing) {
+      reportLocalDbGate('fatal');
+    } else if (!dataOwnerId || decision.phase === 'checking') {
       reportLocalDbGate('pending');
     } else if (decision.phase === 'fatal') {
       reportLocalDbGate('fatal');
@@ -159,7 +166,21 @@ export function LocalDbGate() {
     return () => {
       reportLocalDbGate('pending');
     };
-  }, [dataOwnerId, decision, reportLocalDbGate]);
+  }, [dataOwnerId, decision, localSessionMissing, reportLocalDbGate]);
+
+  if (localSessionMissing) {
+    return (
+      <LocalDbFatalScreen
+        code={LOCAL_SESSION_UNAVAILABLE}
+        message={t('countersignLocalOnly.localSessionFailed')}
+        onRetry={() => {
+          void enterLocalMode().catch((err: unknown) => {
+            log.warn('re-entering local mode from the local session recovery screen failed', err);
+          });
+        }}
+      />
+    );
+  }
 
   if (!dataOwnerId || decision.phase === 'checking') {
     // 主界面还不能画。视觉盖由 AppShellCover + Splash / 品牌层承接
