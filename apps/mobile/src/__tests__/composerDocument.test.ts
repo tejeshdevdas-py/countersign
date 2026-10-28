@@ -25,6 +25,10 @@ import {
   textComposerDocument,
   todoReferenceComposerNode,
 } from '@/session/composerDocument';
+import { BRAND_IDENTITY } from '@cindy/maker-shared/brand-identity';
+
+// Countersign: links follow BRAND_IDENTITY.primaryScheme (no legacy schemes).
+const SCHEME = BRAND_IDENTITY.primaryScheme;
 
 describe('mobile composer document', () => {
   it.each([
@@ -126,13 +130,13 @@ describe('mobile composer document', () => {
     }));
     document = appendComposerNode(document, { type: 'text', text: ' then ' });
     document = appendComposerNode(document, sessionLinkComposerNode({
-      href: 'cindy://session/s-1?message=m-2',
+      href: `${SCHEME}://session/s-1?message=m-2`,
       label: 'the target message',
       titled: true,
     }));
 
     expect(serializeComposerDocument(document).text).toBe(
-      'read @"docs/design notes.md" then cindy://session/s-1?message=m-2',
+      `read @"docs/design notes.md" then ${SCHEME}://session/s-1?message=m-2`,
     );
     expect(removeComposerNode(document, 1).nodes.map((node) => node.type)).toEqual([
       'text', 'session-link',
@@ -143,7 +147,7 @@ describe('mobile composer document', () => {
   });
 
   it('awaits missing message-chip bodies before send serialization', async () => {
-    const href = 'cindy://session/session-a?message=message-a';
+    const href = `${SCHEME}://session/session-a?message=message-a`;
     const document = {
       version: 1 as const,
       nodes: [
@@ -231,9 +235,9 @@ describe('mobile composer document', () => {
   });
 
   it('roundtrips message, conversation and project references while keeping deep-link wire text', () => {
-    const messageHref = 'cindy://session/session-a?message=message-a';
-    const sessionHref = 'cindy://session/session-b';
-    const projectHref = 'cindy://project/%2Frepos%2Fcindy';
+    const messageHref = `${SCHEME}://session/session-a?message=message-a`;
+    const sessionHref = `${SCHEME}://session/session-b`;
+    const projectHref = `${SCHEME}://project/%2Frepos%2Fcindy`;
     const fullMessage = `Target body ${'x'.repeat(300)}`;
     const document = {
       version: 1 as const,
@@ -308,7 +312,7 @@ describe('mobile composer document', () => {
   });
 
   it('keeps unsupported Desktop Plugin references as exact editable wire text', () => {
-    const href = 'cindy://plugin-resource/issues/search_issues/ISSUE-1';
+    const href = `${SCHEME}://plugin-resource/issues/search_issues/ISSUE-1`;
     const text = `[Fix login](${href})`;
     const restored = composerDocumentFromSerializedMessage(text, {
       agentReferences: [{
@@ -360,7 +364,7 @@ describe('mobile composer document', () => {
       version: 1,
       nodes: [
         { type: 'mention', kind: 'file', label: 42, raw: '@"a"' },
-        { type: 'session-link', href: 'cindy://session/s-1', label: 'session', titled: 'yes' },
+        { type: 'session-link', href: `${SCHEME}://session/s-1`, label: 'session', titled: 'yes' },
         { type: 'pasted-text', text: 'paste', display: false },
         { type: 'quote', quote: { text: 'quote', sourcePath: 'a.ts', startLine: 8, endLine: 3 } },
         { type: 'mention', kind: 'file', label: 'a', raw: '@"a"' },

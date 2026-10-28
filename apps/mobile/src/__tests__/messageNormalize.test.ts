@@ -14,6 +14,10 @@ import {
   projectLargeSettledToolInputs,
 } from '@/session/messageToolPayloadProjection';
 import type { RemoteMessage } from '@/session/types';
+import { BRAND_IDENTITY } from '@cindy/maker-shared/brand-identity';
+
+// Countersign: links follow BRAND_IDENTITY.primaryScheme (no legacy schemes).
+const SCHEME = BRAND_IDENTITY.primaryScheme;
 
 function message(patch: Partial<RemoteMessage> & Pick<RemoteMessage, 'id' | 'role' | 'content'>): RemoteMessage {
   return {
@@ -442,7 +446,7 @@ describe('normalizeRemoteMessages', () => {
         id: 'valid-reference',
         role: 'user',
         content: JSON.stringify({
-          text: 'cindy://session/source?message=anchor',
+          text: `${SCHEME}://session/source?message=anchor`,
           images: [],
           files: [],
           sessionReferences: [{
@@ -459,7 +463,7 @@ describe('normalizeRemoteMessages', () => {
         role: 'user',
         createdAt: '2026-01-01T00:00:01.000Z',
         content: JSON.stringify({
-          text: 'cindy://session/source',
+          text: `${SCHEME}://session/source`,
           sessionReferences: [{
             sessionId: 'source',
             range: 'recent',
@@ -504,7 +508,7 @@ describe('normalizeRemoteMessages', () => {
   });
 
   it('preserves message reference semantics when fork or rewind rebuilds the composer', () => {
-    const href = 'cindy://session/session-a?message=message-a';
+    const href = `${SCHEME}://session/session-a?message=message-a`;
     const text = `inspect ${href}`;
     const reference = {
       kind: 'message' as const,

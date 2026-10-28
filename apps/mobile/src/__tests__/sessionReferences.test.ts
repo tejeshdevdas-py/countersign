@@ -20,6 +20,10 @@ import {
   type MobileSessionReference,
   type MobileSessionReferenceContext,
 } from '@/session/sessionReferences';
+import { BRAND_IDENTITY } from '@cindy/maker-shared/brand-identity';
+
+// Countersign: links follow BRAND_IDENTITY.primaryScheme (no legacy schemes).
+const SCHEME = BRAND_IDENTITY.primaryScheme;
 
 // 文案已 i18n 化;固定 zh-CN 让字面量断言与语言环境解耦(全局 mock 默认 en-US)。
 beforeAll(async () => {
@@ -66,7 +70,7 @@ describe('mobile session-reference links', () => {
 
   it('retains a queued steer projection when the source is unavailable', async () => {
     const item = {
-      text: 'continue cindy://session/source',
+      text: `continue ${SCHEME}://session/source`,
       sessionRefs: [{ sessionId: 'source', deviceId: 'dev-source' }],
     };
     const invoke = asInvoke(async (_deviceId, channel) => {
@@ -90,7 +94,7 @@ describe('mobile session-reference links', () => {
 
   it('does not reuse a stored steer projection when the target itself is unavailable', async () => {
     const item = {
-      text: 'continue cindy://session/source',
+      text: `continue ${SCHEME}://session/source`,
       sessionRefs: [{ sessionId: 'source', deviceId: 'dev-source' }],
     };
     const invoke = asInvoke(async (_deviceId, channel) => {
@@ -107,14 +111,14 @@ describe('mobile session-reference links', () => {
     expect(console.warn).not.toHaveBeenCalled();
   });
 
-  it('extracts both schemes, anchors, source devices, and removes exact duplicates', () => {
+  it('extracts links, anchors, source devices, and removes exact duplicates', () => {
     const deviceBySession: Record<string, string> = { 'session-a': 'dev-a', 'session b': 'dev-b' };
     const refs = extractMobileSessionReferences(
       [
-        'cindy://session/session-a',
-        'xdt-maker://session/session%20b?foo=1&message=client%2F2',
-        'cindy://session/session-a',
-        'cindy://session/session-a?message=anchor',
+        `${SCHEME}://session/session-a`,
+        `${SCHEME}://session/session%20b?foo=1&message=client%2F2`,
+        `${SCHEME}://session/session-a`,
+        `${SCHEME}://session/session-a?message=anchor`,
       ].join(' '),
       (sessionId) => deviceBySession[sessionId],
     );
@@ -128,14 +132,14 @@ describe('mobile session-reference links', () => {
 
   it('ignores malformed encodings without losing valid links', () => {
     expect(extractMobileSessionReferences(
-      'cindy://session/%ZZ xdt-maker://session/ok?message=%ZZ',
+      `${SCHEME}://session/%ZZ ${SCHEME}://session/ok?message=%ZZ`,
       () => 'dev-a',
     )).toEqual([{ sessionId: 'ok', deviceId: 'dev-a' }]);
   });
 
   it('preserves a source device hint when only the link anchor changes', () => {
     expect(extractMobileSessionReferences(
-      'cindy://session/source',
+      `${SCHEME}://session/source`,
       () => undefined,
       [{ sessionId: 'source', messageClientId: 'anchor', deviceId: 'source-device' }],
     )).toEqual([{ sessionId: 'source', deviceId: 'source-device' }]);
@@ -143,12 +147,12 @@ describe('mobile session-reference links', () => {
 
   it('refreshes a restored draft device from the store and retains frozen devices for unlisted tasks', () => {
     expect(extractMobileSessionReferences(
-      'cindy://session/source?device=dev-frozen',
+      `${SCHEME}://session/source?device=dev-frozen`,
       () => 'dev-live',
       [{ sessionId: 'source', deviceId: 'dev-hint' }],
     )).toEqual([{ sessionId: 'source', deviceId: 'dev-live' }]);
     expect(extractMobileSessionReferences(
-      'cindy://session/source?message=anchor&device=dev-frozen',
+      `${SCHEME}://session/source?message=anchor&device=dev-frozen`,
       () => undefined,
     )).toEqual([{ sessionId: 'source', messageClientId: 'anchor', deviceId: 'dev-frozen' }]);
   });
@@ -156,7 +160,7 @@ describe('mobile session-reference links', () => {
   it('uses the local shared-task route when a portable link identifies its physical host', () => {
     const peer = sharedTaskHostPeer('shared-task', 'host-device');
     expect(extractMobileSessionReferences(
-      'cindy://session/source?message=anchor&device=host-device',
+      `${SCHEME}://session/source?message=anchor&device=host-device`,
       () => peer,
     )).toEqual([{ sessionId: 'source', messageClientId: 'anchor', deviceId: peer }]);
   });
@@ -190,11 +194,11 @@ describe('mobile session-reference links', () => {
     });
 
     await expect(prepareMobileQueuedSessionReferences(
-      { text: 'compare cindy://session/source' },
+      { text: `compare ${SCHEME}://session/source` },
       asInvoke(invoke),
       () => 'source-device',
       'target-old',
-    )).resolves.toEqual({ text: 'compare cindy://session/source' });
+    )).resolves.toEqual({ text: `compare ${SCHEME}://session/source` });
     expect(invoke).toHaveBeenCalledTimes(1);
     expect(console.warn).toHaveBeenCalledWith(
       '[session-references] trusted history unavailable; preserving raw link text',
@@ -212,7 +216,7 @@ describe('mobile session-reference links', () => {
     });
 
     await expect(prepareMobileQueuedSessionReferences(
-      { text: 'compare cindy://session/source' },
+      { text: `compare ${SCHEME}://session/source` },
       asInvoke(invoke),
       () => 'source-device',
       'target-offline',
@@ -231,14 +235,14 @@ describe('mobile session-reference links', () => {
 
     await expect(prepareMobileQueuedSessionReferences(
       {
-        text: 'compare cindy://session/foreign',
+        text: `compare ${SCHEME}://session/foreign`,
         sessionRefs: [{ sessionId: 'stale', deviceId: 'old-device' }],
         sessionReferencesRequireTrustedSnapshot: true,
       },
       asInvoke(invoke),
       () => 'source-device',
       'target-new',
-    )).resolves.toEqual({ text: 'compare cindy://session/foreign' });
+    )).resolves.toEqual({ text: `compare ${SCHEME}://session/foreign` });
     expect(invoke.mock.calls.map((call) => call[1])).toEqual([
       DL_SESSION_REFERENCE_CAPABILITY_CHANNEL,
       'local-db:sessions:get',
@@ -261,13 +265,13 @@ describe('mobile session-reference links', () => {
 
     await expect(prepareMobileQueuedSessionReferences(
       {
-        text: 'compare cindy://session/source',
+        text: `compare ${SCHEME}://session/source`,
         sessionRefs: [{ sessionId: 'source', deviceId: 'source-device' }],
       },
       asInvoke(invoke),
       () => undefined,
       'target-device',
-    )).resolves.toEqual({ text: 'compare cindy://session/source' });
+    )).resolves.toEqual({ text: `compare ${SCHEME}://session/source` });
     expect(console.warn).toHaveBeenCalledWith(
       '[session-references] trusted history unavailable; preserving raw link text',
       expect.objectContaining({ phase: 'source-resolution', code: 'SESSION_REFERENCE_OFFLINE' }),
@@ -295,7 +299,7 @@ describe('mobile session-reference links', () => {
       text: string;
       trustedSessionReferenceContexts?: MobileSessionReferenceContext[];
     }>(
-      { text: 'compare cindy://session/source' },
+      { text: `compare ${SCHEME}://session/source` },
       invoke,
       () => 'source-device',
       'target-new',
@@ -331,7 +335,7 @@ describe('mobile session-reference links', () => {
       trustedSessionReferenceContexts?: MobileSessionReferenceContext[];
     }>(
       {
-        text: 'compare cindy://session/source',
+        text: `compare ${SCHEME}://session/source`,
         sessionRefs: [{ sessionId: 'source', deviceId: 'source-device' }],
       },
       invoke,
@@ -365,7 +369,7 @@ describe('mobile session-reference links', () => {
       text: string;
       trustedSessionReferenceContexts?: MobileSessionReferenceContext[];
     }>(
-      { text: 'compare cindy://session/source' },
+      { text: `compare ${SCHEME}://session/source` },
       invoke,
       () => 'source-device',
       'target-new',

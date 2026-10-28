@@ -16,6 +16,10 @@ import {
   parseMobileMarkdownInlines,
   groupMobileMarkdownSelectableBlocks,
 } from '@/session/messageMarkdown';
+import { BRAND_IDENTITY } from '@cindy/maker-shared/brand-identity';
+
+// Countersign: links follow BRAND_IDENTITY.primaryScheme (no legacy schemes).
+const SCHEME = BRAND_IDENTITY.primaryScheme;
 
 // 文案已 i18n 化;固定 zh-CN 让字面量断言与语言环境解耦(全局 mock 默认 en-US)。
 beforeAll(async () => {
@@ -1245,7 +1249,7 @@ describe('messageMarkdown', () => {
 
 
   it('tokenizes bare and explicit session deep links as inline links', () => {
-    const url = 'xdt-maker://session/03e0c22d-19db-4ac5-814f-1ea04040b471?message=m1';
+    const url = `${SCHEME}://session/03e0c22d-19db-4ac5-814f-1ea04040b471?message=m1`;
     expect(parseMobileMarkdownInlines(`看 ${url}。收尾`)).toEqual([
       { type: 'text', text: '看 ' },
       { type: 'link', text: url, url },
@@ -1264,7 +1268,7 @@ describe('messageMarkdown', () => {
   });
 
   it('keeps session deep links literal inside inline and fenced code', () => {
-    const url = 'cindy://session/session-a?message=message-a';
+    const url = `${SCHEME}://session/session-a?message=message-a`;
     expect(parseMobileMarkdownInlines(`\`${url}\` then ${url}`)).toEqual([
       { type: 'code', text: url },
       { type: 'text', text: ' then ' },
@@ -1278,7 +1282,7 @@ describe('messageMarkdown', () => {
   it('tokenizes bare and explicit project deep links as inline links (review P1)', () => {
     // 桌面端粘贴 chip 化后按 [标题](深链) 发送;不 tokenize 会把整段渲染成
     // 原始 markdown 源码。renderInline 对非 session 深链显示 label 纯文本。
-    const url = 'xdt-maker://project/%2FUsers%2Fdash%2FCode%2FTools%2Fxdt-maker';
+    const url = `${SCHEME}://project/%2FUsers%2Fdash%2FCode%2FTools%2Fxdt-maker`;
     expect(parseMobileMarkdownInlines(`[主仓](${url}) 后文`)).toEqual([
       { type: 'link', text: '主仓', url },
       { type: 'text', text: ' 后文' },
@@ -1288,16 +1292,16 @@ describe('messageMarkdown', () => {
       { type: 'link', text: url, url },
       { type: 'text', text: ' 这里' },
     ]);
-    // 其它 xdt-maker:// 形态仍不 tokenize(维持纯文本)
-    expect(parseMobileMarkdownInlines('xdt-maker://other/foo')).toEqual([
-      { type: 'text', text: 'xdt-maker://other/foo' },
+    // 其它 ${SCHEME}:// 形态仍不 tokenize(维持纯文本)
+    expect(parseMobileMarkdownInlines(`${SCHEME}://other/foo`)).toEqual([
+      { type: 'text', text: `${SCHEME}://other/foo` },
     ]);
   });
 
   it('keeps sentence punctuation after a bare project link as text (review P2)', () => {
     // project 白名单含 `.`:正则会把句号吞进 match,trimUrlPunctuation 只修
     // 展示不修 cursor 推进,句号从渲染输出里整个消失。
-    const url = 'xdt-maker://project/%2FUsers%2Fdash%2FCode%2FTools%2Fxdt-maker';
+    const url = `${SCHEME}://project/%2FUsers%2Fdash%2FCode%2FTools%2Fxdt-maker`;
     expect(parseMobileMarkdownInlines(`see ${url}.`)).toEqual([
       { type: 'text', text: 'see ' },
       { type: 'link', text: url, url },
@@ -1312,11 +1316,11 @@ describe('messageMarkdown', () => {
   it('leaves legacy project links with raw delimiters as plain text (review P2)', () => {
     // 旧编码放行 `'()`;白名单截断出的前缀会显示成指错项目的链接,
     // 整段维持纯文本(与桌面 PROJECT_DEEP_LINK_RE_SOURCE 的尾部前瞻同口径)。
-    expect(parseMobileMarkdownInlines('xdt-maker://project/%2Ftmp%2Ffoo(copy)')).toEqual([
-      { type: 'text', text: 'xdt-maker://project/%2Ftmp%2Ffoo(copy)' },
+    expect(parseMobileMarkdownInlines(`${SCHEME}://project/%2Ftmp%2Ffoo(copy)`)).toEqual([
+      { type: 'text', text: `${SCHEME}://project/%2Ftmp%2Ffoo(copy)` },
     ]);
-    expect(parseMobileMarkdownInlines("xdt-maker://project/%2FJohn's%20Repo")).toEqual([
-      { type: 'text', text: "xdt-maker://project/%2FJohn's%20Repo" },
+    expect(parseMobileMarkdownInlines(`${SCHEME}://project/%2FJohn's%20Repo`)).toEqual([
+      { type: 'text', text: `${SCHEME}://project/%2FJohn's%20Repo` },
     ]);
   });
 

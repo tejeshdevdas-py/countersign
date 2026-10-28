@@ -7,6 +7,10 @@ import {
   splitAnchoredSessionMessageLinks,
 } from '@/session/sessionMessageText';
 import type { RemoteMessage } from '@/session/types';
+import { BRAND_IDENTITY } from '@cindy/maker-shared/brand-identity';
+
+// Countersign: links follow BRAND_IDENTITY.primaryScheme (no legacy schemes).
+const SCHEME = BRAND_IDENTITY.primaryScheme;
 
 function message(input: Partial<RemoteMessage>): RemoteMessage {
   return { id: 'm', role: 'user', content: '', createdAt: '2026-07-23T00:00:00Z', ...input } as RemoteMessage;
@@ -107,16 +111,16 @@ describe('mobile session message labels', () => {
 
   it('splits message anchors while preserving adjacent punctuation and whole-session links', () => {
     expect(splitAnchoredSessionMessageLinks(
-      'See cindy://session/s-1?message=m-2, then cindy://session/s-3.',
+      `See ${SCHEME}://session/s-1?message=m-2, then ${SCHEME}://session/s-3.`,
     )).toEqual([
       { kind: 'text', text: 'See ' },
       {
         kind: 'message-link',
-        url: 'cindy://session/s-1?message=m-2',
+        url: `${SCHEME}://session/s-1?message=m-2`,
         sessionId: 's-1',
         messageClientId: 'm-2',
       },
-      { kind: 'text', text: ', then cindy://session/s-3.' },
+      { kind: 'text', text: `, then ${SCHEME}://session/s-3.` },
     ]);
   });
 });

@@ -70,6 +70,10 @@ import {
   listPendingPrecreatedWorktrees,
   registerPendingPrecreatedWorktree,
 } from '@/session/precreatedWorktreeRecovery';
+import { BRAND_IDENTITY } from '@cindy/maker-shared/brand-identity';
+
+// Countersign: links follow BRAND_IDENTITY.primaryScheme (no legacy schemes).
+const SCHEME = BRAND_IDENTITY.primaryScheme;
 
 const DRAFT: NewSessionDraft = {
   agentKind: 'claude-code',
@@ -746,7 +750,7 @@ describe('newSessionCreation pipeline', () => {
       }],
     }));
     startNewSessionCreation(makeParams('s12', maker, {
-      draft: { ...DRAFT, firstMessage: 'review cindy://session/source' },
+      draft: { ...DRAFT, firstMessage: `review ${SCHEME}://session/source` },
       transport: {
         maker: maker as unknown as MobileMakerTransport,
         openLink: vi.fn(async () => undefined),

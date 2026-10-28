@@ -11,13 +11,17 @@ import {
 } from '@/session/desktopSlashCommands';
 import type { MobileSlashCommand } from '@/device-link/mobileMakerTransport';
 import { composerDocumentProjectedText, serializeComposerDocument, sessionLinkComposerNode, type ComposerDocument } from '@/session/composerDocument';
+import { BRAND_IDENTITY } from '@cindy/maker-shared/brand-identity';
+
+// Countersign: links follow BRAND_IDENTITY.primaryScheme (no legacy schemes).
+const SCHEME = BRAND_IDENTITY.primaryScheme;
 
 // Unit regression: /side previously flattened a message chip to a URL and lost
 // its body. Command parsing tests only covered strings, not transferred drafts.
 describe('side chat draft transfer', () => {
   it('preserves message bodies, project references and interleaved quotes for the child send', () => {
     const reference = sessionLinkComposerNode({
-      href: 'cindy://session/other-task?message=message-1',
+      href: `${SCHEME}://session/other-task?message=message-1`,
       label: 'Referenced message', agentText: 'The original message body',
     });
     const document: ComposerDocument = { version: 1, nodes: [
@@ -26,8 +30,8 @@ describe('side chat draft transfer', () => {
       { type: 'text', text: ' explain ' },
       reference,
       { type: 'text', text: ' using ' },
-      { type: 'mention', kind: 'project', label: 'Project', raw: 'cindy://project/%2Fwork',
-        href: 'cindy://project/%2Fwork', workingDir: '/work' },
+      { type: 'mention', kind: 'project', label: 'Project', raw: `${SCHEME}://project/%2Fwork`,
+        href: `${SCHEME}://project/%2Fwork`, workingDir: '/work' },
     ] };
     expect(parseMobileDesktopCommand(composerDocumentProjectedText(document))?.name).toBe('side');
     const draft = buildMobileSideChatDraft(document);

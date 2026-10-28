@@ -23,6 +23,10 @@ import {
 } from '@/session/sessionOutbox';
 import type { RemoteSerializedAttachment } from '@/session/types';
 import { serializeComposerDocument } from '@/session/composerDocument';
+import { BRAND_IDENTITY } from '@cindy/maker-shared/brand-identity';
+
+// Countersign: links follow BRAND_IDENTITY.primaryScheme (no legacy schemes).
+const SCHEME = BRAND_IDENTITY.primaryScheme;
 
 // 文案已 i18n 化;固定 zh-CN 让字面量断言与语言环境解耦(全局 mock 默认 en-US)。
 beforeAll(async () => {
@@ -245,7 +249,7 @@ describe('buildOutboxItem', () => {
   });
 
   it('keeps structured reference metadata until dispatch', () => {
-    const href = 'cindy://session/session-a?message=message-a';
+    const href = `${SCHEME}://session/session-a?message=message-a`;
     const text = `inspect ${href}`;
     const reference = {
       kind: 'message' as const,
@@ -351,7 +355,7 @@ describe('recoverOutboxItemsToComposerDraft', () => {
   });
 
   it('restores message references instead of flattening them to private URIs', () => {
-    const href = 'cindy://session/session-a?message=message-a';
+    const href = `${SCHEME}://session/session-a?message=message-a`;
     const text = `inspect ${href}`;
     const reference = {
       kind: 'message' as const,

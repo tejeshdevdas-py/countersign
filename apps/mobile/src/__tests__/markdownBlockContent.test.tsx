@@ -13,6 +13,10 @@ import {
   type MobileMarkdownParseResult,
   type MobileMarkdownTextRunGroupingOptions,
 } from '@/session/messageMarkdown';
+import { BRAND_IDENTITY } from '@cindy/maker-shared/brand-identity';
+
+// Countersign: links follow BRAND_IDENTITY.primaryScheme (no legacy schemes).
+const SCHEME = BRAND_IDENTITY.primaryScheme;
 
 type RenderBlock = (block: MobileMarkdownBlock, leadingGap: boolean) => ReactNode;
 
@@ -162,7 +166,7 @@ describe('streaming Markdown React block boundaries', () => {
 
   it('keeps deep-link render context stable until a referenced title actually changes', () => {
     const sessionId = '03e0c22d-19db-4ac5-814f-1ea04040b471';
-    const linkedText = `[task](cindy://session/${sessionId})\n\ntail`;
+    const linkedText = `[task](${SCHEME}://session/${sessionId})\n\ntail`;
     let parse = parseMobileMarkdownIncremental(linkedText);
     const renders = vi.fn();
     const bodyRenders = vi.fn();
@@ -218,9 +222,9 @@ describe('streaming Markdown React block boundaries', () => {
     try {
       act(() => root.render(<Titles text="plain text" />));
       expect(subscribe).not.toHaveBeenCalled();
-      act(() => root.render(<Titles text={`cindy://session/${first}`} />));
+      act(() => root.render(<Titles text={`${SCHEME}://session/${first}`} />));
       expect(host.textContent).toContain('First');
-      act(() => root.render(<Titles text={`cindy://session/${second}`} />));
+      act(() => root.render(<Titles text={`${SCHEME}://session/${second}`} />));
       renders.mockClear();
       act(() => remoteSessionStore.applySessionPatch('computer', first, { title: 'Old link renamed' }));
       expect(renders).not.toHaveBeenCalled();

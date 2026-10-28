@@ -22,6 +22,10 @@ import { normalizeRemoteMessages } from '@/session/messageNormalize';
 import { buildOutboxItem } from '@/session/sessionOutbox';
 import { buildMobileMessageRenderItems } from '@/session/messageRenderModel';
 import { CONTINUE_AFTER_ERROR_PROMPT, CONTINUE_AFTER_APP_EXIT_PROMPT } from '@cindy/maker-shared/synthetic-trigger';
+import { BRAND_IDENTITY } from '@cindy/maker-shared/brand-identity';
+
+// Countersign: links follow BRAND_IDENTITY.primaryScheme (no legacy schemes).
+const SCHEME = BRAND_IDENTITY.primaryScheme;
 
 const ATTACHMENT_SHA256 = 'a'.repeat(64);
 
@@ -226,7 +230,7 @@ describe('inputProjection', () => {
   });
 
   it('persists structured references through queue creation and queue editing', () => {
-    const href = 'cindy://session/session-a?message=message-a';
+    const href = `${SCHEME}://session/session-a?message=message-a`;
     const text = `inspect ${href}`;
     const reference = {
       kind: 'message' as const,
@@ -644,7 +648,12 @@ describe('inputProjection', () => {
   });
 
   it('strips trusted session-reference bodies from every mobile projection', () => {
-    const queued = buildQueuedTextMessage(session(), 'cindy://session/source', new Date(), 'q-ref');
+    const queued = buildQueuedTextMessage(
+      session(),
+      `${SCHEME}://session/source`,
+      new Date(),
+      'q-ref',
+    );
     queued.sessionRefs = [{ sessionId: 'source', deviceId: 'dev-source' }];
     queued.trustedSessionReferenceContexts = [{
       sessionId: 'source',

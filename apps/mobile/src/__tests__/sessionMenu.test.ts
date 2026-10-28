@@ -13,6 +13,10 @@ import {
   settleSessionMenuBack,
 } from '@/session/sessionMenu';
 import type { RemoteSession } from '@/session/types';
+import { BRAND_IDENTITY } from '@cindy/maker-shared/brand-identity';
+
+// Countersign: links follow BRAND_IDENTITY.primaryScheme (no legacy schemes).
+const SCHEME = BRAND_IDENTITY.primaryScheme;
 
 // 文案已 i18n 化;固定 zh-CN 让字面量断言与语言环境解耦(全局 mock 默认 en-US)。
 beforeAll(async () => {
@@ -163,15 +167,15 @@ describe('sessionMenu info model', () => {
 
 describe('sessionMenu navigation', () => {
   it('copies the mobile deep link for the session', () => {
-    expect(sessionMenuCopyLink(session({ id: 'abc' }))).toBe('cindy://session/abc');
+    expect(sessionMenuCopyLink(session({ id: 'abc' }))).toBe(`${SCHEME}://session/abc`);
     expect(sessionMenuCopyLink(session({ id: 'abc', deviceLinkDeviceId: 'physical' })))
-      .toBe('cindy://session/abc?device=physical');
+      .toBe(`${SCHEME}://session/abc?device=physical`);
     expect(sessionMenuCopyLink(session({ id: 'abc', canonicalDeviceId: 'canonical', deviceLinkDeviceId: 'physical' })))
-      .toBe('cindy://session/abc?device=canonical');
+      .toBe(`${SCHEME}://session/abc?device=canonical`);
     expect(sessionMenuCopyLink(session({
       id: 'abc',
       deviceLinkDeviceId: sharedTaskHostPeer('shared-task', 'host-device'),
-    }))).toBe('cindy://session/abc');
+    }))).toBe(`${SCHEME}://session/abc`);
   });
 
   it('settles back navigation in two stages', () => {

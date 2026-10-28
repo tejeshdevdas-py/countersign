@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildSelectableMarkdownHtml } from '@/session/selectableMarkdownHtml';
+import { BRAND_IDENTITY } from '@cindy/maker-shared/brand-identity';
+
+// Countersign: links follow BRAND_IDENTITY.primaryScheme (no legacy schemes).
+const SCHEME = BRAND_IDENTITY.primaryScheme;
 
 const DOC = [
   '# 标题',        // 0
@@ -175,17 +179,17 @@ describe('buildSelectableMarkdownHtml 本地路径不出死链', () => {
   });
 
   it('会话深链渲染成不可点的 chip:保留 chip 观感,但不是 <a>、也不带 href', () => {
-    const html = buildSelectableMarkdownHtml('[某会话](cindy://session/abc123)');
+    const html = buildSelectableMarkdownHtml(`[某会话](${SCHEME}://session/abc123)`);
     expect(html).toContain('xdt-session-chip');
     expect(html).toContain('某会话');
     // 阅读器无 bridge、interceptNavigation 只放行 http(s) → 会话 chip 点不动,
     // 不该是锚点,更不该把 cindy:// 暴露成 href(PR #1144 review 实捉)。
-    expect(html).not.toContain('cindy://session/abc123');
+    expect(html).not.toContain(`${SCHEME}://session/abc123`);
     expect(html).not.toMatch(/<a[^>]*xdt-session-chip/);
   });
 
   it('查不到标题的会话深链显示中性文字,不露内部任务 ID', () => {
-    const html = buildSelectableMarkdownHtml('cindy://session/03e0c22d-19db-4ac5-814f-1ea04040b471');
+    const html = buildSelectableMarkdownHtml(`${SCHEME}://session/03e0c22d-19db-4ac5-814f-1ea04040b471`);
     expect(html).toContain('xdt-session-chip');
     expect(html).not.toContain('03e0c22d');
     expect(html).not.toContain('b471');
