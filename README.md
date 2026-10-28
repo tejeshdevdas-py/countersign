@@ -173,6 +173,7 @@ What may leave your computer:
 - traffic a task causes because you asked for it: pages an agent browses, MCP servers you added, packages it installs;
 - git traffic to your project's own remote: before a task gets its own worktree (for example a handoff to a new worktree, or a scheduled task's temporary worktree), git asks the remote (`upstream`, else `origin`) for its default branch and fetches it, within 15 seconds;
 - images in an answer that point to a web address: they load as soon as the answer is shown. A YouTube link shows its poster image from `i.ytimg.com`; the player loads only when you click it. The egress log records these hosts;
+- remote images outside an answer: a Markdown file's live preview, and an image shape in a `.drawio` file, load an image that points to a web address as soon as they are shown, in the same way;
 - downloads and checks you start yourself:
   - Settings > Providers, Ollama: installing Ollama asks `api.github.com` for the latest release and downloads it from GitHub. Downloading a model makes Ollama itself contact its model registry (`registry.ollama.ai`), or Hugging Face for an `hf.co/...` model;
   - Settings > Providers, llama.cpp: installing it asks `api.github.com` and downloads from GitHub; its models come from `huggingface.co` and Hugging Face's download hosts;
