@@ -4,6 +4,7 @@ import { i18n } from '@/i18n';
 import { setMobileDebugSink } from '@/debug/mobileDebugLog';
 import { serializeMobileDebugRecord } from '@/debug/mobileDebugRecord';
 import { VoiceInputController, VoiceTimelineLogger } from '@cindy/voice-input-core';
+import { BRAND_NAME } from '@cindy/maker-shared/branding';
 
 const GW_PROXY = `${DEFAULT_MOBILE_VOICE_LITELLM_BASE_URL}/proxy`;
 const GW_PROXY_WSS = GW_PROXY.replace(/^https/, 'wss');
@@ -1055,7 +1056,8 @@ describe('mobileRealtimeAsrProvider', () => {
       reason: 'Received bad response code from server: 403.',
     });
 
-    await expect(started).rejects.toThrow('Cindy 语音服务的登录已失效或没有权限，请确认登录状态后重试（状态码 403）。');
+    // Countersign: the catalog fills {{appName}} from BRAND_NAME.
+    await expect(started).rejects.toThrow(`${BRAND_NAME} 语音服务的登录已失效或没有权限，请确认登录状态后重试（状态码 403）。`);
   });
 
   it('redacts the synced voice key from Volcengine websocket errors', async () => {
