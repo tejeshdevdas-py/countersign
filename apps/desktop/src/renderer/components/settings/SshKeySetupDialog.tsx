@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { brandHomeStateName } from '@cindy/maker-shared/brand-identity';
 import * as Dialog from '@radix-ui/react-dialog';
 import { X, Copy, Key, KeyRound, Lock, Plus, Server, CheckCircle2, Circle, Unlock, Eye, EyeOff, AlertTriangle } from 'lucide-react';
 
@@ -517,7 +518,7 @@ function GenerateForm({ generating, onSubmit, onCancel }: GenerateFormProps) {
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="cindy"
+          placeholder={brandHomeStateName()}
           disabled={generating}
           className="h-8 rounded-md border bg-transparent px-2 text-12 outline-none"
           style={{
@@ -526,7 +527,7 @@ function GenerateForm({ generating, onSubmit, onCancel }: GenerateFormProps) {
           }}
         />
         <span className="text-11" style={{ color: 'var(--settings-integration-subtitle)' }}>
-          {t('settings.remote.keys.nameHint')}
+          {t('settings.remote.keys.nameHint', { defaultName: brandHomeStateName() })}
         </span>
       </label>
 

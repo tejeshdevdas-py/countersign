@@ -21,6 +21,7 @@ import { promisify } from 'node:util';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
+import { brandHomeStateName } from '@cindy/maker-shared/brand-identity';
 
 const execFileP = promisify(execFile);
 
@@ -104,7 +105,8 @@ export async function listLocalSshKeys(): Promise<LocalSshKey[]> {
  * Generate a new ed25519 key pair at `~/.ssh/<name>`. If `passphrase`
  * is non-empty the private key file is encrypted with it; otherwise the
  * key is stored unencrypted (user can `ssh-keygen -p -f <path>` later
- * to retrofit a passphrase). `name` defaults to `cindy` — bumps with
+ * to retrofit a passphrase). `name` defaults to `brandHomeStateName()`
+ * (Countersign: `countersign`, never an installed Cindy's `cindy`) — bumps with
  * `-1`, `-2`, ... on collision so we never overwrite. (2026-07-17 品牌翻转:
  * 只影响之后新生成的密钥文件名;用户已有密钥按显式路径保存,不受影响。)
  *
@@ -124,8 +126,8 @@ export async function generateNewKey(opts: {
   comment?: string;
   passphrase?: string;
 }): Promise<GenerateNewKeyResult> {
-  const baseName = sanitizeFilename(opts.name ?? 'cindy');
-  const comment = opts.comment ?? `cindy@${os.hostname()}`;
+  const baseName = sanitizeFilename(opts.name ?? brandHomeStateName());
+  const comment = opts.comment ?? `${brandHomeStateName()}@${os.hostname()}`;
   const passphrase = opts.passphrase ?? '';
   const dir = SSH_DIR_DEFAULT;
   await fs.mkdir(dir, { recursive: true, mode: 0o700 });
@@ -551,7 +553,7 @@ function sanitizeFilename(s: string): string {
   // Strip anything that could escape ~/.ssh/ or break shell quoting.
   // Conservative whitelist: alnum + dash + underscore. Replace others with `-`.
   const cleaned = s.replace(/[^A-Za-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '');
-  return cleaned || 'cindy';
+  return cleaned || brandHomeStateName();
 }
 
 function shellQuote(s: string): string {

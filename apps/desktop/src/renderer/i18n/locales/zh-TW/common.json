@@ -1598,7 +1598,7 @@
         "unlockSubmit": "解鎖",
         "generateTitle": "生成新的 SSH 金鑰",
         "nameLabel": "名字(可選)",
-        "nameHint": "儲存為 ~/.ssh/<名字>。預設 \"cindy\"，有重名時自動加 -1 / -2 …",
+        "nameHint": "儲存為 ~/.ssh/<名字>。預設 \"{{defaultName}}\"，有重名時自動加 -1 / -2 …",
         "encryptLabel": "用 passphrase 加密(推薦)",
         "encryptHint": "passphrase 現在輸入一次，然後 ssh-add 會把解密後的金鑰快取在系統 ssh-agent 裡。macOS 還會把 passphrase 存到 Keychain，重啟後自動恢復。",
         "passLabel": "Passphrase",
