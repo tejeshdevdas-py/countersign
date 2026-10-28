@@ -2845,7 +2845,9 @@ export function ProvidersSection() {
         );
       } else if (connect === 'xd') {
         // 无账号会话目录不含 xd → 落到登录引导行(不能当 preset 交给向导)。
-        selectProvider(CINDY_SIGNIN_ID);
+        // Countersign: under LOCAL_ONLY there is no hosted-service row; open the add-provider wizard.
+        if (LOCAL_ONLY) setWizard({});
+        else selectProvider(CINDY_SIGNIN_ID);
       } else if (connect === MANAGED_OLLAMA_PROVIDER_ID) {
         setWizard({});
       } else if (target && target.source === 'builtin') {
@@ -2867,7 +2869,8 @@ export function ProvidersSection() {
 
   // Cindy AI 登录引导:无账号会话目录不含 xd(见 CindySigninRow 头注释),置顶
   // 引导行;列表为空时默认选中它(右栏直接展示登录引导,不留「点击添加」空态)。
-  const showCindySignin = !byId.has('xd');
+  // Countersign: under LOCAL_ONLY the hosted service does not exist, so no row and no pane.
+  const showCindySignin = !LOCAL_ONLY && !byId.has('xd');
   const cindySigninActive =
     showCindySignin &&
     (selectedId === CINDY_SIGNIN_ID || (selectedId == null && listProviders.length === 0));
