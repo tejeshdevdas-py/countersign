@@ -21,6 +21,8 @@
 //   --region   cn|global|dev        版本无关包默认 global；传 --version 时必填，
 //                                   决定应用身份、端点清单与发布目标
 //   --version  x.y.z|major|minor|patch
+//              Countersign: refused under LOCAL_ONLY (no updater, no release
+//              channel; scripts/countersign/package-version.mjs).
 //              缺省 = 版本无关打包:占位版本 0.0.0,包不参与热更新
 //              (updateService 对 0.0.0 短路),开源社区拉仓即可打;
 //              bump 关键字会只读拉一次 CDN manifest 取基线——这是打包阶段
@@ -48,6 +50,7 @@ import { fileURLToPath } from 'node:url';
 import { ensureBinary } from '../../../scripts/ensure-agent-binaries.mjs';
 import { desktopClientBuildEnv } from '../../../scripts/shared/client-endpoint-build-env.mjs';
 import { packagingLogUploadBuildEnv } from '../../../scripts/shared/log-upload-build-env.mjs';
+import { refuseVersionedPackaging } from '../../../scripts/countersign/package-version.mjs';
 import {
   DESKTOP_ROOT,
   RELEASE_DIR,
@@ -488,6 +491,8 @@ async function main() {
   let args;
   try {
     args = parsePackageArgs(process.argv.slice(2));
+    // Countersign: versionless only; --version builds for upstream's updater and release CDN.
+    refuseVersionedPackaging(args.versionSpec);
   } catch (err) {
     console.error(`ERROR: ${err.message}`);
     process.exit(1);

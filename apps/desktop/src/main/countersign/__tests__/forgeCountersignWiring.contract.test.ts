@@ -1,9 +1,10 @@
 /**
  * Countersign guard contract: forge.config.ts calls the Countersign packaging
- * steps in forge-countersign.ts at the right hook. The steps themselves are
- * unit-tested on fixture trees; forge.config.ts builds native helpers when it
- * is loaded, so a unit test cannot import it, and this guard-tier test pins
- * the wiring in its source.
+ * steps in forge-countersign.ts at the right hook, and package-desktop.mjs
+ * refuses --version first. The steps themselves are unit-tested; forge.config.ts
+ * builds native helpers when it is loaded and package-desktop.mjs packages
+ * when it is run, so no unit test can load either, and this guard-tier test
+ * pins the wiring in their source.
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -12,6 +13,10 @@ import { describe, expect, it } from 'vitest';
 
 const DESKTOP_ROOT = resolve(__dirname, '..', '..', '..', '..');
 const forge = readFileSync(resolve(DESKTOP_ROOT, 'forge.config.ts'), 'utf8');
+const packageDesktop = readFileSync(
+  resolve(DESKTOP_ROOT, 'scripts', 'package-desktop.mjs'),
+  'utf8',
+);
 
 function occurrences(part: string): number {
   return forge.split(part).length - 1;
@@ -21,7 +26,7 @@ function occurrences(part: string): number {
 function hookBody(name: string): string {
   const start = forge.indexOf(`    ${name}: async (`);
   expect(start, `${name} hook exists`).toBeGreaterThan(-1);
-  const next = forge.slice(start + 1).search(/\n {4}[A-Za-z]+: async \(|\n {2}\},\n/);
+  const next = forge.slice(start + 1).search(/\r?\n {4}[A-Za-z]+: async \(|\r?\n {2}\},\r?\n/);
   return forge.slice(start, next === -1 ? undefined : start + 1 + next);
 }
 
@@ -83,5 +88,16 @@ describe('forge.config.ts Countersign packaging wiring', () => {
     expect(body.split('userName').length - 1).toBe(3);
     expect(/console\.\w+\([^;]*userName/.test(body)).toBe(false);
     expect(/writeFile|appendFile/.test(body)).toBe(false);
+  });
+});
+
+describe('package-desktop.mjs Countersign wiring', () => {
+  it('M-B8: refuses --version right after parsing the arguments, before any step', () => {
+    expect(packageDesktop).toContain(
+      "import { refuseVersionedPackaging } from '../../../scripts/countersign/package-version.mjs';",
+    );
+    expect(packageDesktop).toMatch(
+      /args = parsePackageArgs\(process\.argv\.slice\(2\)\);\s*\/\/[^\n]*\n\s*refuseVersionedPackaging\(args\.versionSpec\);\s*\} catch \(err\) \{\s*console\.error\(`ERROR: \$\{err\.message\}`\);\s*process\.exit\(1\);/,
+    );
   });
 });
