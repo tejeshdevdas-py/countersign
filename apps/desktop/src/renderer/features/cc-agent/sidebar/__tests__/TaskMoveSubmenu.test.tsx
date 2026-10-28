@@ -9,6 +9,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { setDataOwnerGeneration } from '@/contexts/dataOwnerGeneration';
 import { TaskMoveSubmenu, moveRemoteTaskProject } from '../TaskMoveSubmenu';
+
+// Countersign: these cases cover upstream's copy to other computers, which LOCAL_ONLY
+// removes (see TaskMoveSubmenu.localOnly.test.tsx).
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
 const h = vi.hoisted(() => ({
   request: vi.fn(),
   invoke: vi.fn(),

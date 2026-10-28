@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import { ChevronRight, Monitor } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Session } from '@/lib/ccAgent.types';
@@ -190,8 +191,10 @@ export function TaskMoveSubmenu({
         )}
         {/* Agent 在另一台电脑运行的任务可以换项目(那台按任务 id 定址 Agent 工作区)，
             但不能复制到其他电脑：Agent 会话记录在那台，复制带不走。
-            另一台电脑派来的协同 Worker 同样不复制：协同归属在那台(main 同样拒绝)。 */}
-        {['desktop', 'shared', 'feishu'].includes(session.source ?? 'desktop') &&
+            另一台电脑派来的协同 Worker 同样不复制：协同归属在那台(main 同样拒绝)。
+            Countersign: no other computers under LOCAL_ONLY; the device link is off. */}
+        {!LOCAL_ONLY &&
+          ['desktop', 'shared', 'feishu'].includes(session.source ?? 'desktop') &&
           session.orcaRole !== 'worker' &&
           !session.agentDeviceId &&
           !session.orcaRemoteLead && (
