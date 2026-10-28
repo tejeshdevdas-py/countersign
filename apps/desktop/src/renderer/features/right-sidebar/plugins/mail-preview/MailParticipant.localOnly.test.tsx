@@ -24,7 +24,7 @@ function message(overrides: Partial<MailMessage> = {}): MailMessage {
     accountId: 'account',
     messageId: 'm2',
     from: 'Person <person@company.example.com>',
-    to: 'Other <other@partner.example.org>, Third <third@gmail.com>',
+    to: 'Other <other@partner.example.org>, Third <third@example.net>',
     cc: 'Copy <copy@company.example.com>',
     bcc: '',
     subject: 'Subject',

@@ -77,6 +77,13 @@
       "rule": "email",
       "sha256": "d153f01710247d3a55e3d8ef4c4d518e620992d6a4cda954d2c4897ae9166a99",
       "reason": "The support-routes commit (ruling O10) names upstream's public support address in prose while saying it removed it from the locale strings. Public upstream text, not personal or employer detail."
+    },
+    {
+      "commit": "Countersign: mail previews show no Gravatar or domain icons under LOCAL_ONLY",
+      "where": "apps/desktop/src/renderer/features/right-sidebar/plugins/mail-preview/MailParticipant.localOnly.test.tsx:27",
+      "rule": "email",
+      "sha256": "9f9370a579d5ba7ba63f42c22163bd633f9f8c2f07f83bd4076c26a91d3a2646",
+      "reason": "A made-up recipient on a public mailbox domain in a new test fixture (the upstream mail test uses the same form). A later commit (\"Countersign: the mail avatar test uses a reserved example domain\") replaced it with a reserved example domain. No real person is meant."
     }
   ]
 }
