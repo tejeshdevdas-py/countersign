@@ -1594,15 +1594,15 @@
       "file": "apps/desktop/src/main/mcp-integrations/browser-managed-config.ts",
       "text": "Cindy",
       "count": 1,
-      "category": "not-shown",
-      "why": "on-disk managed browser profile folder key, pinned by brandIdentity; the Chrome chip and profile name show BRAND_NAME (MANAGED_PROFILE_DISPLAY_NAME)"
+      "category": "model-identifier",
+      "why": "managed browser profile key, pinned by brandIdentity; the browser tool's status and profiles results show it to the model as the profile name (an identifier, not prose). Kept because renaming it would orphan existing browser profiles; the Chrome chip and profile name show BRAND_NAME (MANAGED_PROFILE_DISPLAY_NAME)"
     },
     {
       "file": "apps/desktop/src/main/mcp-integrations/browser-managed-config.ts",
       "text": "Cindy-real",
       "count": 1,
-      "category": "not-shown",
-      "why": "on-disk managed browser profile folder key, pinned by brandIdentity; the Chrome chip and profile name show BRAND_NAME (MANAGED_PROFILE_DISPLAY_NAME)"
+      "category": "model-identifier",
+      "why": "managed browser profile key, pinned by brandIdentity; the browser tool's status and profiles results show it to the model as the profile name (an identifier, not prose). Kept because renaming it would orphan existing browser profiles; the Chrome chip and profile name show BRAND_NAME (MANAGED_PROFILE_DISPLAY_NAME)"
     },
     {
       "file": "apps/desktop/src/main/mcp-integrations/browser-real-profile/snapshot.ts",

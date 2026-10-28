@@ -651,6 +651,7 @@ export const BASELINE_CATEGORIES = [
   'third-party', // a third party's own name that happens to be Cindy (a vendor speech voice)
   'peer-identity', // identity sent to another program (MCP clientInfo name, MCP app userAgent), which may show it
   'hidden-history', // author name of hidden snapshot commits (refs/cindy/*); shown by git log --all or the reflog
+  'model-identifier', // a stored key the model sees as an identifier in tool results; renaming it orphans user data
 ];
 
 const LOG_CALLEE =

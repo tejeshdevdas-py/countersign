@@ -647,6 +647,14 @@ test('the committed baseline files snapshot authors and client identities under 
   ]) {
     assert.equal(categoryOf(file), 'peer-identity', file);
   }
+  // The managed browser profile keys: the browser tool's status and profiles results show
+  // them to the model as profile names. Kept as stored keys, listed as model-visible.
+  const managedConfig = 'apps/desktop/src/main/mcp-integrations/browser-managed-config.ts';
+  for (const text of ['Cindy', 'Cindy-real']) {
+    const listed = baseline.find((e) => e.file === managedConfig && e.text === text);
+    assert.equal(listed?.category, 'model-identifier', text);
+    assert.match(listed.why, /model/, text);
+  }
   // Fixed rather than listed: model-visible plugin refusal and the Pi gateway provider name.
   assert.equal(
     baseline.some((e) => e.file === 'apps/desktop/src/main/cindy-brain/ghostVisibility.ts'),
