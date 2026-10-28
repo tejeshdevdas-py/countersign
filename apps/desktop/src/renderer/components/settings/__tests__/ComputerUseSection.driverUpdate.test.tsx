@@ -7,6 +7,12 @@ const { translate } = vi.hoisted(() => ({
   translate: (key: string, args?: { version?: string; time?: string }) =>
     args?.version || args?.time ? `${key}: ${args.version ?? args.time}` : key,
 }));
+// Countersign: upstream's check-on-open flow is tested here with LOCAL_ONLY off;
+// ComputerUseSection.driverUpdate.localOnly.test.tsx covers the real switch.
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: translate }) }));
 vi.mock('@/lib/toast', () => ({
   toast: { info: vi.fn(), success: vi.fn(), warning: vi.fn(), error: vi.fn() },

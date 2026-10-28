@@ -17,6 +17,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import {
   Check,
   ChevronDown,
@@ -777,6 +778,9 @@ export function ComputerUseSection({
 
   useEffect(() => {
     if (!computerStatus?.installed || driverUpdateCheckedRef.current) return;
+    // Countersign: under LOCAL_ONLY the driver is checked for updates (on
+    // GitHub) only when the user presses the check button, never on open.
+    if (LOCAL_ONLY) return;
     driverUpdateCheckedRef.current = true;
     let cancelled = false;
     let settled = false;
