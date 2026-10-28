@@ -225,9 +225,8 @@ The engines (Claude Code, Codex, Pi), git and the other programs the app starts 
 16. The installer is unsigned. How Windows SmartScreen treats it has not been checked.
 17. Only Windows is built. The mobile app (`apps/mobile`) is in the tree but is not built.
 18. The third-party notices in `docs/legal/notices/` were generated for Cindy. They list the updater, which Countersign does not ship, and say the engines are downloaded at runtime, while Countersign bundles them.
-19. The installer does not contain this repository's `LICENSE` or `NOTICE`. Add them before you share an installer.
-20. `CONTRIBUTING`, `SUPPORT` and the other community files (the issue and pull-request templates, `CODEOWNERS`) are upstream's and describe Cindy's process and services. Only `SECURITY`, `CODE_OF_CONDUCT` and the security link in `.github/ISSUE_TEMPLATE/config.yml` were changed. The root `package.json` still names Cindy's homepage and repository; its issue tracker link (`bugs`) points at this repository.
-21. Not checked live: a start with no network, a build on a clean machine, and a network capture after the final set of engine switches.
+19. `CONTRIBUTING`, `SUPPORT` and the other community files (the issue and pull-request templates, `CODEOWNERS`) are upstream's and describe Cindy's process and services. Only `SECURITY`, `CODE_OF_CONDUCT` and the security link in `.github/ISSUE_TEMPLATE/config.yml` were changed. The root `package.json` still names Cindy's homepage and repository; its issue tracker link (`bugs`) points at this repository.
+20. Not checked live: a start with no network, a build on a clean machine, and a network capture after the final set of engine switches.
 
 ## Verification status
 
@@ -258,6 +257,7 @@ Countersign is built on [Cindy](https://github.com/makecindy/cindy). Thanks to t
 
 - Licence: Apache License, Version 2.0 ([`LICENSE`](LICENSE)). Except where noted otherwise, the source code is under this licence. Source files carry no per-file licence header; the root `LICENSE` governs.
 - [`NOTICE`](NOTICE) keeps Cindy's notice and adds Countersign's modification notice.
+- Packaging copies `LICENSE` and `NOTICE` into the installer's `resources` folder as `LICENSE.txt` and `NOTICE.txt`. This step was added after the last package build and has not run in one yet.
 - [`FORK-CHANGES.md`](FORK-CHANGES.md) lists the modified areas.
 - Model weights, datasets, prompts, trademarks and other separately identified material may have their own terms and are not automatically covered by the repository's Apache-2.0 grant. The Cindy name and logo are not licensed for this project.
 - Third-party components keep their own copyright and licences. Their notices and SBOMs are in [`docs/legal/notices/`](docs/legal/notices/) (see limit 18).
