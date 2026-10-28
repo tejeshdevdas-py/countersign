@@ -22,8 +22,10 @@ import {
   resolveCindyRegion,
 } from '@cindy/maker-shared/brand-identity';
 import {
+  assertPackagedOutputClean,
   assertRealLfsBinary,
   msvcPathFreeBuildEnv,
+  publicGithubIdentity,
   spawnEnsureAgentBinaries,
   stageAgentBinaries,
   withEnv,
@@ -739,6 +741,28 @@ function applyMacPackagedDisplayName(buildPath: string, platform: string): void 
     }
     console.log(`[forge:postPackage] mac display name → Countersign (${appDir}/Contents/Info.plist)`);
   }
+}
+
+/**
+ * Countersign: a Windows package must not carry node-gyp/MSVC build
+ * intermediates or this machine's user name (forge-countersign.ts). The name
+ * is read here, compared in lower case and never written anywhere.
+ */
+function assertCountersignPackagedOutputClean(buildPath: string, platform: ForgePlatform): void {
+  if (platform !== 'win32') return;
+  let userName = '';
+  try {
+    userName = os.userInfo().username;
+  } catch {
+    console.warn('[forge:postPackage] no user name available; checking build intermediates only');
+  }
+  const findings = assertPackagedOutputClean(packagedResourcesPath(buildPath, platform), {
+    userName,
+    publicIdentity: publicGithubIdentity(Object.values(BRAND_IDENTITY.appIdByRegion)),
+  });
+  console.log(
+    `[forge:postPackage] ${findings.filesChecked} packaged files: no build intermediates, no user name`,
+  );
 }
 
 function targetPlatformKey(targetPlatform: string, targetArch: string): string {
@@ -2042,6 +2066,7 @@ const config: ForgeConfig = {
           console.log(`[forge:postPackage] staged ${noticeName} + restricted component disclosure`);
           signPackagedExes(buildPath);
           applyMacPackagedDisplayName(buildPath, opts.platform);
+          assertCountersignPackagedOutputClean(buildPath, opts.platform);
         }
       } finally {
         removeCindySourceMetadata();

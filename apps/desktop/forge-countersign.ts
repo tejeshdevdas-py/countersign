@@ -7,6 +7,8 @@ import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
+import { getRawHeader } from '@electron/asar';
+
 // ── Bundled agent engines ────────────────────────────────────────────────────
 
 /**
@@ -201,4 +203,217 @@ export async function withEnv<T>(vars: Record<string, string>, run: () => Promis
       else process.env[name] = value;
     }
   }
+}
+
+// ── Packaged output: no build intermediates, no builder user name ────────────
+
+/** File names only a node-gyp/MSVC build leaves behind (objects, symbols, logs, projects). */
+const BUILD_INTERMEDIATE_FILE =
+  /\.(?:obj|iobj|pdb|ipdb|lib|exp|tlog|sln)$|\.vcxproj(?:\.[^\\/]+)?$|^config\.gypi$/i;
+/** Compiler output folders. */
+const BUILD_INTERMEDIATE_DIR = /^obj(?:\.target)?$/i;
+const USER_NAME_MASK = '<user name>';
+const REPORT_LIMIT = 20;
+
+/**
+ * Text the app ships on purpose that may contain the builder's name: each app
+ * ID (`io.github.<owner>.<name>`) and the owner's `github.com/<owner>/` URLs.
+ * The project's public GitHub owner name can contain the maintainer's Windows
+ * user name; inside these texts it is public, anywhere else it is a leak.
+ */
+export function publicGithubIdentity(appIds: readonly string[]): string[] {
+  const texts = new Set<string>();
+  for (const appId of appIds) {
+    texts.add(appId);
+    const owner = /^io\.github\.([^.]+)\./.exec(appId)?.[1];
+    if (owner) texts.add(`github.com/${owner}/`);
+  }
+  return [...texts];
+}
+
+export interface PackagedLeakFindings {
+  /** Build intermediates, as `app.asar/<path>` or `app.asar.unpacked/<path>`. */
+  intermediates: string[];
+  /** Files whose name or content holds the user name outside the public identity (name masked). */
+  userName: string[];
+  filesChecked: number;
+}
+
+interface NameMatcher {
+  lowerName: string;
+  needles: Buffer[];
+  allowed: Buffer[];
+}
+
+/** ASCII-lowercased copy, so a name matches in any case, in UTF-8 and in UTF-16LE. */
+function asciiLower(bytes: Buffer): Buffer {
+  const lower = Buffer.from(bytes);
+  for (let i = 0; i < lower.length; i++) {
+    const c = lower[i];
+    if (c >= 0x41 && c <= 0x5a) lower[i] = c + 0x20;
+  }
+  return lower;
+}
+
+function encodings(text: string): Buffer[] {
+  return [Buffer.from(text, 'utf8'), Buffer.from(text, 'utf16le')];
+}
+
+function nameMatcher(userName: string, publicIdentity: readonly string[]): NameMatcher | null {
+  const lowerName = userName.trim().toLowerCase();
+  if (!lowerName) return null;
+  return {
+    lowerName,
+    needles: encodings(lowerName),
+    allowed: publicIdentity.flatMap((text) => encodings(text.toLowerCase())),
+  };
+}
+
+function rangesOf(haystack: Buffer, needle: Buffer): Array<[number, number]> {
+  const ranges: Array<[number, number]> = [];
+  for (let at = haystack.indexOf(needle); at !== -1; at = haystack.indexOf(needle, at + 1)) {
+    ranges.push([at, at + needle.length]);
+  }
+  return ranges;
+}
+
+/** True when the name occurs anywhere except inside an allowed public text. */
+function holdsName(content: Buffer, matcher: NameMatcher): boolean {
+  const lower = asciiLower(content);
+  let allowed: Array<[number, number]> | null = null;
+  for (const needle of matcher.needles) {
+    for (const [start, end] of rangesOf(lower, needle)) {
+      allowed ??= matcher.allowed.flatMap((text) => rangesOf(lower, text));
+      if (!allowed.some(([from, to]) => from <= start && end <= to)) return true;
+    }
+  }
+  return false;
+}
+
+function maskName(shownPath: string, matcher: NameMatcher | null): string {
+  if (!matcher) return shownPath;
+  let out = '';
+  let rest = shownPath;
+  let at = rest.toLowerCase().indexOf(matcher.lowerName);
+  while (at !== -1) {
+    out += rest.slice(0, at) + USER_NAME_MASK;
+    rest = rest.slice(at + matcher.lowerName.length);
+    at = rest.toLowerCase().indexOf(matcher.lowerName);
+  }
+  return out + rest;
+}
+
+type AsarNode = {
+  files?: Record<string, AsarNode>;
+  link?: string;
+  unpacked?: boolean;
+  offset?: string;
+  size?: number;
+};
+
+/**
+ * Lists what a packaged app must not carry: node-gyp/MSVC build
+ * intermediates, and the build machine's user name (outside the public
+ * identity) in any file name or content. Scans resources/app.asar (packed
+ * files are read from the archive) and resources/app.asar.unpacked.
+ */
+export function findPackagedBuildLeaks(
+  resourcesDir: string,
+  options: { userName: string; publicIdentity: readonly string[] },
+): PackagedLeakFindings {
+  const matcher = nameMatcher(options.userName, options.publicIdentity);
+  const findings: PackagedLeakFindings = { intermediates: [], userName: [], filesChecked: 0 };
+  const visit = (shown: string, name: string, read: (() => Buffer) | null) => {
+    const pattern = read ? BUILD_INTERMEDIATE_FILE : BUILD_INTERMEDIATE_DIR;
+    if (pattern.test(name)) findings.intermediates.push(maskName(shown, matcher));
+    if (!read) return;
+    findings.filesChecked++;
+    if (!matcher) return;
+    if (shown.toLowerCase().includes(matcher.lowerName) || holdsName(read(), matcher)) {
+      findings.userName.push(maskName(shown, matcher));
+    }
+  };
+
+  const archive = path.join(resourcesDir, 'app.asar');
+  const { header, headerSize } = getRawHeader(archive);
+  const fd = fs.openSync(archive, 'r');
+  try {
+    const walk = (node: AsarNode, relative: string) => {
+      for (const [name, child] of Object.entries(node.files ?? {})) {
+        const childPath = relative ? `${relative}/${name}` : name;
+        const shown = `app.asar/${childPath}`;
+        if (child.files) {
+          visit(shown, name, null);
+          walk(child, childPath);
+        } else if (child.link === undefined && !child.unpacked) {
+          visit(shown, name, () => {
+            const bytes = Buffer.alloc(child.size ?? 0);
+            if (bytes.length > 0) {
+              fs.readSync(fd, bytes, 0, bytes.length, 8 + headerSize + Number(child.offset));
+            }
+            return bytes;
+          });
+        }
+        // Unpacked files are checked on disk below.
+      }
+    };
+    walk(header as AsarNode, '');
+  } finally {
+    fs.closeSync(fd);
+  }
+
+  const walkDisk = (dir: string, relative: string) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const childPath = relative ? `${relative}/${entry.name}` : entry.name;
+      const shown = `app.asar.unpacked/${childPath}`;
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        visit(shown, entry.name, null);
+        walkDisk(full, childPath);
+      } else if (entry.isFile()) {
+        visit(shown, entry.name, () => fs.readFileSync(full));
+      }
+    }
+  };
+  const unpacked = path.join(resourcesDir, 'app.asar.unpacked');
+  if (fs.existsSync(unpacked)) walkDisk(unpacked, '');
+  return findings;
+}
+
+function listed(paths: string[]): string {
+  const shown = paths.slice(0, REPORT_LIMIT).map((entry) => `\n  ${entry}`);
+  if (paths.length > REPORT_LIMIT) shown.push(`\n  ... and ${paths.length - REPORT_LIMIT} more`);
+  return shown.join('');
+}
+
+/**
+ * Fails the package when app.asar or app.asar.unpacked holds build
+ * intermediates or the build machine's user name. The name is compared in
+ * lower case; the report masks it and never prints it.
+ */
+export function assertPackagedOutputClean(
+  resourcesDir: string,
+  options: { userName: string; publicIdentity: readonly string[] },
+): PackagedLeakFindings {
+  const findings = findPackagedBuildLeaks(resourcesDir, options);
+  const problems: string[] = [];
+  if (findings.intermediates.length > 0) {
+    problems.push(
+      `${findings.intermediates.length} build intermediates (compiler objects, debug symbols, ` +
+        `build logs or project files):${listed(findings.intermediates)}`,
+    );
+  }
+  if (findings.userName.length > 0) {
+    problems.push(
+      `${findings.userName.length} files that hold this machine's user name ` +
+        `(shown as ${USER_NAME_MASK}), usually in a build path:${listed(findings.userName)}`,
+    );
+  }
+  if (problems.length > 0) {
+    throw new Error(
+      `[forge:postPackage] the packaged app must not carry details of the build machine. ` +
+        `Found ${problems.join('\nand ')}\nSee forge-countersign.ts.`,
+    );
+  }
+  return findings;
 }

@@ -53,4 +53,24 @@ describe('forge.config.ts Countersign packaging wiring', () => {
     expect(body).toMatch(/await withEnv\(rebuildEnv, \(\) =>\s*electronRebuild\(\{/);
     expect(body.split('electronRebuild(').length - 1).toBe(1);
   });
+
+  it('M-B1: postPackage checks the Windows package for build intermediates and the user name', () => {
+    const postPackage = hookBody('postPackage');
+    const check = postPackage.indexOf(
+      'assertCountersignPackagedOutputClean(buildPath, opts.platform);',
+    );
+    expect(check).toBeGreaterThan(postPackage.indexOf('signPackagedExes(buildPath);'));
+
+    const start = forge.indexOf('function assertCountersignPackagedOutputClean(');
+    const body = forge.slice(start, forge.indexOf('\nfunction ', start + 1));
+    expect(body).toContain("if (platform !== 'win32') return;");
+    expect(body).toContain('userName = os.userInfo().username;');
+    expect(body).toContain(
+      'publicIdentity: publicGithubIdentity(Object.values(BRAND_IDENTITY.appIdByRegion)),',
+    );
+    // The name is only handed to the check: never logged or written.
+    expect(body.split('userName').length - 1).toBe(3);
+    expect(/console\.\w+\([^;]*userName/.test(body)).toBe(false);
+    expect(/writeFile|appendFile/.test(body)).toBe(false);
+  });
 });
