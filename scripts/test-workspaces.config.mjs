@@ -291,6 +291,8 @@ const desktopGuardInclude = [
   'src/renderer/__tests__/toastZIndex.test.ts',
   'src/renderer/__tests__/unsupportedTextPreview.test.ts',
   'src/renderer/hooks/__tests__/useCCAgentChatHiddenFreeze.test.tsx',
+  // Countersign: MainLayout's issue-page commands go through the LOCAL_ONLY gate (O13).
+  'src/renderer/__tests__/countersignIssueEntryWiring.contract.test.ts',
 ];
 
 export function desktopUnitWorkerCount(
