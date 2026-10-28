@@ -369,39 +369,54 @@ function unquoteDiffPath(raw) {
 
 /**
  * Lines added by a unified diff (git diff -U0 with a/ and b/ prefixes).
+ * Each hunk header gives how many old and new lines follow; inside a hunk every
+ * line is content, so an added line whose text starts with "++ " (shown as
+ * "+++ ...") is never read as a file header.
  * @returns {Map<string, {line: number, text: string}[]>} per new path
  */
 export function parseAddedLines(diffText) {
   const out = new Map();
   let current = null;
   let nextLine = 0;
+  let oldLeft = 0;
+  let newLeft = 0;
   for (const raw of diffText.split('\n')) {
     const line = raw.endsWith('\r') ? raw.slice(0, -1) : raw;
+    if (oldLeft > 0 || newLeft > 0) {
+      if (line.startsWith('+')) {
+        if (current !== null) {
+          out.get(current).push({ line: nextLine, text: line.slice(1) });
+        }
+        nextLine += 1;
+        newLeft -= 1;
+      } else if (line.startsWith('-')) {
+        oldLeft -= 1;
+      } else if (line.startsWith(' ')) {
+        nextLine += 1;
+        oldLeft -= 1;
+        newLeft -= 1;
+      }
+      // "\ No newline at end of file" belongs to the hunk and counts on neither side.
+      continue;
+    }
     if (line.startsWith('diff --git ')) {
       current = null;
       continue;
     }
     if (line.startsWith('+++ ')) {
-      const target = line.slice(4);
+      // Git ends the header with a TAB when the name contains a space.
+      const target = line.slice(4).replace(/\t$/, '');
       current = target === '/dev/null' ? null : unquoteDiffPath(target).replace(/^b\//, '');
       if (current !== null && !out.has(current)) {
         out.set(current, []);
       }
       continue;
     }
-    const hunk = /^@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(line);
+    const hunk = /^@@ -\d+(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/.exec(line);
     if (hunk) {
-      nextLine = Number(hunk[1]);
-      continue;
-    }
-    if (current === null) {
-      continue;
-    }
-    if (line.startsWith('+')) {
-      out.get(current).push({ line: nextLine, text: line.slice(1) });
-      nextLine += 1;
-    } else if (line.startsWith(' ')) {
-      nextLine += 1;
+      oldLeft = hunk[1] === undefined ? 1 : Number(hunk[1]);
+      nextLine = Number(hunk[2]);
+      newLeft = hunk[3] === undefined ? 1 : Number(hunk[3]);
     }
   }
   return out;
@@ -421,10 +436,13 @@ function git(root, args, input) {
   return { ok: true, stdout: result.stdout, stderr: result.stderr };
 }
 
+// --text: a source file with a NUL byte in a string is still diffed line by line;
+// real binaries are dropped by skipReason before any rule runs.
 const DIFF_ARGS = [
   '-U0',
   '-M',
   '-l0',
+  '--text',
   '--no-color',
   '--no-ext-diff',
   '--no-textconv',

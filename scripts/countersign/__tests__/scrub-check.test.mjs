@@ -301,6 +301,49 @@ test('parseAddedLines reads hunk numbers, renames, quoted paths and deletions', 
   assert.equal(added.get('src/a.ts')[2].text, 'eleven');
 });
 
+test('parseAddedLines: inside a hunk every line is content, even one shaped like a header', () => {
+  const diff = [
+    'diff --git a/notes.md b/notes.md',
+    'new file mode 100644',
+    '--- /dev/null',
+    '+++ b/notes.md',
+    '@@ -0,0 +1,3 @@',
+    '+intro',
+    '+++ counter',
+    '+after',
+    'diff --git a/old.md b/old.md',
+    '--- a/old.md',
+    '+++ b/old.md',
+    '@@ -2,2 +2 @@',
+    '---- dashes',
+    '-x',
+    '\\ No newline at end of file',
+    '+kept',
+    '',
+  ].join('\n');
+  const added = parseAddedLines(diff);
+  assert.deepEqual([...added.keys()], ['notes.md', 'old.md']);
+  assert.deepEqual(added.get('notes.md'), [
+    { line: 1, text: 'intro' },
+    { line: 2, text: '++ counter' },
+    { line: 3, text: 'after' },
+  ]);
+  assert.deepEqual(added.get('old.md'), [{ line: 2, text: 'kept' }]);
+});
+
+test('parseAddedLines drops the TAB git appends to a header name with a space', () => {
+  const diff = [
+    'diff --git a/my notes.md b/my notes.md',
+    'new file mode 100644',
+    '--- /dev/null',
+    '+++ b/my notes.md\t',
+    '@@ -0,0 +1 @@',
+    '+one',
+    '',
+  ].join('\n');
+  assert.deepEqual([...parseAddedLines(diff).keys()], ['my notes.md']);
+});
+
 test('readForkBase takes the 40-character sha from the Base line', () => {
   const sha = 'a'.repeat(40);
   assert.equal(readForkBase(`# x\n\nBase: \`up/repo\` main at \`${sha}\` (2026-10-26).\n`), sha);
@@ -440,6 +483,64 @@ test('CLI: a key, a fork-added path and a private word fail without printing the
     assert.equal(out.includes(secret), false, 'output must not carry the matched text');
   }
   assert.match(out, /1 private pattern\(s\)/);
+});
+
+/** Fork-added files the diff parser used to lose: a '++ ' content line, a spaced name, a NUL. */
+function writeAwkwardFiles(ctx, secondLine) {
+  write(
+    ctx,
+    'notes.md',
+    ['intro', secondLine, `mail ${OUTSIDE_EMAIL}`, `see ${USER_PATH}`, ''].join('\n'),
+  );
+  write(ctx, 'my notes.md', `mail ${OUTSIDE_EMAIL}\n`);
+  write(
+    ctx,
+    'src/sep.ts',
+    [
+      "export const sep = '\u0000';",
+      `export const home = '${USER_PATH}';`,
+      `// ${OUTSIDE_EMAIL}`,
+      '',
+    ].join('\n'),
+  );
+}
+
+test('CLI: added lines count after a "++ " content line, in a spaced name and in a NUL file', (t) => {
+  const ctx = forkRepo(t);
+  writeAwkwardFiles(ctx, '++ counter');
+  commitAll(ctx, 'fork: awkward files');
+  const { code, out } = run(ctx);
+  assert.equal(code, 1, out);
+  const findingLines = out.split(/\r?\n/).filter((l) => / (?:email|windows-user-path)$/.test(l));
+  assert.deepEqual(findingLines.sort(), [
+    'my notes.md:1 email',
+    'notes.md:3 email',
+    'notes.md:4 windows-user-path',
+    'src/sep.ts:2 windows-user-path',
+    'src/sep.ts:3 email',
+  ]);
+});
+
+test('CLI --history: the same files are read line by line; a "++ " line is content, never a path', (t) => {
+  const ctx = forkRepo(t);
+  writeAwkwardFiles(ctx, `++ ${PRIVATE_WORD} on this line`);
+  const sha = commitAll(ctx, 'fork: awkward files');
+  write(ctx, '.scrub-patterns', `${PRIVATE_WORD}\n`);
+  const { code, out } = run(ctx, ['--history']);
+  assert.equal(code, 1, out);
+  const short = sha.slice(0, 9);
+  const findingLines = out.split(/\r?\n/).filter((l) => l.startsWith(short));
+  assert.deepEqual(findingLines.sort(), [
+    `${short} my notes.md:1 email`,
+    `${short} notes.md:2 private:1`,
+    `${short} notes.md:3 email`,
+    `${short} notes.md:4 windows-user-path`,
+    `${short} src/sep.ts:2 windows-user-path`,
+    `${short} src/sep.ts:3 email`,
+  ]);
+  for (const leaked of ['on this line', PRIVATE_WORD, '\t']) {
+    assert.equal(out.includes(leaked), false, 'output must not carry line content or a TAB');
+  }
 });
 
 test('CLI: a bad pattern line exits 2 and names the line, not the pattern', (t) => {
