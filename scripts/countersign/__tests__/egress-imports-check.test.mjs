@@ -69,6 +69,35 @@ test('every way of loading undici counts, subpaths included', () => {
   assert.deepEqual(findUndiciReferences(`${MAIN}/a.ts`, text), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
 });
 
+test('a require function bound to a name, and module.require, count too', () => {
+  const text = [
+    "import { createRequire } from 'node:module';",
+    'const moduleRequire = createRequire(import.meta.url);',
+    "const a = moduleRequire('undici');",
+    'let workerRequire;',
+    'workerRequire = module.createRequire(__filename);',
+    "const b = workerRequire('undici/lib');",
+    "const c = module.require('undici');",
+    "const d = moduleRequire('ws');",
+  ].join('\n');
+  assert.deepEqual(findUndiciReferences(`${MAIN}/a.ts`, text), [3, 6, 7]);
+});
+
+test('only a call to assertEgressAllowed guards a file, not the name in a comment or string', () => {
+  const lines = (extra) => ["import { request } from 'undici';", ...extra, 'request(target);'];
+  const files = [
+    file('comment.ts', lines(['// TODO: call assertEgressAllowed() before request'])),
+    file('string.ts', lines(["const note = 'assertEgressAllowed(';"])),
+    file('called.ts', lines(['assertEgressAllowed(target);'])),
+  ];
+  const result = checkEgressImports(files, new Map());
+  assert.deepEqual(
+    result.unguarded.map((u) => u.path),
+    [`${MAIN}/comment.ts`, `${MAIN}/string.ts`],
+  );
+  assert.deepEqual(result.guarded, [`${MAIN}/called.ts`]);
+});
+
 test('the word undici in a string, a comment or another module name does not count', () => {
   const text = [
     "export const transport = { name: 'undici' as const };",

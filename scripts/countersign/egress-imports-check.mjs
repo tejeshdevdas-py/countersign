@@ -9,19 +9,26 @@
  *
  * A reference is any of these, for 'undici' or an 'undici/...' subpath:
  * a value import or export (`import type` and `export type` do not count),
- * import x = require(...), require(...), createRequire(...)(...) and import(...).
+ * import x = require(...), require(...), <expr>.require(...),
+ * createRequire(...)(...), a call through a name bound to createRequire(...)
+ * (`const r = createRequire(...)` or `r = createRequire(...)`) and import(...).
  * The check does not look at which names are imported: Agent, Pool, Client and
  * ProxyAgent all have request() and dispatch(), and WebSocket and EventSource
  * open connections too.
+ *
+ * A file is guarded when it calls assertEgressAllowed(...) (a call in the
+ * syntax tree; the name in a comment or a string does not count).
  *
  * Files that load undici without making requests are allowed in ALLOWLIST,
  * each with its reason. An allowlist entry for a file that no longer loads
  * undici, or that now asserts itself, fails as stale.
  *
  * Limits: the check is per file. It cannot prove the assert runs before the
- * request; that order was checked by hand when the allowlist was written. It
- * does not scan packages/* (browser-control-runtime and opencli-vendor call
- * undici directly).
+ * request, or that it checks the request's own address; that was checked by
+ * hand when the allowlist was written. It does not check where the called
+ * assertEgressAllowed comes from. A require function passed around under
+ * another name is not followed. It does not scan packages/*
+ * (browser-control-runtime and opencli-vendor call undici directly).
  *
  * Exit codes: 0 every reference is guarded or allowed; 1 an unguarded file or
  * a stale allowlist entry; 2 input error (the source folder is missing).
@@ -78,23 +85,65 @@ function isUndiciSpecifier(node, ts) {
   );
 }
 
-function isRequireCallee(expression, ts) {
-  if (ts.isIdentifier(expression) && expression.text === 'require') {
-    return true;
+function parse(filePath, text) {
+  const ts = loadTypeScript();
+  const kind = filePath.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
+  return { ts, source: ts.createSourceFile(filePath, text, ts.ScriptTarget.Latest, true, kind) };
+}
+
+/** True for createRequire(...) and <expr>.createRequire(...). */
+function isCreateRequireCall(node, ts) {
+  if (node === undefined || !ts.isCallExpression(node)) {
+    return false;
+  }
+  const callee = node.expression;
+  if (ts.isIdentifier(callee)) {
+    return callee.text === 'createRequire';
+  }
+  return ts.isPropertyAccessExpression(callee) && callee.name.text === 'createRequire';
+}
+
+/** Names bound to a createRequire(...) result: `const r = createRequire(...)`, `r = createRequire(...)`. */
+function requireAliases(source, ts) {
+  const names = new Set();
+  const visit = (node) => {
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      isCreateRequireCall(node.initializer, ts)
+    ) {
+      names.add(node.name.text);
+    } else if (
+      ts.isBinaryExpression(node) &&
+      node.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
+      ts.isIdentifier(node.left) &&
+      isCreateRequireCall(node.right, ts)
+    ) {
+      names.add(node.left.text);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  return names;
+}
+
+function isRequireCallee(expression, ts, aliases) {
+  if (ts.isIdentifier(expression)) {
+    // require('undici'), or a name bound to createRequire(...).
+    return expression.text === 'require' || aliases.has(expression.text);
+  }
+  // module.require('undici') and similar.
+  if (ts.isPropertyAccessExpression(expression)) {
+    return expression.name.text === 'require';
   }
   // createRequire(import.meta.url)('undici')
-  return (
-    ts.isCallExpression(expression) &&
-    ts.isIdentifier(expression.expression) &&
-    expression.expression.text === 'createRequire'
-  );
+  return isCreateRequireCall(expression, ts);
 }
 
 /** Lines (1-based) where a file loads undici as a value. */
 export function findUndiciReferences(filePath, text) {
-  const ts = loadTypeScript();
-  const kind = filePath.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
-  const source = ts.createSourceFile(filePath, text, ts.ScriptTarget.Latest, true, kind);
+  const { ts, source } = parse(filePath, text);
+  const aliases = requireAliases(source, ts);
   const lines = [];
   const add = (node) => {
     lines.push(source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1);
@@ -119,7 +168,7 @@ export function findUndiciReferences(filePath, text) {
       }
     } else if (ts.isCallExpression(node) && isUndiciSpecifier(node.arguments[0], ts)) {
       const dynamicImport = node.expression.kind === ts.SyntaxKind.ImportKeyword;
-      if (dynamicImport || isRequireCallee(node.expression, ts)) {
+      if (dynamicImport || isRequireCallee(node.expression, ts, aliases)) {
         add(node);
       }
     }
@@ -127,6 +176,36 @@ export function findUndiciReferences(filePath, text) {
   };
   visit(source);
   return lines;
+}
+
+/**
+ * True when the file calls assertEgressAllowed(...) (directly or as a member).
+ * The name in a comment or a string does not count.
+ */
+export function callsEgressAssert(filePath, text) {
+  const { ts, source } = parse(filePath, text);
+  let found = false;
+  const visit = (node) => {
+    if (found) {
+      return;
+    }
+    if (ts.isCallExpression(node)) {
+      const callee = node.expression;
+      let name = null;
+      if (ts.isIdentifier(callee)) {
+        name = callee.text;
+      } else if (ts.isPropertyAccessExpression(callee)) {
+        name = callee.name.text;
+      }
+      if (name === 'assertEgressAllowed') {
+        found = true;
+        return;
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  return found;
 }
 
 /**
@@ -147,7 +226,7 @@ export function checkEgressImports(files, allowlist = ALLOWLIST) {
     if (lines.length === 0) {
       continue;
     }
-    const asserts = file.text.includes('assertEgressAllowed(');
+    const asserts = callsEgressAssert(rel, file.text);
     referencing.set(rel, asserts);
     if (asserts) {
       guarded.push(rel);

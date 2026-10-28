@@ -206,7 +206,7 @@ Not checked: a build on a clean machine, a start with no network, and a capture 
 
 - `pnpm check:countersign-brand` fails on the old product name in text a user or a model sees, unless the text is in the reviewed baseline.
 - `pnpm check:scrub` fails on keys, personal paths, email addresses and private words in tracked files; `pnpm check:scrub --history` checks the fork's commits. CI runs the built-in rules only. The owner's private words live in a git-ignored `.scrub-patterns` file (format in [`.scrub-patterns.example`](.scrub-patterns.example)) and are checked locally before each push.
-- `pnpm check:countersign-egress` fails when main-process code loads `undici` without calling the egress check.
+- `pnpm check:countersign-egress` fails when a main-process file (`apps/desktop/src/main`) loads `undici` and never calls the egress check. It works per file, so it cannot prove that the check runs before the request. Two files that load `undici` but make no request themselves (one uses only its type, one only builds connection pools) are allowlisted, each with its reason. It does not scan `packages/*`.
 
 ## Issues and security
 
