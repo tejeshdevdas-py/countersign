@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain, safeStorage } from 'electron';
 import path from 'node:path';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 
 import {
   buildSpeakerEnrollment,
@@ -207,6 +208,10 @@ export function getSpeakerFilterService(): SpeakerFilterService {
 
 let ipcRegistered = false;
 
+/** Countersign: the models download only from the upstream project's CDN, which local mode never contacts. */
+export const SPEAKER_FILTER_DISABLED_MESSAGE =
+  'SPEAKER_FILTER_DISABLED: the speaker filter is not available in this local-only build; its models come from a server it does not use';
+
 export function registerVoiceSpeakerFilterIpc(): void {
   if (ipcRegistered) return;
   ipcRegistered = true;
@@ -218,6 +223,7 @@ export function registerVoiceSpeakerFilterIpc(): void {
   });
   ipcMain.handle(channels.downloadModels, (event): VoiceSpeakerFilterStatus => {
     assertTrustedAppRendererEvent(event);
+    if (LOCAL_ONLY) throwIpcError('PRECONDITION_FAILED', SPEAKER_FILTER_DISABLED_MESSAGE);
     const speaker = getSpeakerFilterService();
     speaker.downloadModels();
     return speaker.getStatus();

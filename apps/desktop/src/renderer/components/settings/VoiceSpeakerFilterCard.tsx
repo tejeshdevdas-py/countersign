@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import {
   SPEAKER_GATE_STRICTNESS_VALUES,
   SPEAKER_MODEL_TOTAL_BYTES,
@@ -32,11 +33,21 @@ interface VoiceSpeakerFilterCardProps {
 }
 
 /**
+ * Countersign: the speaker models download only from the upstream project's
+ * CDN, which local mode never contacts, so under LOCAL_ONLY the card is not
+ * shown (and its status is never read).
+ */
+export function VoiceSpeakerFilterCard(props: VoiceSpeakerFilterCardProps) {
+  if (LOCAL_ONLY) return null;
+  return <SpeakerFilterCardContent {...props} />;
+}
+
+/**
  * "Recognize my voice": the switch, the one-time model download, the voiceprint
  * and the strictness. The filter only takes effect when it is on, the models
  * are downloaded and a voiceprint is enrolled; the card says what is missing.
  */
-export function VoiceSpeakerFilterCard({
+function SpeakerFilterCardContent({
   enabled,
   strictness,
   strictnessCustomized,

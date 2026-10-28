@@ -18,6 +18,12 @@ vi.mock('@/lib/toast', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock('@/components/ui/confirm-dialog-provider', () => ({
   useConfirmDialog: () => ({ confirm: vi.fn(async () => true) }),
 }));
+// Countersign: these upstream cases cover the card outside LOCAL_ONLY;
+// VoiceSpeakerFilterCard.localOnly.test.tsx covers its absence.
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
 
 import { VoiceSpeakerFilterCard } from '../VoiceSpeakerFilterCard';
 

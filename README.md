@@ -37,6 +37,7 @@ These need Cindy's servers, so they are removed or switched off:
 - provider sharing and the phone link (the relay never starts), and the mobile app download;
 - cloud chat, cloud file upload and cloud app connections (OAuth broker);
 - cloud voice (voice input with your own provider still works);
+- the "Recognize my voice" speaker filter for voice input, whose models download only from Cindy's server;
 - the Telegram, X and Slack bridges;
 - in-app issue reporting, both through Cindy's service and to Cindy's GitHub tracker;
 - the beta channel, and moving tasks between computers;
