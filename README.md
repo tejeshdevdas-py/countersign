@@ -14,7 +14,7 @@ This is milestone 1 (M1): the renamed, local-only app. Read [Known limits](#know
 - Starts the bundled Claude Code and Codex engines with the switches each offers for telemetry, error reports, feature flags and self-update turned off. Each switch, and where its name comes from, is in [`docs/countersign/engine-telemetry.md`](docs/countersign/engine-telemetry.md).
 - Ships Pi with the app. Settings > About shows the installed Pi version only; the app does not check for or download Pi updates.
 - Can write an egress log of the hosts the app itself contacts, for you to check (see [Network](#network)).
-- Has its own identity: app id `io.github.tejeshdevdas-py.countersign`, user data in `%APPDATA%\Countersign`, link scheme `countersign://`. What its own profiles share (the skill bundle, skill locks and worktree records) is in `%APPDATA%\Countersign` too, and its files outside that folder carry its own name: `%USERPROFILE%\.countersign\` (local themes and a skill-folder lock), `%USERPROFILE%\.ssh\countersign.conf` for the SSH hosts it manages (adding a host also adds an `Include ~/.ssh/countersign.conf` line to `%USERPROFILE%\.ssh\config`), and new SSH keys default to `%USERPROFILE%\.ssh\countersign`. Inside your project folders it uses Cindy's folder names on purpose (see [Known limits](#known-limits)).
+- Has its own identity: app id `io.github.tejeshdevdas-py.countersign`, user data in `%APPDATA%\Countersign`, link scheme `countersign://`. What its own profiles share (the skill bundle, skill locks and worktree records) is in `%APPDATA%\Countersign` too, and these files outside that folder carry its own name: `%USERPROFILE%\.countersign\` (local themes and a skill-folder lock), `%USERPROFILE%\.ssh\countersign.conf` for the SSH hosts it manages (adding a host also adds an `Include ~/.ssh/countersign.conf` line to `%USERPROFILE%\.ssh\config`), and new SSH keys default to `%USERPROFILE%\.ssh\countersign`. Inside your project folders (on purpose), on SSH hosts and in some temporary folders it still uses Cindy's names (see [Known limits](#known-limits)).
 
 ## Planned, not built yet
 
@@ -106,7 +106,7 @@ Packaging also checks what it ships:
 - It copies this repository's `LICENSE` and `NOTICE` into the installer's `resources` folder as `LICENSE.txt` and `NOTICE.txt`.
 - It fails when the packaged app (`app.asar` and `app.asar.unpacked`) holds compiler intermediates (`.obj`, `.pdb`, `.lib`, `.tlog`, `.vcxproj`, `config.gypi` and similar) or this computer's user name. The name is allowed only inside the project's own app IDs and GitHub address. To keep it out, the build compiles `better-sqlite3` with two MSVC options (`/d1trimfile` and `/PDBALTPATH`) that it sets itself.
 
-These checks were added after the last package build, so none of them has run in a real package build yet.
+The engine check for Claude Code, Codex and Pi, the `vec0.dll` check, the licence files and the packaged-output check were added after the last package build, so none of them has run in a real package build yet.
 
 ### Hosts the build downloads from
 
@@ -124,7 +124,7 @@ These checks were added after the last package build, so none of them has run in
 Some build messages come from upstream scripts and are in Chinese only. The ones on this path, and what to do:
 
 - After `pnpm install`, "agent 二进制未就位（best-effort，不阻断）": an engine did not download. The English line above it names the engine and the host; run `pnpm install:<engine>`.
-- "Electron zip 下载失败", "系统 tar 解压失败" or "Electron 修复后仍不完整": Electron did not download or unpack. Put Windows' own `tar` first on `PATH`, delete the Electron download cache (`%LOCALAPPDATA%\electron\Cache`), and run `pnpm install` again with Node 22.
+- "Electron install.js 失败" or "Electron 修复后仍不完整": Electron did not download or unpack. Check that `github.com` is reachable, delete the Electron download cache (`%LOCALAPPDATA%\electron\Cache`), and run `pnpm install` again with Node 22.
 - "关键依赖损坏" or "核弹清理后依然损坏": the dependency check that `pnpm release:package` runs first found broken packages and reinstalled them. If it still fails, run `pnpm install` yourself and read its error.
 - "root Node ABI 修复后仍不可用": `better-sqlite3` could not be rebuilt for Node. Check Python 3 and the MSVC build tools, then run `pnpm install` again.
 - "需要一个值" or "未知参数": a `pnpm release:package` option has no value or is unknown; compare with the command under Steps.
