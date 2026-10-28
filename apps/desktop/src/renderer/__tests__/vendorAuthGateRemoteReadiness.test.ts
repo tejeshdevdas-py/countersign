@@ -6,7 +6,14 @@
  * deriveRemoteReadiness:来源判定以被控端 provider 目录(sourceReady,与本地 /
  * 手机端同源)为唯一真相;maker:agent:status 的 authReady 只是老被控端回退口径。
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+
+// Countersign: the voice cases cover upstream's hosted voice service, which LOCAL_ONLY
+// switches off (see vendorAuthGateVoice.localOnly.test.tsx).
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
 
 import type { ProviderView } from '@cindy/model-providers';
 
@@ -162,6 +169,7 @@ describe('pickVoiceInputDialogCopy（语音输入缺认证文案）', () => {
   const copy: Parameters<typeof pickVoiceInputDialogCopy>[0] = {
     'no-source': { title: 'no-source', description: '', confirmText: '', cancelText: '', settingsTab: 'providers' },
     'voice-api-key-unauth': { title: 'gateway', description: '', confirmText: '', cancelText: '', settingsTab: 'providers' },
+    'voice-local-unconfigured': { title: 'local', description: '', confirmText: '', cancelText: '', settingsTab: 'voice-input' },
     'voice-direct-api-key-unauth': { title: 'direct-key', description: '', confirmText: '', cancelText: '', settingsTab: 'api-keys' },
     'codex-voice-unauth': { title: 'codex', description: '', confirmText: '', cancelText: '', settingsTab: 'providers' },
     'codex-binary-missing': { title: 'binary', description: '', confirmText: '', cancelText: '', settingsTab: 'providers' },

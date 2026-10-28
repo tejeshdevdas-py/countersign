@@ -28,6 +28,8 @@ import {
   type AgentKind as ProviderAgentKind,
 } from '@cindy/model-providers';
 
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
+
 import { useConfirmDialog } from '@/components/ui/confirm-dialog-provider';
 import { useVendorReadiness, type Readiness } from '@/hooks/useVendorReadiness';
 import {
@@ -47,11 +49,12 @@ interface DialogCopy {
 }
 
 type GatePurpose = 'send' | 'voice-input';
-type SettingsTab = 'api-keys' | 'connections' | 'providers' | 'about';
+type SettingsTab = 'api-keys' | 'connections' | 'providers' | 'about' | 'voice-input';
 
 type CopyKey =
   | 'no-source'
   | 'voice-api-key-unauth'
+  | 'voice-local-unconfigured'
   | 'voice-direct-api-key-unauth'
   | 'codex-voice-unauth'
   | 'codex-binary-missing'
@@ -74,6 +77,15 @@ function buildCopy(t: (key: string) => string): Record<CopyKey, DialogCopy> {
       confirmText: t('logic.confirm.goToSettings'),
       cancelText: t('logic.confirm.cancel'),
       settingsTab: 'providers',
+    },
+    // Countersign: under LOCAL_ONLY no hosted voice service exists; the user sets up a
+    // realtime speech recognition service in Settings > Voice input.
+    'voice-local-unconfigured': {
+      title: t('countersignLocalOnly.voiceSetupTitle'),
+      description: t('countersignLocalOnly.voiceSetupDescription'),
+      confirmText: t('logic.confirm.goToSettings'),
+      cancelText: t('logic.confirm.cancel'),
+      settingsTab: 'voice-input',
     },
     'voice-direct-api-key-unauth': {
       title: t('logic.confirm.voiceDirectApiKeyAuthTitle'),
@@ -112,6 +124,8 @@ export function pickVoiceInputDialogCopy(
   readiness: { auth: 'api-key' | 'codex'; settingsTab: SettingsTab },
 ): DialogCopy {
   if (readiness.auth === 'codex') return copy['codex-voice-unauth'];
+  // Countersign: an API-key speech service is set up in Settings > Voice input.
+  if (LOCAL_ONLY) return copy['voice-local-unconfigured'];
   if (readiness.settingsTab === 'providers') return copy['voice-api-key-unauth'];
   return copy['voice-direct-api-key-unauth'];
 }
@@ -260,7 +274,8 @@ export function useVendorAuthGate(): UseVendorAuthGateReturn {
           autoFocusConfirm: true,
         });
         if (ok) {
-          navigate(`/settings?tab=${readiness.settingsTab}`);
+          // Countersign: under LOCAL_ONLY the dialog names the page it opens.
+          navigate(`/settings?tab=${LOCAL_ONLY ? dialogCopy.settingsTab : readiness.settingsTab}`);
         }
         return { proceed: false };
       }

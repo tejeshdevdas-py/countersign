@@ -17424,6 +17424,8 @@
     "profileName": "本機模式",
     "auxiliaryHint": "自動推薦使用 {{appName}} 不使用的託管模型服務；請在自訂中選擇已設定的模型。",
     "voiceHint": "{{appName}} 沒有內建語音服務；請連線支援即時 ASR 的服務並配置獨立語音憑證。",
+    "voiceSetupTitle": "語音輸入尚未設定",
+    "voiceSetupDescription": "語音輸入需要一個使用獨立憑證的即時語音辨識服務。{{appName}} 沒有內建語音服務。是否開啟語音輸入設定進行配置？",
     "remoteControlDescription": "透過 SSH 連線遠端主機。",
     "pluginEmptyHint": "可點選右上角匯入插件包",
     "importBotsNote": "{{appName}} 不支援聊天應用程式：這些機器人會留在 {{source}} 裡，不會接給夥伴。",

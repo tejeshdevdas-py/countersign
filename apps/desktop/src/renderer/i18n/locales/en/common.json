@@ -17484,6 +17484,8 @@
     "profileName": "Local mode",
     "auxiliaryHint": "Automatic recommendations use a hosted model service that {{appName}} does not use. Choose a configured model under Custom.",
     "voiceHint": "{{appName}} has no built-in voice service; connect a realtime ASR service with separate voice credentials.",
+    "voiceSetupTitle": "Voice input is not set up",
+    "voiceSetupDescription": "Voice input needs a realtime speech recognition service with its own credentials. {{appName}} has no built-in voice service. Open Voice input settings to set one up?",
     "remoteControlDescription": "Connect to a remote host over SSH.",
     "pluginEmptyHint": "Import a plugin package from the menu above",
     "importBotsNote": "Chat apps are not available in {{appName}}: these bots stay in {{source}} and are not connected to the teammate.",

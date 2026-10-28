@@ -17424,6 +17424,8 @@
     "profileName": "ローカルモード",
     "auxiliaryHint": "自動おすすめは {{appName}} が使用しないホスト型モデルサービスを使います。「カスタム」で設定済みのモデルを選択してください。",
     "voiceHint": "{{appName}} には内蔵の音声サービスがありません。リアルタイム ASR 対応サービスと専用の音声認証情報を設定してください。",
+    "voiceSetupTitle": "音声入力が設定されていません",
+    "voiceSetupDescription": "音声入力には、専用の認証情報を持つリアルタイム音声認識サービスが必要です。{{appName}} には内蔵の音声サービスがありません。音声入力の設定を開いて設定しますか？",
     "remoteControlDescription": "SSH でリモートホストに接続します。",
     "pluginEmptyHint": "上のメニューからプラグインパッケージを読み込めます",
     "importBotsNote": "{{appName}} ではチャットアプリを利用できません。これらのボットは {{source}} に残り、仲間には接続されません。",
