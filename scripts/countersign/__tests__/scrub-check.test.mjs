@@ -17,6 +17,7 @@ import {
   readForkBase,
   scrub,
   scrubHistory,
+  scrubPaths,
   skipReason,
   validateBaseline,
   validateHistoryBaseline,
@@ -380,6 +381,48 @@ test('scrubHistory checks identity, message lines and added lines', () => {
   assert.deepEqual(
     findings.map((f) => `${f.sha[0]} ${f.where} ${f.rule}`),
     ['d author identity', 'd message:3 email', 'd src/b.ts:7 private:1'],
+  );
+});
+
+test('scrubPaths: file names go through the key rules and private words, as line 0', () => {
+  const findings = scrubPaths(
+    [
+      `docs/${PRIVATE_WORD}-notes.md`,
+      `fixtures/${ANTHROPIC_KEY}.txt`,
+      'LICENSE',
+      'assets/logo.png',
+      `src\\${PRIVATE_WORD.toUpperCase()}\\a.ts`,
+      `docs/${USER_PATH.replace(/\\/g, '_')}x.md`,
+    ],
+    [new RegExp(PRIVATE_WORD, 'i')],
+  );
+  assert.deepEqual(
+    findings.map((f) => `${f.path}:${f.line} ${f.rule}`),
+    [
+      `docs/${PRIVATE_WORD}-notes.md:0 private:1`,
+      `fixtures/${ANTHROPIC_KEY}.txt:0 anthropic-key`,
+      `src/${PRIVATE_WORD.toUpperCase()}/a.ts:0 private:1`,
+    ],
+  );
+  assert.equal(findings[1].matchHash, sha256(ANTHROPIC_KEY));
+});
+
+test('scrubHistory: added and renamed file names are checked, as <path>:0', () => {
+  const commits = [
+    {
+      sha: 'a'.repeat(40),
+      an: 'owner',
+      ae: OWNER_EMAIL,
+      cn: 'owner',
+      ce: OWNER_EMAIL,
+      body: 'Subject\n',
+      added: new Map(),
+      paths: [`notes/${PRIVATE_WORD}.md`, 'src/clean.ts'],
+    },
+  ];
+  assert.deepEqual(
+    scrubHistory(commits, [new RegExp(PRIVATE_WORD)]).map((f) => `${f.where} ${f.rule}`),
+    [`notes/${PRIVATE_WORD}.md:0 private:1`],
   );
 });
 
@@ -817,4 +860,41 @@ test('CLI --history: listed email findings pass; a stale or invalid history entr
   for (const out of [ok.out, stale.out, invalid.out]) {
     assert.equal(out.includes(OUTSIDE_EMAIL), false, 'output must not carry the matched text');
   }
+});
+
+// File names: a private word or a key shape that appears only in a path is found, reported as
+// path:0 (the output names the file, so the name is printed).
+
+test('CLI: a private word that appears only in a file name is found, as path:0', (t) => {
+  const ctx = forkRepo(t);
+  write(ctx, `docs/${PRIVATE_WORD}-plan.md`, 'nothing private in the text\n');
+  write(ctx, `fixtures/${ANTHROPIC_KEY}.txt`, 'clean\n');
+  commitAll(ctx, 'fork: named files');
+  write(ctx, '.scrub-patterns', `${PRIVATE_WORD}\n`);
+  const { code, out } = run(ctx);
+  assert.equal(code, 1, out);
+  const findingLines = out.split(/\r?\n/).filter((l) => /^\S+:\d+ \S+$/.test(l));
+  assert.deepEqual(findingLines.sort(), [
+    `docs/${PRIVATE_WORD}-plan.md:0 private:1`,
+    `fixtures/${ANTHROPIC_KEY}.txt:0 anthropic-key`,
+  ]);
+});
+
+test('CLI --history: a private word only in an added or renamed file name is found, as <sha> <path>:0', (t) => {
+  const ctx = forkRepo(t);
+  write(ctx, `docs/${PRIVATE_WORD}-plan.md`, 'nothing private in the text\n');
+  const added = commitAll(ctx, 'fork: add a named file');
+  git(ctx, ['mv', 'src/app.ts', `src/${PRIVATE_WORD}.ts`]);
+  const renamed = commitAll(ctx, 'fork: rename an upstream file');
+  write(ctx, '.scrub-patterns', `${PRIVATE_WORD}\n`);
+  const { code, out } = run(ctx, ['--history']);
+  assert.equal(code, 1, out);
+  const findingLines = out.split(/\r?\n/).filter((l) => / private:1$/.test(l));
+  assert.deepEqual(
+    findingLines.sort(),
+    [
+      `${added.slice(0, 9)} docs/${PRIVATE_WORD}-plan.md:0 private:1`,
+      `${renamed.slice(0, 9)} src/${PRIVATE_WORD}.ts:0 private:1`,
+    ].sort(),
+  );
 });

@@ -20,6 +20,10 @@
  * in FORK-CHANGES.md, with rename detection), because upstream lines are
  * already public. Upstream licence files keep the emails their licences need.
  *
+ * File names: every tracked path (skipped files included), and in --history every
+ * path a commit added, renamed or copied, goes through the key rules and the
+ * private words. A hit is reported as <path>:0.
+ *
  * Skipped: LICENSE, docs/legal/**, binary files (by extension, or marked
  * filter=lfs or -diff in .gitattributes), and tracked files missing from the
  * working tree (reported). A NUL byte is not a reason to skip: real source
@@ -37,13 +41,15 @@
  * fails as stale.
  *
  * Output names path:line and rule only. It never prints the matched text, the
- * line, or a private pattern's source.
+ * line, or a private pattern's source; the one exception is a file-name finding,
+ * where the path it names is the matched text's container.
  *
  * Usage:
  *   node scripts/countersign/scrub-check.mjs             tracked files (git ls-files)
  *   node scripts/countersign/scrub-check.mjs --history   the fork's commits: author and
  *     committer email must be the owner's noreply address; messages and added lines
- *     go through every rule (git log --no-merges <base>..HEAD)
+ *     go through every rule, added and renamed file names through the key rules and
+ *     private words (git log --no-merges <base>..HEAD)
  *   --base <rev>   compare against <rev> instead of the Base line of FORK-CHANGES.md
  *
  * .scrub-patterns (git-ignored; see .scrub-patterns.example): one regular
@@ -265,6 +271,25 @@ export function scrub(files, extraPatterns = [], options = {}) {
 }
 
 /**
+ * Findings in file names: each path goes through the key rules and the private
+ * words (not the path or email rules, which would flag every folder name),
+ * reported as line 0. Every path is checked, skipped files included.
+ * @param {string[]} paths repo-relative paths
+ * @returns {{path: string, line: 0, rule: string, matchHash: string}[]}
+ */
+export function scrubPaths(paths, extraPatterns = []) {
+  const privatePatterns = toPrivatePatterns(extraPatterns);
+  const findings = [];
+  for (const raw of paths) {
+    const filePath = normalize(raw);
+    for (const hit of lineFindings(filePath, false, privatePatterns)) {
+      findings.push({ path: filePath, line: 0, rule: hit.rule, matchHash: sha256(hit.text) });
+    }
+  }
+  return findings;
+}
+
+/**
  * Parses .scrub-patterns text. Each non-comment line is compiled as
  * new RegExp(line, 'i'); g and y never apply.
  * @returns {{patterns: {line: number, re: RegExp}[], errors: number[]}} errors are line numbers
@@ -461,6 +486,9 @@ const DIFF_ARGS = [
   '--dst-prefix=b/',
 ];
 
+// The names a commit added, renamed or copied (new names only), NUL-separated.
+const NAME_ARGS = ['--name-only', '-z', '-M', '-l0', '--diff-filter=ACR', '--no-color'];
+
 /** The base commit from the `Base:` line of FORK-CHANGES.md, or null. */
 export function readForkBase(forkChangesText) {
   const line = forkChangesText.split(/\r?\n/).find((l) => l.startsWith('Base:'));
@@ -605,7 +633,7 @@ function runTree({ root, base, patterns, baseline, log, error }) {
       skipped += 1;
     }
   }
-  const findings = scrub(toScan, patterns, { addedLines });
+  const findings = [...scrubPaths(files, patterns), ...scrub(toScan, patterns, { addedLines })];
   const { fresh, stale } = compareWithBaseline(findings, baseline);
   for (const f of fresh) {
     log(`${f.path}:${f.line} ${f.rule}`);
@@ -680,6 +708,16 @@ export function scrubHistory(commits, extraPatterns = []) {
         });
       }
     });
+    // File names the commit added, renamed or copied: key rules and private words.
+    for (const f of scrubPaths(c.paths ?? [], extraPatterns)) {
+      findings.push({
+        sha: c.sha,
+        where: `${f.path}:0`,
+        rule: f.rule,
+        path: f.path,
+        matchHash: f.matchHash,
+      });
+    }
     for (const [file, lines] of c.added) {
       if (skipReason(file) !== null) {
         continue;
@@ -797,11 +835,13 @@ function runHistory({ root, base, patterns, baseline, historyBaseline, log, erro
   const commits = parseCommits(listed.stdout);
   for (const c of commits) {
     const diff = git(root, ['diff', ...DIFF_ARGS, `${c.sha}^`, c.sha]);
-    if (!diff.ok) {
+    const names = git(root, ['diff', ...NAME_ARGS, `${c.sha}^`, c.sha]);
+    if (!diff.ok || !names.ok) {
       error(`scrub: git diff failed for ${c.sha.slice(0, 9)}`);
       return 2;
     }
     c.added = parseAddedLines(diff.stdout);
+    c.paths = names.stdout.split('\0').filter(Boolean);
   }
   // A fixture accepted in the tree baseline is accepted in the commit that added it.
   const accepted = new Set(baseline.map((e) => baselineKey(e.file, e.rule, e.sha256)));
