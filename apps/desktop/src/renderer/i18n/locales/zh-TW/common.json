@@ -17424,6 +17424,14 @@
     "auxiliaryHint": "自動推薦使用 {{appName}} 不使用的託管模型服務；請在自訂中選擇已設定的模型。",
     "voiceHint": "{{appName}} 沒有內建語音服務；請連線支援即時 ASR 的服務並配置獨立語音憑證。",
     "remoteControlDescription": "透過 SSH 連線遠端主機。",
-    "pluginEmptyHint": "可點選右上角匯入插件包"
+    "pluginEmptyHint": "可點選右上角匯入插件包",
+    "remoteError": {
+      "REMOTE_COMPAT_MODE_UNSUPPORTED": "遠端任務不能使用本機相容通道。請選擇已設定金鑰的模型供應商，或在本機任務裡繼續。",
+      "REMOTE_GATEWAY_ENDPOINT_UNAVAILABLE": "遠端任務不能使用託管模型閘道，{{appName}} 不使用該服務。請選擇已設定金鑰的模型供應商，或在本機任務裡繼續。",
+      "REMOTE_LOCAL_ONLY_PROVIDER": "此模型供應商是本機專屬服務（如 Ollama），SSH 遠端任務無法存取本機位址。請選擇遠端主機可達的模型供應商，或在本機任務裡使用這個模型。",
+      "REMOTE_HOST_PROXY_FORWARD_UNAVAILABLE": "這個模型需要電腦端轉送請求，目前遠端連線還不能轉送。請選擇已設定金鑰的模型供應商，或在本機任務裡使用這個模型。",
+      "REMOTE_NATIVE_OAUTH_UNAVAILABLE": "遠端任務還不能使用訂閱登入。請選擇已設定金鑰的模型供應商，或在本機任務裡使用這個模型。",
+      "REMOTE_PI_CONTEXT_PROFILE_UNAVAILABLE": "遠端 Pi 任務不能使用這個上下文設定。請選擇遠端可以存取的模型。"
+    }
   }
 }

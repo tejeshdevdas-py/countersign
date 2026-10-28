@@ -17484,6 +17484,14 @@
     "auxiliaryHint": "Automatic recommendations use a hosted model service that {{appName}} does not use. Choose a configured model under Custom.",
     "voiceHint": "{{appName}} has no built-in voice service; connect a realtime ASR service with separate voice credentials.",
     "remoteControlDescription": "Connect to a remote host over SSH.",
-    "pluginEmptyHint": "Import a plugin package from the menu above"
+    "pluginEmptyHint": "Import a plugin package from the menu above",
+    "remoteError": {
+      "REMOTE_COMPAT_MODE_UNSUPPORTED": "Remote tasks cannot use this computer’s compatibility route. Pick a provider with an API key, or continue in a local task.",
+      "REMOTE_GATEWAY_ENDPOINT_UNAVAILABLE": "Remote tasks cannot use the hosted model gateway, which {{appName}} does not use. Pick a provider with an API key, or continue in a local task.",
+      "REMOTE_LOCAL_ONLY_PROVIDER": "This model provider is a local-only service (e.g. Ollama) that a remote SSH task cannot reach. Pick a provider reachable from the remote host, or use this model in a local task.",
+      "REMOTE_HOST_PROXY_FORWARD_UNAVAILABLE": "This model needs this computer to forward requests, and the remote connection cannot do that yet. Pick a provider with an API key, or use this model in a local task.",
+      "REMOTE_NATIVE_OAUTH_UNAVAILABLE": "Remote tasks cannot use a subscription sign-in yet. Pick a provider with an API key, or use this model in a local task.",
+      "REMOTE_PI_CONTEXT_PROFILE_UNAVAILABLE": "A remote Pi task cannot use this context profile. Pick a model the remote computer can reach."
+    }
   }
 }

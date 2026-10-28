@@ -17424,6 +17424,14 @@
     "auxiliaryHint": "자동 추천은 {{appName}}에서 사용하지 않는 호스팅 모델 서비스를 사용합니다. 「사용자 지정」에서 설정된 모델을 선택하세요.",
     "voiceHint": "{{appName}}에는 기본 제공 음성 서비스가 없습니다. 실시간 ASR 지원 서비스와 별도의 음성 인증 정보를 설정하세요.",
     "remoteControlDescription": "SSH로 원격 호스트에 연결합니다.",
-    "pluginEmptyHint": "위 메뉴에서 플러그인 패키지를 가져올 수 있습니다"
+    "pluginEmptyHint": "위 메뉴에서 플러그인 패키지를 가져올 수 있습니다",
+    "remoteError": {
+      "REMOTE_COMPAT_MODE_UNSUPPORTED": "원격 작업에서는 이 컴퓨터의 호환 경로를 사용할 수 없습니다. API 키가 설정된 모델 제공자를 선택하거나 이 컴퓨터의 작업에서 계속하세요.",
+      "REMOTE_GATEWAY_ENDPOINT_UNAVAILABLE": "원격 작업에서는 {{appName}}에서 사용하지 않는 호스팅 모델 게이트웨이를 사용할 수 없습니다. API 키가 설정된 모델 제공자를 선택하거나 이 컴퓨터의 작업에서 계속하세요.",
+      "REMOTE_LOCAL_ONLY_PROVIDER": "이 모델 제공자는 로컬 전용 서비스(예: Ollama)라서 SSH 원격 작업에서 접근할 수 없습니다. 원격 호스트에서 접근 가능한 제공자를 선택하거나 이 컴퓨터의 작업에서 사용하세요.",
+      "REMOTE_HOST_PROXY_FORWARD_UNAVAILABLE": "이 모델은 컴퓨터에서 요청을 전달해야 하는데, 현재 원격 연결은 전달할 수 없습니다. API 키가 설정된 모델 제공자를 선택하거나 이 컴퓨터의 작업에서 사용하세요.",
+      "REMOTE_NATIVE_OAUTH_UNAVAILABLE": "원격 작업에서는 아직 구독 로그인을 사용할 수 없습니다. API 키가 설정된 모델 제공자를 선택하거나 이 컴퓨터의 작업에서 사용하세요.",
+      "REMOTE_PI_CONTEXT_PROFILE_UNAVAILABLE": "원격 Pi 작업에서는 이 컨텍스트 설정을 사용할 수 없습니다. 원격 컴퓨터가 접근할 수 있는 모델을 선택하세요."
+    }
   }
 }
