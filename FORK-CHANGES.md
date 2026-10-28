@@ -106,7 +106,7 @@ Base: `makecindy/cindy` main at `0f70b883436cbc31b6f9338c6a304e18a3d72bb6` (2026
 | `apps/desktop/src/renderer/lib/atResourceService.ts` | Browser-tab and desktop-window references use `DEEP_LINK_URL_PREFIX` | Hardcoded `cindy://` would no longer parse after the scheme change |
 | `apps/desktop/src/shared/__tests__/autoTitleSeed.test.ts` | Expected values updated to the Countersign identity (`countersign://` scheme, Countersign names, app id) | Upstream test pinned Cindy values |
 | `apps/desktop/src/shared/__tests__/deepLinkSchemes.test.ts` | Expected values updated to the Countersign identity (`countersign://` scheme, Countersign names, app id) | Upstream test pinned Cindy values |
-| `apps/desktop/src/shared/agentInputQueue.ts` | Session-link regex built from `DEEP_LINK_SCHEME_RE_GROUP` | Hardcoded `(cindy|xdt-maker)` scheme would no longer match |
+| `apps/desktop/src/shared/agentInputQueue.ts` | Session-link regex built from `DEEP_LINK_SCHEME_RE_GROUP` | Hardcoded `(cindy\|xdt-maker)` scheme would no longer match |
 | `packages/device-link/src/chatInvitation.ts` | Also accepts `countersign://chat-invite/` (upstream prefix kept) | Parser must read links built with the new scheme |
 | `apps/desktop/src/renderer/__tests__/pendingQueueDefer.test.ts` | Expected values updated to the Countersign identity (`countersign://` scheme, Countersign names, app id) | Upstream test pinned Cindy values |
 | `packages/maker-shared/src/brandIdentity.ts` (fix round 1) | All legacy data-dir, dialogue-dir and db-prefix lists emptied (`xdt-maker` removed) | A `cn` build must never import from or reap processes of a real Cindy install |
