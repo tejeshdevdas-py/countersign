@@ -24,11 +24,21 @@
  * path a commit added, renamed or copied, goes through the key rules and the
  * private words. A hit is reported as <path>:0.
  *
- * Skipped: LICENSE, docs/legal/**, binary files (by extension, or marked
- * filter=lfs or -diff in .gitattributes), and tracked files missing from the
- * working tree (reported). A NUL byte is not a reason to skip: real source
- * files carry one inside a string. A -text attribute alone is not either:
- * vendored source and teammate packages carry it to keep their bytes.
+ * Skipped (skip reason in brackets):
+ *   - binary files by extension [binary] and files marked filter=lfs [lfs]: no rule;
+ *   - LICENSE and docs/legal/** [licence], and files marked -diff [no-diff]: no
+ *     built-in rule, but the private words still run (on a -diff file only when it
+ *     is text: no NUL byte in its first 8000 bytes, as git decides);
+ *   - tracked files missing from the working tree (reported).
+ * A NUL byte is not a reason to skip a normal file: real source files carry one
+ * inside a string. A -text attribute alone is not either: vendored source and
+ * teammate packages carry it to keep their bytes (a reviewed departure from the
+ * design, which listed -text; skipping less is stricter).
+ *
+ * The skipped set is pinned in scrub-skipped.json: every tracked file skipped for
+ * a reason other than a binary extension, with its reason. The tree mode fails on
+ * a newly skipped file that is not listed and on a listed file that is no longer
+ * skipped for that reason, so nothing leaves the check unseen.
  *
  * Accepted test fixtures are listed in scrub-baseline.json by file, rule and
  * the sha256 of the matched text (never the text). A finding not in the
@@ -123,7 +133,9 @@ function globalCopy(re) {
 }
 
 /**
- * Why a tracked file is not scanned, or null when it is.
+ * Why a tracked file skips the built-in rules, or null when it does not:
+ * 'licence' (LICENSE, docs/legal/**), 'binary' (a binary extension), 'lfs'
+ * (filter=lfs) or 'no-diff' (-diff). See PRIVATE_WORDS_STILL_RUN.
  * @param {string} filePath repo-relative path
  * @param {{filter?: string, diff?: string}} [attrs] git attributes of the file
  */
@@ -135,10 +147,24 @@ export function skipReason(filePath, attrs = {}) {
   if (BINARY_EXTENSION.test(p)) {
     return 'binary';
   }
-  if (attrs.filter === 'lfs' || attrs.diff === 'unset') {
-    return 'binary';
+  if (attrs.filter === 'lfs') {
+    return 'lfs';
+  }
+  if (attrs.diff === 'unset') {
+    return 'no-diff';
   }
   return null;
+}
+
+/** Skip reasons under which the private words still run (on text). */
+export const PRIVATE_WORDS_STILL_RUN = new Set(['licence', 'no-diff']);
+
+/** Skip reasons pinned in scrub-skipped.json: every reason but a binary extension. */
+export const PINNED_SKIP_REASONS = ['licence', 'lfs', 'no-diff'];
+
+/** Git's own test for binary content: a NUL byte in the first 8000 bytes. */
+function looksBinary(text) {
+  return text.slice(0, 8000).includes('\u0000');
 }
 
 /** True when an email-shaped match is allowed (see the header). */
@@ -182,11 +208,7 @@ function lineFindings(line, added, privatePatterns) {
       out.push({ rule: rule.id, text: m[0] });
     }
   }
-  for (const pattern of privatePatterns) {
-    for (const m of line.matchAll(pattern.re)) {
-      out.push({ rule: `private:${pattern.line}`, text: m[0] });
-    }
-  }
+  out.push(...privateFindings(line, privatePatterns));
   if (!added) {
     return out;
   }
@@ -227,9 +249,37 @@ function lineOfIndex(text, index) {
   return line;
 }
 
+/** Private-word findings on one line: [{rule, text}]. */
+function privateFindings(line, privatePatterns) {
+  const out = [];
+  for (const pattern of privatePatterns) {
+    for (const m of line.matchAll(pattern.re)) {
+      out.push({ rule: `private:${pattern.line}`, text: m[0] });
+    }
+  }
+  return out;
+}
+
+/**
+ * How a file is scanned: 'all' rules, 'private' words only, or 'none'.
+ * @param {string} filePath repo-relative path
+ * @param {{filter?: string, diff?: string}} [attrs] git attributes of the file
+ * @param {string} [text] the file's text, when read (a -diff file is scanned only as text)
+ */
+export function scanMode(filePath, attrs, text) {
+  const reason = skipReason(filePath, attrs);
+  if (reason === null) {
+    return 'all';
+  }
+  if (!PRIVATE_WORDS_STILL_RUN.has(reason)) {
+    return 'none';
+  }
+  return reason === 'no-diff' && text !== undefined && looksBinary(text) ? 'none' : 'private';
+}
+
 /**
  * Scans in-memory files.
- * @param {{path: string, text: string}[]} files
+ * @param {{path: string, text: string, attrs?: {filter?: string, diff?: string}}[]} files
  * @param {(RegExp|{line: number, re: RegExp})[]} [extraPatterns] private words
  * @param {{addedLines?: Map<string, Set<number>>}} [options] lines the fork added,
  *   per repo-relative path; when absent every line counts as added
@@ -241,23 +291,30 @@ export function scrub(files, extraPatterns = [], options = {}) {
   const findings = [];
   for (const file of files) {
     const filePath = normalize(file.path);
-    if (skipReason(filePath) !== null) {
+    const mode = scanMode(filePath, file.attrs, file.text);
+    if (mode === 'none') {
       continue;
     }
     const added = addedLines ? (addedLines.get(filePath) ?? new Set()) : null;
-    for (const m of file.text.matchAll(PRIVATE_KEY_BLOCK)) {
-      findings.push({
-        path: filePath,
-        line: lineOfIndex(file.text, m.index),
-        rule: 'private-key-block',
-        matchHash: sha256(m[0]),
-      });
+    if (mode === 'all') {
+      for (const m of file.text.matchAll(PRIVATE_KEY_BLOCK)) {
+        findings.push({
+          path: filePath,
+          line: lineOfIndex(file.text, m.index),
+          rule: 'private-key-block',
+          matchHash: sha256(m[0]),
+        });
+      }
     }
     const lines = file.text.split(/\r?\n/);
     lines.forEach((line, index) => {
       const lineNo = index + 1;
       const isAdded = added === null || added.has(lineNo);
-      for (const hit of lineFindings(line, isAdded, privatePatterns)) {
+      const hits =
+        mode === 'all'
+          ? lineFindings(line, isAdded, privatePatterns)
+          : privateFindings(line, privatePatterns);
+      for (const hit of hits) {
         findings.push({
           path: filePath,
           line: lineNo,
@@ -372,6 +429,50 @@ export function compareWithBaseline(findings, entries) {
     const found = groups.get(baselineKey(e.file, e.rule, e.sha256))?.length ?? 0;
     if (found < e.count) {
       stale.push({ ...e, found });
+    }
+  }
+  return { fresh, stale };
+}
+
+/** Problems with the skipped-list entries themselves (empty when valid). */
+export function validateSkipped(entries) {
+  const problems = [];
+  const seen = new Set();
+  entries.forEach((e, index) => {
+    const where = `entry ${index + 1} (${e.file ?? '?'})`;
+    if (typeof e.file !== 'string' || e.file.length === 0) {
+      problems.push(`${where}: no file`);
+    }
+    if (!PINNED_SKIP_REASONS.includes(e.reason)) {
+      problems.push(`${where}: reason must be one of ${PINNED_SKIP_REASONS.join(', ')}`);
+    }
+    const key = normalize(e.file ?? '');
+    if (seen.has(key)) {
+      problems.push(`${where}: listed twice`);
+    }
+    seen.add(key);
+  });
+  return problems;
+}
+
+/**
+ * Files skipped for a pinned reason but not listed (fresh), and listed files that
+ * are not skipped for the listed reason (stale).
+ * @param {Map<string, string>} skipped repo-relative path -> pinned skip reason
+ * @param {{file: string, reason: string}[]} entries
+ */
+export function compareSkipped(skipped, entries) {
+  const listed = new Map(entries.map((e) => [normalize(e.file), e.reason]));
+  const fresh = [];
+  for (const [file, reason] of skipped) {
+    if (listed.get(file) !== reason) {
+      fresh.push({ file, reason });
+    }
+  }
+  const stale = [];
+  for (const [file, reason] of listed) {
+    if (skipped.get(file) !== reason) {
+      stale.push({ file, reason });
     }
   }
   return { fresh, stale };
@@ -581,23 +682,31 @@ function resolveBase(root, explicitBase, error) {
   return verified.stdout.trim();
 }
 
-/** The entries of a baseline file (repo-relative `rel`), or null after reporting why not. */
-function loadBaselineFile(root, rel, error) {
+const SKIPPED_REL = 'scripts/countersign/scrub-skipped.json';
+
+/**
+ * The entries of a list file (repo-relative `rel`: a baseline or the skipped list),
+ * [] when the file does not exist, or null after reporting why it cannot be used.
+ */
+function loadListFile(root, rel, error) {
+  if (!fs.existsSync(path.join(root, rel))) {
+    return [];
+  }
   let parsed;
   try {
     parsed = JSON.parse(fs.readFileSync(path.join(root, rel), 'utf8'));
   } catch {
-    error(`scrub: cannot read the baseline ${rel}`);
+    error(`scrub: cannot read ${rel}`);
     return null;
   }
   if (parsed === null || typeof parsed !== 'object' || !Array.isArray(parsed.entries)) {
-    error(`scrub: the baseline ${rel} has no "entries" list`);
+    error(`scrub: ${rel} has no "entries" list`);
     return null;
   }
   return parsed.entries;
 }
 
-function runTree({ root, base, patterns, baseline, log, error }) {
+function runTree({ root, base, patterns, baseline, skippedEntries, log, error }) {
   const listed = git(root, ['ls-files', '-z']);
   const files = listed.ok ? listed.stdout.split('\0').filter(Boolean) : [];
   if (files.length === 0) {
@@ -616,14 +725,23 @@ function runTree({ root, base, patterns, baseline, log, error }) {
   }
   const toScan = [];
   const missing = [];
+  const pinned = new Map();
   let skipped = 0;
+  let privateOnly = 0;
   for (const file of files) {
-    if (skipReason(file, attrs.get(file)) !== null) {
+    const fileAttrs = attrs.get(file);
+    const reason = skipReason(file, fileAttrs);
+    if (PINNED_SKIP_REASONS.includes(reason)) {
+      pinned.set(normalize(file), reason);
+    }
+    // A skipped file is read only when the private words still run on it.
+    if (reason !== null && !(PRIVATE_WORDS_STILL_RUN.has(reason) && patterns.length > 0)) {
       skipped += 1;
       continue;
     }
+    let text;
     try {
-      toScan.push({ path: file, text: fs.readFileSync(path.join(root, file), 'utf8') });
+      text = fs.readFileSync(path.join(root, file), 'utf8');
     } catch (err) {
       if (err.code !== 'ENOENT' && err.code !== 'EISDIR') {
         error(`scrub: cannot read ${file} (${err.code})`);
@@ -631,10 +749,20 @@ function runTree({ root, base, patterns, baseline, log, error }) {
       }
       missing.push(file);
       skipped += 1;
+      continue;
     }
+    if (scanMode(file, fileAttrs, text) === 'none') {
+      skipped += 1;
+      continue;
+    }
+    if (reason !== null) {
+      privateOnly += 1;
+    }
+    toScan.push({ path: file, text, attrs: fileAttrs });
   }
   const findings = [...scrubPaths(files, patterns), ...scrub(toScan, patterns, { addedLines })];
   const { fresh, stale } = compareWithBaseline(findings, baseline);
+  const skippedCheck = compareSkipped(pinned, skippedEntries);
   for (const f of fresh) {
     log(`${f.path}:${f.line} ${f.rule}`);
   }
@@ -643,12 +771,22 @@ function runTree({ root, base, patterns, baseline, log, error }) {
       `${e.file} ${e.rule}: baseline entry found ${e.found} of ${e.count} time(s); shrink the baseline`,
     );
   }
+  for (const s of skippedCheck.fresh) {
+    log(`${s.file}: skipped (${s.reason}) but not listed in ${SKIPPED_REL}`);
+  }
+  for (const s of skippedCheck.stale) {
+    log(
+      `${s.file}: listed in ${SKIPPED_REL} (${s.reason}) but not skipped for that reason; remove it`,
+    );
+  }
   for (const file of missing) {
     log(`${file}: skipped, not in the working tree`);
   }
-  const problems = fresh.length + stale.length;
+  const problems =
+    fresh.length + stale.length + skippedCheck.fresh.length + skippedCheck.stale.length;
+  const privateNote = privateOnly > 0 ? ` (${privateOnly} for private words only)` : '';
   log(
-    `${problems} finding${problems === 1 ? '' : 's'}; ${toScan.length} files scanned, ${skipped} skipped`,
+    `${problems} finding${problems === 1 ? '' : 's'}; ${toScan.length} files scanned${privateNote}, ${skipped} skipped`,
   );
   return problems > 0 ? 1 : 0;
 }
@@ -719,11 +857,14 @@ export function scrubHistory(commits, extraPatterns = []) {
       });
     }
     for (const [file, lines] of c.added) {
-      if (skipReason(file) !== null) {
+      // History reads no attributes: a binary extension skips every rule, and a
+      // licence file gets the private words only (as in the tree mode).
+      const mode = scanMode(file);
+      if (mode === 'none') {
         continue;
       }
       const joined = lines.map((l) => l.text).join('\n');
-      for (const m of joined.matchAll(PRIVATE_KEY_BLOCK)) {
+      for (const m of mode === 'all' ? joined.matchAll(PRIVATE_KEY_BLOCK) : []) {
         const line = lines[lineOfIndex(joined, m.index) - 1].line;
         findings.push({
           sha: c.sha,
@@ -734,7 +875,11 @@ export function scrubHistory(commits, extraPatterns = []) {
         });
       }
       for (const l of lines) {
-        for (const hit of lineFindings(l.text, true, privatePatterns)) {
+        const hits =
+          mode === 'all'
+            ? lineFindings(l.text, true, privatePatterns)
+            : privateFindings(l.text, privatePatterns);
+        for (const hit of hits) {
           findings.push({
             sha: c.sha,
             where: `${file}:${l.line}`,
@@ -904,10 +1049,7 @@ export function main({
   if (loaded.failed) {
     return 2;
   }
-  const baselineRel = 'scripts/countersign/scrub-baseline.json';
-  const baseline = fs.existsSync(path.join(root, baselineRel))
-    ? loadBaselineFile(root, baselineRel, error)
-    : [];
+  const baseline = loadListFile(root, 'scripts/countersign/scrub-baseline.json', error);
   if (baseline === null) {
     return 2;
   }
@@ -919,11 +1061,9 @@ export function main({
     return 1;
   }
   let historyBaseline = [];
+  let skippedEntries = [];
   if (history) {
-    const historyRel = 'scripts/countersign/scrub-history-baseline.json';
-    historyBaseline = fs.existsSync(path.join(root, historyRel))
-      ? loadBaselineFile(root, historyRel, error)
-      : [];
+    historyBaseline = loadListFile(root, 'scripts/countersign/scrub-history-baseline.json', error);
     if (historyBaseline === null) {
       return 2;
     }
@@ -934,13 +1074,34 @@ export function main({
     if (historyProblems.length > 0) {
       return 1;
     }
+  } else {
+    skippedEntries = loadListFile(root, SKIPPED_REL, error);
+    if (skippedEntries === null) {
+      return 2;
+    }
+    const skippedProblems = validateSkipped(skippedEntries);
+    for (const problem of skippedProblems) {
+      error(`scrub skipped list: ${problem}`);
+    }
+    if (skippedProblems.length > 0) {
+      return 1;
+    }
   }
   log(
     loaded.present
       ? `scrub: built-in rules and ${loaded.patterns.length} private pattern(s) from .scrub-patterns`
       : 'scrub: built-in rules only (no .scrub-patterns file)',
   );
-  const context = { root, base, patterns: loaded.patterns, baseline, historyBaseline, log, error };
+  const context = {
+    root,
+    base,
+    patterns: loaded.patterns,
+    baseline,
+    historyBaseline,
+    skippedEntries,
+    log,
+    error,
+  };
   return history ? runHistory(context) : runTree(context);
 }
 

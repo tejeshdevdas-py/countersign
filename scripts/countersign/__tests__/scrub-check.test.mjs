@@ -93,36 +93,55 @@ test('a plain RegExp extra pattern is numbered by its position', () => {
   assert.deepEqual(rules(findings), ['private:2']);
 });
 
-test('LICENSE and docs/legal are skipped', () => {
-  const text = `${ANTHROPIC_KEY} ${USER_PATH} ${OUTSIDE_EMAIL}`;
+test('LICENSE and docs/legal skip the built-in rules but not the private words', () => {
+  const text = `${ANTHROPIC_KEY} ${USER_PATH} ${OUTSIDE_EMAIL} ${PRIVATE_WORD}`;
   const files = ['LICENSE', 'docs/legal/notices/desktop-win.txt'].map((p) => ({ path: p, text }));
-  assert.deepEqual(scrub(files, [new RegExp('sk-')]), []);
+  assert.deepEqual(scrub(files, []), []);
+  assert.deepEqual(
+    scrub(files, [new RegExp(PRIVATE_WORD)]).map((f) => `${f.path} ${f.rule}`),
+    ['LICENSE private:1', 'docs/legal/notices/desktop-win.txt private:1'],
+  );
   assert.equal(scrub([{ path: 'docs/LICENSE.md', text }], []).length > 0, true);
 });
 
-test('the skipped list: binaries by extension, lfs and -diff; not -text alone, not a NUL byte', () => {
+test('skip reasons: licence, binary extension, lfs and -diff; not -text alone, not a NUL byte', () => {
   const cases = [
-    ['LICENSE', {}],
-    ['docs/legal/notices/x.txt', {}],
-    ['assets/logo.PNG', {}],
-    ['native/vec0.dll', {}],
-    ['design/board.pen', { filter: 'lfs' }],
-    ['data/blob.bin', { diff: 'unset' }],
-    ['packages/opencli-vendor/src/node-network.ts', { diff: 'unspecified', filter: 'unspecified' }],
-    ['apps/desktop/resources/bot-packages/a/SKILL.md', {}],
-    ['src/loader.ts', {}],
+    ['LICENSE', {}, 'licence'],
+    ['docs/legal/notices/x.txt', {}, 'licence'],
+    ['assets/logo.PNG', {}, 'binary'],
+    ['native/vec0.dll', { filter: 'lfs' }, 'binary'],
+    ['design/board.pen', { filter: 'lfs' }, 'lfs'],
+    ['data/blob.bin', { diff: 'unset' }, 'no-diff'],
+    [
+      'packages/opencli-vendor/src/node-network.ts',
+      { diff: 'unspecified', filter: 'unspecified' },
+      null,
+    ],
+    ['apps/desktop/resources/bot-packages/a/SKILL.md', {}, null],
+    ['src/loader.ts', {}, null],
   ];
-  const skipped = cases.filter(([p, attrs]) => skipReason(p, attrs) !== null).map(([p]) => p);
-  assert.deepEqual(skipped, [
-    'LICENSE',
-    'docs/legal/notices/x.txt',
-    'assets/logo.PNG',
-    'native/vec0.dll',
-    'design/board.pen',
-    'data/blob.bin',
-  ]);
+  for (const [p, attrs, reason] of cases) {
+    assert.equal(skipReason(p, attrs), reason, p);
+  }
   const withNul = `const sep = '\u0000';\nconst k = '${ANTHROPIC_KEY}';\n`;
   assert.deepEqual(rules(scrub([{ path: 'src/loader.ts', text: withNul }], [])), ['anthropic-key']);
+});
+
+test('private words still run on a -diff file that is text; lfs and binary files skip them', () => {
+  const text = `${ANTHROPIC_KEY}\n${PRIVATE_WORD}\n`;
+  const word = [new RegExp(PRIVATE_WORD)];
+  const noDiff = { diff: 'unset' };
+  assert.deepEqual(
+    scrub([{ path: 'data/notes.dat', text, attrs: noDiff }], word).map(
+      (f) => `${f.line} ${f.rule}`,
+    ),
+    ['2 private:1'],
+    'text -diff file: private words only',
+  );
+  const binary = `\u0000\u0001${PRIVATE_WORD}`;
+  assert.deepEqual(scrub([{ path: 'data/blob.dat', text: binary, attrs: noDiff }], word), []);
+  assert.deepEqual(scrub([{ path: 'design/a.pen', text, attrs: { filter: 'lfs' } }], word), []);
+  assert.deepEqual(scrub([{ path: 'assets/a.png', text }], word), []);
 });
 
 test('path and email rules see only added lines; key and private rules see every line', () => {
@@ -407,6 +426,30 @@ test('scrubPaths: file names go through the key rules and private words, as line
   assert.equal(findings[1].matchHash, sha256(ANTHROPIC_KEY));
 });
 
+test('scrubHistory: lines added to a licence file go through the private words only', () => {
+  const commits = [
+    {
+      sha: 'b'.repeat(40),
+      an: 'owner',
+      ae: OWNER_EMAIL,
+      cn: 'owner',
+      ce: OWNER_EMAIL,
+      body: 'Subject\n',
+      added: new Map([
+        [
+          'docs/legal/notices/x.txt',
+          [{ line: 3, text: `${OUTSIDE_EMAIL} ${ANTHROPIC_KEY} ${PRIVATE_WORD}` }],
+        ],
+        ['assets/a.png', [{ line: 1, text: PRIVATE_WORD }]],
+      ]),
+    },
+  ];
+  assert.deepEqual(
+    scrubHistory(commits, [new RegExp(PRIVATE_WORD)]).map((f) => `${f.where} ${f.rule}`),
+    ['docs/legal/notices/x.txt:3 private:1'],
+  );
+});
+
 test('scrubHistory: added and renamed file names are checked, as <path>:0', () => {
   const commits = [
     {
@@ -570,8 +613,15 @@ function forkRepo(t) {
     `# Fork changes\n\nBase: \`up/repo\` main at \`${ctx.base}\` (2026-10-26).\n`,
   );
   write(ctx, '.gitignore', '.scrub-patterns*\n!.scrub-patterns.example\n');
+  writeSkipped(ctx, [{ file: 'LICENSE', reason: 'licence' }]);
   commitAll(ctx, 'fork: record the base');
   return ctx;
+}
+
+const SKIPPED_MANIFEST = 'scripts/countersign/scrub-skipped.json';
+
+function writeSkipped(ctx, entries) {
+  write(ctx, SKIPPED_MANIFEST, `${JSON.stringify({ entries }, null, 2)}\n`);
 }
 
 function run(ctx, args = []) {
@@ -588,7 +638,7 @@ test('CLI: a clean fork exits 0; upstream lines with a path or an email do not c
   const { code, out } = run(ctx);
   assert.equal(code, 0, out);
   assert.match(out, /built-in rules only/);
-  assert.match(out, /^0 findings; 4 files scanned, 1 skipped$/m);
+  assert.match(out, /^0 findings; 5 files scanned, 1 skipped$/m);
 });
 
 test('CLI: a key, a fork-added path and a private word fail without printing them', (t) => {
@@ -760,7 +810,99 @@ test('CLI: a tracked file missing from the work tree is skipped and reported', (
   const { code, out } = run(ctx);
   assert.equal(code, 0, out);
   assert.match(out, /^src\/app\.ts: skipped, not in the working tree$/m);
-  assert.match(out, /^0 findings; 3 files scanned, 2 skipped$/m);
+  assert.match(out, /^0 findings; 4 files scanned, 2 skipped$/m);
+});
+
+// The skipped set is pinned in scripts/countersign/scrub-skipped.json: every file the tree mode
+// skips for a reason other than a binary extension (LICENSE, docs/legal/**, filter=lfs, -diff).
+
+test('CLI: a newly skipped file not in the manifest fails; listing it passes', (t) => {
+  const ctx = forkRepo(t);
+  write(ctx, '.gitattributes', 'data/*.dat -diff\ndesign/*.pen filter=lfs\n');
+  write(ctx, 'data/notes.dat', 'plain text kept out of diffs\n');
+  write(ctx, 'docs/legal/NOTICE.txt', 'notice text\n');
+  commitAll(ctx, 'fork: skipped files');
+  const fresh = run(ctx);
+  assert.equal(fresh.code, 1, fresh.out);
+  assert.match(
+    fresh.out,
+    /^data\/notes\.dat: skipped \(no-diff\) but not listed in scripts\/countersign\/scrub-skipped\.json$/m,
+  );
+  assert.match(
+    fresh.out,
+    /^docs\/legal\/NOTICE\.txt: skipped \(licence\) but not listed in scripts\/countersign\/scrub-skipped\.json$/m,
+  );
+  writeSkipped(ctx, [
+    { file: 'LICENSE', reason: 'licence' },
+    { file: 'data/notes.dat', reason: 'no-diff' },
+    { file: 'docs/legal/NOTICE.txt', reason: 'licence' },
+  ]);
+  commitAll(ctx, 'fork: list them');
+  const listed = run(ctx);
+  assert.equal(listed.code, 0, listed.out);
+});
+
+test('CLI: a manifest entry that is no longer skipped fails as stale', (t) => {
+  const ctx = forkRepo(t);
+  writeSkipped(ctx, [
+    { file: 'LICENSE', reason: 'licence' },
+    { file: 'src/app.ts', reason: 'no-diff' },
+    { file: 'gone.dat', reason: 'lfs' },
+  ]);
+  commitAll(ctx, 'fork: stale entries');
+  const { code, out } = run(ctx);
+  assert.equal(code, 1, out);
+  assert.match(
+    out,
+    /^src\/app\.ts: listed in scripts\/countersign\/scrub-skipped\.json \(no-diff\) but not skipped for that reason; remove it$/m,
+  );
+  assert.match(
+    out,
+    /^gone\.dat: listed in scripts\/countersign\/scrub-skipped\.json \(lfs\) but not skipped for that reason; remove it$/m,
+  );
+});
+
+test('CLI: an invalid or missing skipped manifest fails', (t) => {
+  const ctx = forkRepo(t);
+  writeSkipped(ctx, [
+    { file: 'LICENSE', reason: 'licence' },
+    { file: 'LICENSE', reason: 'licence' },
+    { file: 'x.png', reason: 'binary' },
+  ]);
+  commitAll(ctx, 'fork: bad manifest');
+  const invalid = run(ctx);
+  assert.equal(invalid.code, 1, invalid.out);
+  assert.match(invalid.out, /scrub skipped list: entry 2 \(LICENSE\): listed twice/);
+  assert.match(
+    invalid.out,
+    /scrub skipped list: entry 3 \(x\.png\): reason must be one of licence, lfs, no-diff/,
+  );
+
+  git(ctx, ['rm', '-q', SKIPPED_MANIFEST]);
+  commitAll(ctx, 'fork: no manifest');
+  const missing = run(ctx);
+  assert.equal(missing.code, 1, missing.out);
+  assert.match(missing.out, /^LICENSE: skipped \(licence\) but not listed/m);
+});
+
+test('CLI: private words run on LICENSE, docs/legal and text -diff files; not on lfs files', (t) => {
+  const ctx = forkRepo(t);
+  write(ctx, '.gitattributes', 'data/*.dat -diff\ndesign/*.pen filter=lfs\n');
+  write(ctx, 'LICENSE', `licence text ${OUTSIDE_EMAIL}\nwith ${PRIVATE_WORD}\n`);
+  write(ctx, 'data/notes.dat', `kept out of diffs: ${PRIVATE_WORD}\n`);
+  write(ctx, 'design/board.pen', `${PRIVATE_WORD}\n`);
+  writeSkipped(ctx, [
+    { file: 'LICENSE', reason: 'licence' },
+    { file: 'data/notes.dat', reason: 'no-diff' },
+    { file: 'design/board.pen', reason: 'lfs' },
+  ]);
+  commitAll(ctx, 'fork: private words in skipped files');
+  write(ctx, '.scrub-patterns', `${PRIVATE_WORD}\n`);
+  const { code, out } = run(ctx);
+  assert.equal(code, 1, out);
+  const findingLines = out.split(/\r?\n/).filter((l) => /^\S+:\d+ \S+$/.test(l));
+  assert.deepEqual(findingLines.sort(), ['LICENSE:2 private:1', 'data/notes.dat:1 private:1']);
+  assert.match(out, /^2 findings; 8 files scanned \(2 for private words only\), 1 skipped$/m);
 });
 
 test('CLI: a baselined fixture passes; a stale entry fails', (t) => {

@@ -1,0 +1,85 @@
+{
+  "note": "Every tracked file the scrub tree mode skips for a reason other than a binary extension, with that reason: licence (LICENSE, docs/legal/**), lfs (filter=lfs) or no-diff (-diff). Built-in rules do not run on these files; private words still run on licence files and on -diff files that are text. scripts/countersign/scrub-check.mjs fails on a newly skipped file not listed here and on a listed file that is no longer skipped for its reason.",
+  "entries": [
+    {
+      "file": "LICENSE",
+      "reason": "licence"
+    },
+    {
+      "file": "docs/legal/README.md",
+      "reason": "licence"
+    },
+    {
+      "file": "docs/legal/notices/README.md",
+      "reason": "licence"
+    },
+    {
+      "file": "docs/legal/notices/THIRD-PARTY-NOTICES.txt",
+      "reason": "licence"
+    },
+    {
+      "file": "docs/legal/notices/THIRD-PARTY-RESTRICTED.txt",
+      "reason": "licence"
+    },
+    {
+      "file": "docs/legal/notices/desktop-linux-restricted.txt",
+      "reason": "licence"
+    },
+    {
+      "file": "docs/legal/notices/desktop-linux.txt",
+      "reason": "licence"
+    },
+    {
+      "file": "docs/legal/notices/desktop-macos-restricted.txt",
+      "reason": "licence"
+    },
+    {
+      "file": "docs/legal/notices/desktop-macos.txt",
+      "reason": "licence"
+    },
+    {
+      "file": "docs/legal/notices/desktop-win-restricted.txt",
+      "reason": "licence"
+    },
+    {
+      "file": "docs/legal/notices/desktop-win.txt",
+      "reason": "licence"
+    },
+    {
+      "file": "docs/legal/notices/mobile-android-restricted.txt",
+      "reason": "licence"
+    },
+    {
+      "file": "docs/legal/notices/mobile-android.txt",
+      "reason": "licence"
+    },
+    {
+      "file": "docs/legal/notices/mobile-ios-restricted.txt",
+      "reason": "licence"
+    },
+    {
+      "file": "docs/legal/notices/mobile-ios.txt",
+      "reason": "licence"
+    },
+    {
+      "file": "docs/legal/notices/sbom/desktop-linux.spdx.json",
+      "reason": "licence"
+    },
+    {
+      "file": "docs/legal/notices/sbom/desktop-macos.spdx.json",
+      "reason": "licence"
+    },
+    {
+      "file": "docs/legal/notices/sbom/desktop-win.spdx.json",
+      "reason": "licence"
+    },
+    {
+      "file": "docs/legal/notices/sbom/mobile-android.spdx.json",
+      "reason": "licence"
+    },
+    {
+      "file": "docs/legal/notices/sbom/mobile-ios.spdx.json",
+      "reason": "licence"
+    }
+  ]
+}
