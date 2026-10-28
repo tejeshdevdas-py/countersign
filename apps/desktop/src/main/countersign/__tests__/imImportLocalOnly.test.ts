@@ -107,22 +107,32 @@ describe('IM connections under LOCAL_ONLY', () => {
       format: 'telegram',
       value: { token: TOKEN, ownerUserId: OWNER },
     });
-    expect(issue).toBe('IMPORT_IM_BOT_CONNECT_FAILED');
+    // M-J8: a dedicated local-only code, not "connect failed" (whose text sends the user to a
+    // Messaging platforms page that LOCAL_ONLY hides).
+    expect(issue).toBe('IMPORT_IM_BOT_LOCAL_ONLY');
     expect(create).not.toHaveBeenCalled();
     expect(listBotImConnections()).toEqual([]);
     expect([...h.secrets.keys()]).toEqual([]);
   });
 
-  it('a takeover stops at preflight, before the source bot is touched', async () => {
-    const target = importedImBotTarget('bot-1', {
-      format: 'telegram',
-      value: { token: TOKEN, ownerUserId: OWNER },
-    });
-    expect(typeof target).toBe('object');
-    if (typeof target === 'string') return;
-    await expect(target.preflight()).resolves.toBe('IMPORT_IM_BOT_CONNECT_FAILED');
-    await expect(target.connect()).resolves.toBe('IMPORT_IM_BOT_CONNECT_FAILED');
+  it('a takeover has no target, so the source bot is never touched', () => {
+    for (const format of ['telegram', 'discord', 'feishu', 'wecom', 'dingtalk']) {
+      const target = importedImBotTarget('bot-1', {
+        format,
+        value: { token: TOKEN, ownerUserId: OWNER },
+      });
+      expect(target, format).toBe('IMPORT_IM_BOT_LOCAL_ONLY');
+    }
     expect(create).not.toHaveBeenCalled();
+  });
+
+  it('an import without an owner gets the local-only code, not "owner missing"', async () => {
+    await expect(
+      connectImportedImBot('bot-1', { format: 'telegram', value: { token: TOKEN } }),
+    ).resolves.toBe('IMPORT_IM_BOT_LOCAL_ONLY');
+    expect(importedImBotTarget('bot-1', { format: 'telegram', value: { token: TOKEN } })).toBe(
+      'IMPORT_IM_BOT_LOCAL_ONLY',
+    );
   });
 
   it('addBotImConnection refuses with a neutral message', async () => {

@@ -2,6 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+// Countersign: these cases cover upstream's chat-app bot import, which LOCAL_ONLY switches
+// off (see countersign/__tests__/imImportLocalOnly.test.ts and botImport.localOnly.test.tsx).
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
 import { createImportSourceReader, discoverImportSources, inspectImportSource } from '../sources.js';
 import { transferCompanion, validateImportSelection, type TransferDeps } from '../transfer.js';
 import { resolveImportReferences, selectedImportEnvironment } from '../environmentSelection.js';

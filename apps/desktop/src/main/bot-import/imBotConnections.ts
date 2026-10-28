@@ -1,4 +1,5 @@
 import { createLogger } from '../logger.js';
+import { isServiceDisabled } from '../countersign/services.js';
 import {
   addBotImConnection,
   assertBotImConnectionAddable,
@@ -28,7 +29,8 @@ const string = (value: unknown) => typeof value === 'string' ? value.trim() : ''
 function issueOf(channel: string, error: unknown): string {
   // IPC errors read "[CODE] message"; the runtime's messages carry codes and platform reasons, never the token.
   const message = error instanceof Error ? error.message : '';
-  const issue = /\bownerUserId is invalid\b/.test(message) ? 'IMPORT_IM_BOT_OWNER_MISSING'
+  const issue = /\bIM_CONNECTORS_DISABLED\b/.test(message) ? 'IMPORT_IM_BOT_LOCAL_ONLY'
+    : /\bownerUserId is invalid\b/.test(message) ? 'IMPORT_IM_BOT_OWNER_MISSING'
     : /\b(TOKEN_IN_USE|APP_IN_USE):/.test(message) ? 'IMPORT_IM_BOT_IN_USE'
       : /\bCONNECT_FAILED: conflict$/.test(message) ? 'IMPORT_IM_BOT_GATEWAY_RUNNING'
         : 'IMPORT_IM_BOT_CONNECT_FAILED';
@@ -41,6 +43,9 @@ function issueOf(channel: string, error: unknown): string {
  * Returns an issue code when it cannot become a connection; secrets never reach logs or the result.
  */
 export function importedImBotTarget(botId: string, credential: { format: string; value: unknown }): ImportedImBotTarget | string {
+  // Countersign: chat-app connectors are off under LOCAL_ONLY, so there is no target at all;
+  // a takeover then never stops the source bot.
+  if (isServiceDisabled('imConnectors')) return 'IMPORT_IM_BOT_LOCAL_ONLY';
   const value = object(credential.value);
   const channel = credential.format;
   if (!['telegram', 'discord', 'feishu', 'wecom', 'dingtalk'].includes(channel)) return 'IMPORT_IM_BOT_CONNECT_FAILED';

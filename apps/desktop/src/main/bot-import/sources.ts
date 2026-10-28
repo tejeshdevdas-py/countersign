@@ -10,6 +10,7 @@ import { discoverImportSkills } from './skills.js';
 import { indexAutomationDependencies, normalizeAutomation } from './sourceAutomations.js';
 import { memoryFileContent } from './memoryFiles.js';
 import { CompanionImportError, object, string, type ImportItem, type ImportSnapshot, type ImportSource } from './types.js';
+import { isServiceDisabled } from '../countersign/services.js';
 import type { CompanionImportBotPlatform } from '@cindy/maker-shared/companion-import';
 
 export interface SourceReaderDeps {
@@ -482,7 +483,8 @@ function pushBotItems(items: ImportItem[], bots: SourceBot[], env: Record<string
     else if (candidates.length > 1 && candidates.length <= BOT_OWNER_ALTERNATIVES) {
       const ids = candidates.map(owner => entryId(bot.platform, `${bot.account}\0owner:${owner}`));
       candidates.forEach((owner, index) => items.push(item(ids[index]!, owner, { selected: false, exclusiveWith: ids.filter((_id, other) => other !== index) })));
-    } else items.push(item(id, undefined, { issues: ['IMPORT_IM_BOT_OWNER_MISSING'] }));
+    // Countersign: under LOCAL_ONLY the bot cannot be connected at all, owner or not.
+    } else items.push(item(id, undefined, { issues: [isServiceDisabled('imConnectors') ? 'IMPORT_IM_BOT_LOCAL_ONLY' : 'IMPORT_IM_BOT_OWNER_MISSING'] }));
   }
 }
 

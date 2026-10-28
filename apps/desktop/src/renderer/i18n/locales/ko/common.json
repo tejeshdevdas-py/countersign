@@ -10128,6 +10128,7 @@
       "imBotGatewayRunning": "기존 게이트웨이가 아직 이 봇을 사용 중입니다. 중지한 다음 메시지 플랫폼에서 연결하세요.",
       "imBotInUse": "이 봇은 이미 이 컴퓨터에서 사용 중입니다 (설정 → IM 봇, 또는 다른 동료).",
       "imBotConnectFailed": "이 봇에 연결하지 못했습니다. 동료의 메시지 플랫폼 페이지에서 다시 시도하세요.",
+      "imBotLocalOnly": "이 봇은 연결되지 않았습니다. {{appName}}에서는 채팅 앱을 사용할 수 없습니다.",
       "imBotSourceStopUnconfirmed": "기존 봇이 아직 멈추지 않아 동료에게 넘기지 않았습니다. 나중에 동료의 메시지 플랫폼 페이지에서 연결할 수 있습니다.",
       "imBotSourceChanged": "미리보기 후 기존 봇이 바뀌어 중지하지 않았습니다. 다시 읽은 뒤 가져오세요.",
       "bots": "메시지 봇",
@@ -17425,6 +17426,7 @@
     "voiceHint": "{{appName}}에는 기본 제공 음성 서비스가 없습니다. 실시간 ASR 지원 서비스와 별도의 음성 인증 정보를 설정하세요.",
     "remoteControlDescription": "SSH로 원격 호스트에 연결합니다.",
     "pluginEmptyHint": "위 메뉴에서 플러그인 패키지를 가져올 수 있습니다",
+    "importBotsNote": "{{appName}}에서는 채팅 앱을 사용할 수 없습니다. 이 봇들은 {{source}}에 남아 있으며 동료에게 연결되지 않습니다.",
     "remoteError": {
       "REMOTE_COMPAT_MODE_UNSUPPORTED": "원격 작업에서는 이 컴퓨터의 호환 경로를 사용할 수 없습니다. API 키가 설정된 모델 제공자를 선택하거나 이 컴퓨터의 작업에서 계속하세요.",
       "REMOTE_GATEWAY_ENDPOINT_UNAVAILABLE": "원격 작업에서는 {{appName}}에서 사용하지 않는 호스팅 모델 게이트웨이를 사용할 수 없습니다. API 키가 설정된 모델 제공자를 선택하거나 이 컴퓨터의 작업에서 계속하세요.",

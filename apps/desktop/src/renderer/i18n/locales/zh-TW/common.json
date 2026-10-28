@@ -10128,6 +10128,7 @@
       "imBotGatewayRunning": "原本的閘道還在使用這個機器人。先停掉它，再到「訊息平台」頁連線。",
       "imBotInUse": "這個機器人已經在這台電腦上使用了：在 設定 → IM 機器人 裡，或是在另一位夥伴那裡。",
       "imBotConnectFailed": "沒能連上這個機器人，請到夥伴的「訊息平台」頁重試。",
+      "imBotLocalOnly": "沒有連接這個機器人：{{appName}} 不支援聊天應用程式。",
       "imBotSourceStopUnconfirmed": "原本的機器人還沒停下，暫時沒有接給夥伴。可以稍後在夥伴的「訊息平台」頁連線。",
       "imBotSourceChanged": "原本的機器人在預覽後換過了，沒有停用它。請重新讀取後再匯入。",
       "bots": "訊息機器人",
@@ -17425,6 +17426,7 @@
     "voiceHint": "{{appName}} 沒有內建語音服務；請連線支援即時 ASR 的服務並配置獨立語音憑證。",
     "remoteControlDescription": "透過 SSH 連線遠端主機。",
     "pluginEmptyHint": "可點選右上角匯入插件包",
+    "importBotsNote": "{{appName}} 不支援聊天應用程式：這些機器人會留在 {{source}} 裡，不會接給夥伴。",
     "remoteError": {
       "REMOTE_COMPAT_MODE_UNSUPPORTED": "遠端任務不能使用本機相容通道。請選擇已設定金鑰的模型供應商，或在本機任務裡繼續。",
       "REMOTE_GATEWAY_ENDPOINT_UNAVAILABLE": "遠端任務不能使用託管模型閘道，{{appName}} 不使用該服務。請選擇已設定金鑰的模型供應商，或在本機任務裡繼續。",

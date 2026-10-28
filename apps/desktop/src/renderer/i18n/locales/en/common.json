@@ -10162,6 +10162,7 @@
       "imBotGatewayRunning": "The original gateway is still using this bot. Stop it, then connect the bot on Messaging platforms.",
       "imBotInUse": "This bot is already connected on this computer, in Settings → IM bots or on another teammate.",
       "imBotConnectFailed": "Couldn’t connect this bot. Try again on the teammate’s Messaging platforms page.",
+      "imBotLocalOnly": "This bot was not connected: chat apps are not available in {{appName}}.",
       "imBotSourceStopUnconfirmed": "The original bot hasn’t stopped yet, so it wasn’t handed to the teammate. You can connect it later on the teammate’s Messaging platforms page.",
       "imBotSourceChanged": "The original bot changed after the preview, so it wasn’t stopped. Reload the preview and import again.",
       "bots": "Messaging bots",
@@ -17485,6 +17486,7 @@
     "voiceHint": "{{appName}} has no built-in voice service; connect a realtime ASR service with separate voice credentials.",
     "remoteControlDescription": "Connect to a remote host over SSH.",
     "pluginEmptyHint": "Import a plugin package from the menu above",
+    "importBotsNote": "Chat apps are not available in {{appName}}: these bots stay in {{source}} and are not connected to the teammate.",
     "remoteError": {
       "REMOTE_COMPAT_MODE_UNSUPPORTED": "Remote tasks cannot use this computer’s compatibility route. Pick a provider with an API key, or continue in a local task.",
       "REMOTE_GATEWAY_ENDPOINT_UNAVAILABLE": "Remote tasks cannot use the hosted model gateway, which {{appName}} does not use. Pick a provider with an API key, or continue in a local task.",

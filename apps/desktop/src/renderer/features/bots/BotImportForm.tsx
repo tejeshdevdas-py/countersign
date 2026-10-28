@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
 import { Button } from '@/components/ui/button';
 import { companionImportReasonKey, companionImportErrorCode, compactCompanionImportSelection, areCompanionImportEntriesSelected, toggleCompanionImportEntries, companionImportCategories, type CompanionImportCategory, type CompanionImportEntry, type CompanionImportApi, type CompanionImportPreview, type CompanionImportResult, type CompanionImportSelection, type CompanionImportSource } from '@cindy/maker-shared/companion-import';
 import { normalizeBotName } from '../../../shared/botCreation';
@@ -162,7 +163,7 @@ export function BotImportForm({ api = window.electronAPI.companionImport, onBack
           return <div key={group} className="flex min-h-12 items-center gap-3 py-1">
             {checkbox(entries.map(item => item.id), allSelected, tr(group), count > 0 && !allSelected)}
             <button type="button" disabled={locked} className="flex min-h-11 min-w-0 flex-1 items-center justify-between gap-3 text-left text-14" onClick={() => openCategory(group)}>
-              <span className="min-w-0">{tr(group)}{group === 'bots' ? <span className="mt-1 block text-13 text-[var(--text-secondary)]">{t('bots.import.botsNote', { source: preview.source.kind === 'hermes' ? 'Hermes' : 'OpenClaw' })}</span> : null}</span>
+              <span className="min-w-0">{tr(group)}{group === 'bots' ? <span className="mt-1 block text-13 text-[var(--text-secondary)]">{t(LOCAL_ONLY ? 'countersignLocalOnly.importBotsNote' : 'bots.import.botsNote', { source: preview.source.kind === 'hermes' ? 'Hermes' : 'OpenClaw' })}</span> : null}</span>
               <span className="shrink-0 text-[var(--text-secondary)]">{count} / {entries.length} <span aria-hidden="true">›</span></span>
             </button>
           </div>;

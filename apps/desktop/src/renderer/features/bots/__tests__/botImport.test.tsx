@@ -4,6 +4,13 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import type { CompanionImportApi } from '@cindy/maker-shared/companion-import';
 import { BotImportForm } from '../BotImportForm';
 
+// Countersign: these cases cover upstream's chat-app bot import, which LOCAL_ONLY switches
+// off (see countersign/__tests__/imImportLocalOnly.test.ts and botImport.localOnly.test.tsx).
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
+
 const portraits = vi.hoisted(() => ({ load: vi.fn(async (index: number) => `data:image/png;base64,portrait-${index}`) }));
 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string, options?: Record<string, string>) => options ? `${key} ${Object.values(options).join(' ')}` : key }) }));

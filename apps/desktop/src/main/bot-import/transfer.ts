@@ -73,6 +73,8 @@ export const IMPORT_IM_BOT_ISSUES: ReadonlySet<string> = new Set([
   'IMPORT_IM_BOT_GATEWAY_RUNNING',
   'IMPORT_IM_BOT_IN_USE',
   'IMPORT_IM_BOT_CONNECT_FAILED',
+  // Countersign: chat-app connectors are off under LOCAL_ONLY.
+  'IMPORT_IM_BOT_LOCAL_ONLY',
   'IMPORT_IM_BOT_SOURCE_STOP_UNCONFIRMED',
   'IMPORT_IM_BOT_SOURCE_CHANGED',
   // The source CLI is missing: the bot credential is saved, only its source stop did not run.

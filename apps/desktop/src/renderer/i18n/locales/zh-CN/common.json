@@ -10128,6 +10128,7 @@
       "imBotGatewayRunning": "原来的网关还在用这个机器人。先停掉它，再到「消息平台」页连接。",
       "imBotInUse": "这个机器人已经在这台电脑上用了：在 设置 → IM 机器人 里，或者在另一位伙伴那里。",
       "imBotConnectFailed": "没能连上这个机器人，请到伙伴的「消息平台」页重试。",
+      "imBotLocalOnly": "没有连接这个机器人：{{appName}} 不支持聊天应用。",
       "imBotSourceStopUnconfirmed": "原来的机器人还没停下，暂时没有接给伙伴。可以稍后在伙伴的「消息平台」页连接。",
       "imBotSourceChanged": "原来的机器人在预览后换过了，没有停用它。请重新读取后再导入。",
       "bots": "消息机器人",
@@ -17425,6 +17426,7 @@
     "voiceHint": "{{appName}} 没有内置语音服务；请连接支持实时 ASR 的服务并配置独立语音凭证。",
     "remoteControlDescription": "通过 SSH 连接远端主机。",
     "pluginEmptyHint": "可点击右上角导入插件包",
+    "importBotsNote": "{{appName}} 不支持聊天应用：这些机器人会留在 {{source}} 里，不会接给伙伴。",
     "remoteError": {
       "REMOTE_COMPAT_MODE_UNSUPPORTED": "远端任务不能使用本机兼容通道。请选择已配置密钥的模型供应商，或在本机任务里继续。",
       "REMOTE_GATEWAY_ENDPOINT_UNAVAILABLE": "远端任务不能使用托管模型网关，{{appName}} 不使用该服务。请选择已配置密钥的模型供应商，或在本机任务里继续。",
