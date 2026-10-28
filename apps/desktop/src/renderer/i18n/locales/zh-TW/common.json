@@ -17417,5 +17417,8 @@
     "title": "確認附件存取",
     "message": "{{appName}} 無法讀取這個附件。請選擇原始檔案，確認後繼續傳送這則訊息；取消會保留草稿。",
     "button": "使用原始檔案"
+  },
+  "countersignLocalOnly": {
+    "notAvailable": "{{feature}} 在 {{appName}} 中無法使用：它需要雲端服務，而這個僅在本機執行的應用程式不使用雲端服務。"
   }
 }
