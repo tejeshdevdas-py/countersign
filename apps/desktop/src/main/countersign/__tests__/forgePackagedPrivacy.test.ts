@@ -163,7 +163,7 @@ describe('Countersign packaged output check', () => {
   });
 
   // build-1 / regression-2: a first name or a common word is ordinary app text.
-  // Only a Windows profile folder (C:\Users\<name>, /c/Users/<name>) names the builder.
+  // Only a Windows profile folder (a drive, Users, then the name) names the builder.
   it.each([
     ['Mark', 'const doc = "markdown"; // Mark the item as done'],
     ['max', 'const n = Math.max(a, b); const maxSize = 4;'],

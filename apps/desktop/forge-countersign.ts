@@ -308,11 +308,11 @@ function escapeRegExp(text: string): string {
 /**
  * A Windows profile path that names the builder: a drive, then `Users` (or
  * `Documents and Settings`), then the name as a whole path segment. Any slash
- * direction, escaped backslashes and the MSYS form (`/c/Users/<name>`) count.
- * A first name or a common word elsewhere in app text (`markdown`,
- * `Math.max`, `User settings`) is not a finding, and neither are the
- * `/home/user` placeholders in documentation or a web address such as
- * `example.org/users/<name>/`: none of them identifies the builder. The check
+ * direction, escaped backslashes and the MSYS form (a slash, the drive letter,
+ * a slash, then Users) count. A first name or a common word elsewhere in app
+ * text (`markdown`, `Math.max`, `User settings`) is not a finding, and neither
+ * are the home-folder placeholders in documentation or a web address with a
+ * users folder in it: none of them identifies the builder. The check
  * runs on Windows packages only, where build paths take this shape.
  */
 function profilePattern(names: readonly string[]): RegExp {
