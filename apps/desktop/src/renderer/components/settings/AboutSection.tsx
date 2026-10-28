@@ -390,22 +390,25 @@ export function AboutSection() {
         <div id="settings-search-settings-about-logsDirLabel">
           <OpenLogsRow />
         </div>
-        <Divider />
+        {/* Countersign: the legal rows open the upstream company's terms and privacy
+            policy for its own service, so under LOCAL_ONLY they are not shown. */}
         {!LOCAL_ONLY && (
           <>
+            <Divider />
             <CrashAutoUploadToggleRow />
             <Divider />
             <div id="settings-search-settings-about-logUpload-uploadLabel">
               <UploadLogsRow />
             </div>
             <Divider />
+            <LegalLinksRows />
           </>
         )}
-        <LegalLinksRows />
       </div>
 
       {/* 存储空间(媒体总仓占用 / 清理 / 体检) */}
-      <SocialLinksPanel />
+      {/* Countersign: the social links are the upstream project's own accounts. */}
+      {!LOCAL_ONLY && <SocialLinksPanel />}
     </div>
   );
 }

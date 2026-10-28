@@ -28,6 +28,12 @@ vi.mock('@/hooks/useExperimentalFeatures', () => ({ useExperimentalFlag: () => (
 vi.mock('@/components/ui/confirm-dialog-provider', () => ({ useConfirmDialog: () => ({ confirm: vi.fn() }) }));
 vi.mock('@/components/log-support/LogSupportActions', () => ({ OpenLogsRow: () => null, UploadLogsRow: () => null }));
 vi.mock('../PiKernelVersionRow', () => ({ PiKernelVersionRow: () => null }));
+// Countersign: these upstream cases cover the links outside LOCAL_ONLY;
+// AboutSection.localOnly.test.tsx covers their absence.
+vi.mock('@cindy/maker-shared/local-only', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@cindy/maker-shared/local-only')>()),
+  LOCAL_ONLY: false,
+}));
 
 import { AboutSection, LegalLinksRows } from '../AboutSection';
 
