@@ -1,0 +1,26 @@
+# Private words for the scrub check (scripts/countersign/scrub-check.mjs).
+#
+# Copy this file to .scrub-patterns in the repository root and replace the
+# examples with your own: employer and customer names, private email domains,
+# fragments of your own folder paths. .scrub-patterns is git-ignored (so is any
+# .scrub-patterns.* variant, such as an editor's .txt copy); only this example
+# file is tracked. Then run `pnpm check:scrub` and `pnpm check:scrub -- --history`
+# before each push. CI never sees your file and checks the built-in rules only.
+#
+# Format:
+# - One JavaScript regular expression per line, without /slashes/ or flags.
+#   Every line is matched case-insensitively.
+# - Lines starting with # are comments. Blank lines are ignored.
+# - (?i) and (?i:...) are not valid in JavaScript; they are not needed either.
+# - A line that is not a valid expression stops the check with exit code 2 and
+#   names its line number.
+# - A finding prints as path:line private:<n>, where n is the line number in
+#   this file. The matched text and the expression are never printed.
+# - Private words are checked in every tracked file and cannot be baselined.
+# - A short word also matches inside longer words. If one of your words is
+#   part of your public GitHub handle, add a negative lookahead for the rest of
+#   the handle, or list a longer fragment instead.
+#
+# Neutral examples (replace them):
+\bexamplecorp\b
+[a-z]:[\\/]+users[\\/]+yourname

@@ -1,0 +1,124 @@
+{
+  "note": "Accepted scrub findings: file, rule, sha256 of the matched text (never the text), count and reason. Private words are never listed here. scripts/countersign/scrub-check.mjs fails on any finding not listed and on an entry found fewer times than its count.",
+  "entries": [
+    {
+      "file": "apps/desktop/src/main/__tests__/claudeOrphanReaper.test.ts",
+      "rule": "local-path",
+      "sha256": "73de225f29dce8dcabd664cb3c25892f80840f279de7a9135a504bdecf37ea2c",
+      "count": 1,
+      "reason": "test fixture: process command lines for a placeholder user \"me\""
+    },
+    {
+      "file": "apps/desktop/src/main/__tests__/claudeOrphanReaper.test.ts",
+      "rule": "windows-user-path",
+      "sha256": "21d0d59c5fc2ee35dcd3f44c9808ac9f19dc0bc69aabb2695d5a875bdb0583e0",
+      "count": 1,
+      "reason": "test fixture: process command lines for a placeholder user \"me\""
+    },
+    {
+      "file": "apps/desktop/src/main/__tests__/claudeOrphanReaper.test.ts",
+      "rule": "windows-user-path",
+      "sha256": "eac840dbcc32102efde2f60b75af59f11fcc7750e7daf726827bde66294b6874",
+      "count": 1,
+      "reason": "test fixture: process command lines for a placeholder user \"me\""
+    },
+    {
+      "file": "apps/desktop/src/main/__tests__/claudeOrphanReaper.test.ts",
+      "rule": "windows-user-path",
+      "sha256": "ed9203c8078e4c6b832600085f28f24656d679aa8dca82ecc2557afc3df25036",
+      "count": 5,
+      "reason": "test fixture: process command lines for a placeholder user \"me\""
+    },
+    {
+      "file": "apps/desktop/src/main/__tests__/deepLink.test.ts",
+      "rule": "local-path",
+      "sha256": "610f2859aa64ec32d9940295962ff12626d6a2ea539802dde19d3a12d616004f",
+      "count": 1,
+      "reason": "test fixture: a placeholder project folder inside a deep link"
+    },
+    {
+      "file": "apps/desktop/src/main/__tests__/gitSnapshotLabeler.test.ts",
+      "rule": "github-token",
+      "sha256": "9ca3957e7cefa708a5323c1a10273b47d236b18359fa467ecaace2a3842d126f",
+      "count": 2,
+      "reason": "upstream test fixture: an alphabet-run token that checks redaction, not a real token"
+    },
+    {
+      "file": "apps/desktop/src/main/__tests__/regionUserData.test.ts",
+      "rule": "local-path",
+      "sha256": "f4a663b661764f3c385a23383344129259b5f0c7d64b3f445c9b9f6c91ff9622",
+      "count": 2,
+      "reason": "test fixture: a placeholder temporary user-data folder"
+    },
+    {
+      "file": "apps/desktop/src/main/countersign/__tests__/cliResolver.test.ts",
+      "rule": "local-path",
+      "sha256": "257c8ede03104ec0655167c8096c0d26ce2cce0042cc4ae0a9f36b4bd9544a02",
+      "count": 2,
+      "reason": "test fixture: placeholder tool folders on PATH"
+    },
+    {
+      "file": "apps/desktop/src/main/countersign/__tests__/cliResolver.test.ts",
+      "rule": "local-path",
+      "sha256": "5792ac3ff48febf1d72854e288c93d8495719e87a901882e2c0cb63afddef210",
+      "count": 3,
+      "reason": "test fixture: placeholder tool folders on PATH"
+    },
+    {
+      "file": "apps/desktop/src/main/countersign/__tests__/cliResolver.test.ts",
+      "rule": "local-path",
+      "sha256": "6d5fa512b5fca823e3cd0d8999810676563ab0e1efbdf2c7520921e22b5e64c2",
+      "count": 1,
+      "reason": "test fixture: placeholder tool folders on PATH"
+    },
+    {
+      "file": "apps/desktop/src/main/countersign/__tests__/cliResolver.test.ts",
+      "rule": "windows-user-path",
+      "sha256": "eccda90348adffaa176d0173c9ed83948b432565f8eea84bb4211836930be010",
+      "count": 5,
+      "reason": "test fixture: PATH entries and files for a placeholder user \"someone\""
+    },
+    {
+      "file": "apps/desktop/src/main/maker-ipc/helpKnowledge.generated.ts",
+      "rule": "local-path",
+      "sha256": "309e5fa0afe8051d225a3d1a6dafe7b2d65d23b6d224cc39077ce5090efdfecd",
+      "count": 1,
+      "reason": "upstream help text with a <you> placeholder; the line changed only by the rename"
+    },
+    {
+      "file": "docs/countersign/2026-10-26-countersign-m1-runs-and-yours.md",
+      "rule": "windows-user-path",
+      "sha256": "eafa0dce395e6c4f244d7698c55a9b3b72195068b14d8beeb12bf3304ee8755a",
+      "count": 1,
+      "reason": "the M1 plan quotes the scrub test example path for a placeholder user \"someone\""
+    },
+    {
+      "file": "packages/maker-core/src/agents/claude-code/__tests__/local-only-env.test.ts",
+      "rule": "windows-user-path",
+      "sha256": "ed9203c8078e4c6b832600085f28f24656d679aa8dca82ecc2557afc3df25036",
+      "count": 1,
+      "reason": "test fixture: a config folder for a placeholder user \"me\""
+    },
+    {
+      "file": "scripts/__tests__/desktop-dev-region.test.mjs",
+      "rule": "local-path",
+      "sha256": "231fa9dfe6fc0aa69e3d6b054eab1279ad2ec5dd1e243ff8e2415c2ab1c10f66",
+      "count": 1,
+      "reason": "test fixture: user-data folders for a placeholder user \"tester\""
+    },
+    {
+      "file": "scripts/__tests__/desktop-dev-region.test.mjs",
+      "rule": "windows-user-path",
+      "sha256": "131911aa2c00b9e3c91c56b1f435313b86e3a4e9b4950416d8f746c74864152b",
+      "count": 1,
+      "reason": "test fixture: user-data folders for a placeholder user \"tester\""
+    },
+    {
+      "file": "scripts/countersign/__tests__/brand-guard.test.mjs",
+      "rule": "windows-user-path",
+      "sha256": "47debb9226cbfea959fa794abd1adfa545e1bceb0144ee80a521d580d4ff8e9d",
+      "count": 1,
+      "reason": "test fixture: a path for a placeholder user \"me\" in a brand-guard case"
+    }
+  ]
+}

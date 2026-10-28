@@ -203,6 +203,7 @@ apps/desktop/resources/builtin-ghosts/
 artifacts/
 
 # Countersign
-.scrub-patterns
+.scrub-patterns*
+!.scrub-patterns.example
 egress-log.jsonl
 .superpowers/
