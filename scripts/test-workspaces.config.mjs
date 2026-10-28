@@ -307,6 +307,8 @@ const desktopGuardInclude = [
   'src/main/countersign/__tests__/buildRetryHints.contract.test.ts',
   // Countersign: forge.config.ts calls the forge-countersign.ts packaging steps (M-B1, M-B5, M-B6, M-L2).
   'src/main/countersign/__tests__/forgeCountersignWiring.contract.test.ts',
+  // Countersign: the plugin gate in mcp-providers.ts refuses the chat-app tool servers first (journey-2).
+  'src/main/countersign/__tests__/chatAppToolServers.contract.test.ts',
 ];
 
 export function desktopUnitWorkerCount(
