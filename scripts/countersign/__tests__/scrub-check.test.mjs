@@ -12,6 +12,7 @@ import {
   compareWithBaseline,
   compareWithHistoryBaseline,
   decodeTrackedText,
+  isUtf8,
   isAllowedEmail,
   parseAddedLines,
   parsePatterns,
@@ -1408,5 +1409,94 @@ test('scrubHistory: added lines with NUL between ASCII characters are read as UT
   assert.deepEqual(
     scrubHistory(commits).map((f) => `${f.where} ${f.rule}`),
     ['a.txt:2 windows-user-path'],
+  );
+});
+
+// scrub-1, round 2: a UTF-16 file of mostly non-ASCII text has too few NULs for
+// the alternating-NUL guess. Tree mode fails any file that is neither UTF-16 nor
+// valid UTF-8; --history decodes such a file from its blob.
+const CJK_LINE = '说明文字中文内容'.repeat(40);
+
+function cjkText() {
+  return `${CJK_LINE}\r\n${CJK_LINE}\r\nsee ${USER_PATH}\r\n${CJK_LINE}\r\n`;
+}
+
+test('decodeTrackedText: mostly non-ASCII UTF-16 is UTF-16 with a BOM and not UTF-8 without one', () => {
+  assert.equal(decodeTrackedText(utf16le(cjkText(), true)).utf16, true);
+  assert.equal(decodeTrackedText(utf16le(cjkText(), false)).utf16, false);
+  assert.equal(isUtf8(utf16le(cjkText(), false)), false);
+  assert.equal(isUtf8(Buffer.from(cjkText(), 'utf8')), true);
+  assert.equal(isUtf8(Buffer.from("const sep = '\u0000';\n", 'utf8')), true);
+  assert.equal(isUtf8(Buffer.from([0x63, 0x61, 0x66, 0xe9, 0x0a])), false);
+});
+
+test('CLI: a file that is neither UTF-16 nor valid UTF-8 fails as not UTF-8 text', (t) => {
+  const ctx = forkRepo(t);
+  write(ctx, 'cjk.txt', utf16le(cjkText(), false));
+  write(ctx, 'latin1.txt', Buffer.from([0x63, 0x61, 0x66, 0xe9, 0x0a]));
+  write(ctx, 'cjkbom.txt', utf16le(cjkText(), true));
+  commitAll(ctx, 'fork: odd encodings');
+  const { code, out } = run(ctx);
+  assert.equal(code, 1, out);
+  const lines = out.split(/\r?\n/);
+  assert.deepEqual(lines.filter((l) => l.includes('not UTF-8 text')).sort(), [
+    'cjk.txt: not UTF-8 text and not UTF-16; save it as UTF-8',
+    'latin1.txt: not UTF-8 text and not UTF-16; save it as UTF-8',
+  ]);
+  assert.deepEqual(lines.filter((l) => /^\S+:\d+ \S+$/.test(l)), [
+    'cjkbom.txt:3 windows-user-path',
+  ]);
+  assert.match(out, /^3 findings; 6 files scanned \(1 read as UTF-16\), 3 skipped$/m);
+  assert.equal(out.includes('someone'), false, 'output must not carry the matched text');
+});
+
+test('CLI --history: a removed UTF-16 file of mostly non-ASCII text is still read', (t) => {
+  const ctx = forkRepo(t);
+  write(ctx, 'cjkbom.txt', utf16le(cjkText(), true));
+  write(ctx, 'cjk.txt', utf16le(cjkText(), false));
+  const sha = commitAll(ctx, 'fork: utf-16 notes');
+  fs.rmSync(path.join(ctx.repo, 'cjkbom.txt'));
+  fs.rmSync(path.join(ctx.repo, 'cjk.txt'));
+  commitAll(ctx, 'fork: drop the notes');
+  assert.equal(run(ctx).code, 0, 'the tree no longer holds the files');
+  const { code, out } = run(ctx, ['--history']);
+  assert.equal(code, 1, out);
+  const short = sha.slice(0, 9);
+  assert.deepEqual(out.split(/\r?\n/).filter((l) => l.startsWith(short)).sort(), [
+    `${short} cjk.txt:0 not-utf8`,
+    `${short} cjkbom.txt:3 windows-user-path`,
+  ]);
+  assert.equal(out.includes('someone'), false, 'output must not carry the matched text');
+});
+
+test('scrubHistory: a file blob decides how its added lines are read', () => {
+  const asGit = (bytes) => bytes.toString('utf8').split('\n');
+  const bom = utf16le(cjkText(), true);
+  const plain = Buffer.from(`see ${USER_PATH}\n`, 'utf8');
+  const commits = [
+    {
+      sha: 'f'.repeat(40),
+      an: 'owner',
+      ae: OWNER_EMAIL,
+      cn: 'owner',
+      ce: OWNER_EMAIL,
+      body: 'Subject\n',
+      added: new Map([
+        ['bom.txt', asGit(bom).map((text, i) => ({ line: i + 1, text }))],
+        ['nobom.txt', [{ line: 1, text: '\u0000�' }]],
+        ['plain.txt', [{ line: 1, text: `see ${USER_PATH}` }]],
+      ]),
+      blobs: new Map([
+        ['bom.txt', bom],
+        ['nobom.txt', utf16le(cjkText(), false)],
+        ['plain.txt', plain],
+      ]),
+    },
+  ];
+  assert.deepEqual(
+    scrubHistory(commits)
+      .map((f) => `${f.where} ${f.rule}`)
+      .sort(),
+    ['bom.txt:3 windows-user-path', 'nobom.txt:0 not-utf8', 'plain.txt:1 windows-user-path'],
   );
 });

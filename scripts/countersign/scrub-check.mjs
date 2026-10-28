@@ -37,9 +37,13 @@
  *     is text: no NUL byte in its first 8000 bytes, as git decides);
  *   - tracked files missing from the working tree (reported).
  * A UTF-16 file (a UTF-16 byte order mark, or NULs alternating with ASCII) is
- * decoded as UTF-16 and every line of it counts as added; in --history the NULs
- * are dropped from its added lines. A UTF-16 file of mostly non-ASCII text
- * without a byte order mark is still read as UTF-8.
+ * decoded as UTF-16 and every line of it counts as added. --history reads a
+ * file's committed blob when its added lines carry a NUL or bytes that are not
+ * UTF-8, and decodes it the same way. Any other file that is not valid UTF-8
+ * (such as UTF-16 of mostly non-ASCII text without a byte order mark) fails as
+ * not UTF-8 text: in the tree mode as a listed problem, in --history as a
+ * not-utf8 finding at <path>:0, which no baseline accepts. A UTF-16 file whose
+ * bytes happen to be valid UTF-8 is still read as UTF-8.
  * A NUL byte is not a reason to skip a normal file: real source files carry one
  * inside a string. A -text attribute alone is not either: vendored source and
  * teammate packages carry it to keep their bytes (a reviewed departure from the
@@ -79,7 +83,8 @@
  *
  * Exit codes:
  *   0  no findings
- *   1  findings, or a stale or invalid baseline entry
+ *   1  findings (a tracked file that is not UTF-8 text included), or a stale or
+ *      invalid baseline entry
  *   2  input error: base unresolved, git failing, no tracked files, a bad pattern
  *      line, a .scrub-patterns that is not UTF-8 text or is a directory, a baseline
  *      file that cannot be read or has no "entries" list
@@ -260,6 +265,50 @@ export function decodeTrackedText(bytes) {
     even.swap16();
   }
   return { text: even.toString('utf16le'), utf16: true };
+}
+
+/** True when the bytes are valid UTF-8 (a NUL byte is valid UTF-8). */
+export function isUtf8(bytes) {
+  try {
+    new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Added lines of one file as `git diff` printed them, read through the file's
+ * committed blob when one is given: a UTF-16 blob gives all its lines (as in the
+ * tree mode), a blob that is neither UTF-16 nor UTF-8 gives `notUtf8`, and a
+ * UTF-8 blob, or no blob, gives the printed lines with UTF-16 NULs dropped.
+ * @returns {{lines: {line: number, text: string}[], notUtf8: boolean}}
+ */
+function historyFileLines(rawLines, blob) {
+  if (blob) {
+    const { text, utf16 } = decodeTrackedText(blob);
+    if (utf16) {
+      const lines = text.split('\n').map((t, i) => ({
+        line: i + 1,
+        text: t.endsWith('\r') ? t.slice(0, -1) : t,
+      }));
+      return { lines, notUtf8: false };
+    }
+    if (!isUtf8(blob)) {
+      return { lines: [], notUtf8: true };
+    }
+  }
+  return { lines: readableAddedLines(rawLines), notUtf8: false };
+}
+
+/**
+ * True when a file's printed added lines may not be UTF-8 text: a NUL (every
+ * line of a UTF-16 file but its first carries one from the line break) or a
+ * replacement character (bytes that are not UTF-8, such as a UTF-16 byte order
+ * mark). Only then does --history read the committed blob.
+ */
+export function needsBlob(rawLines) {
+  return rawLines.some((l) => l.text.includes('\u0000') || l.text.includes('�'));
 }
 
 /**
@@ -695,6 +744,19 @@ function git(root, args, input) {
   return { ok: true, stdout: result.stdout, stderr: result.stderr };
 }
 
+/** The raw stdout bytes of a git command, or null when it fails. */
+function gitBytes(root, args) {
+  const result = spawnSync('git', ['-c', 'core.quotePath=false', ...args], {
+    cwd: root,
+    maxBuffer: 1024 * 1024 * 1024,
+    windowsHide: true,
+  });
+  if (result.error || result.status !== 0) {
+    return null;
+  }
+  return result.stdout;
+}
+
 // --text: a source file with a NUL byte in a string is still diffed line by line;
 // real binaries are dropped by skipReason before any rule runs.
 const DIFF_ARGS = [
@@ -847,6 +909,7 @@ function runTree({ root, base, patterns, baseline, skippedEntries, log, error })
   }
   const toScan = [];
   const missing = [];
+  const notUtf8 = [];
   const pinned = new Map();
   let skipped = 0;
   let privateOnly = 0;
@@ -862,10 +925,9 @@ function runTree({ root, base, patterns, baseline, skippedEntries, log, error })
       skipped += 1;
       continue;
     }
-    let text;
-    let utf16 = false;
+    let bytes;
     try {
-      ({ text, utf16 } = decodeTrackedText(fs.readFileSync(path.join(root, file))));
+      bytes = fs.readFileSync(path.join(root, file));
     } catch (err) {
       if (err.code !== 'ENOENT' && err.code !== 'EISDIR') {
         error(`scrub: cannot read ${file} (${err.code})`);
@@ -875,7 +937,15 @@ function runTree({ root, base, patterns, baseline, skippedEntries, log, error })
       skipped += 1;
       continue;
     }
+    const { text, utf16 } = decodeTrackedText(bytes);
     if (scanMode(file, fileAttrs, text) === 'none') {
+      skipped += 1;
+      continue;
+    }
+    // Neither UTF-16 nor UTF-8 (for example UTF-16 of mostly non-ASCII text
+    // without a byte order mark): no rule could match it, so it fails.
+    if (!utf16 && !isUtf8(bytes)) {
+      notUtf8.push(file);
       skipped += 1;
       continue;
     }
@@ -909,8 +979,15 @@ function runTree({ root, base, patterns, baseline, skippedEntries, log, error })
   for (const file of missing) {
     log(`${file}: skipped, not in the working tree`);
   }
+  for (const file of notUtf8) {
+    log(`${file}: not UTF-8 text and not UTF-16; save it as UTF-8`);
+  }
   const problems =
-    fresh.length + stale.length + skippedCheck.fresh.length + skippedCheck.stale.length;
+    fresh.length +
+    stale.length +
+    skippedCheck.fresh.length +
+    skippedCheck.stale.length +
+    notUtf8.length;
   const notes = [];
   if (privateOnly > 0) {
     notes.push(`${privateOnly} for private words only`);
@@ -997,7 +1074,11 @@ export function scrubHistory(commits, extraPatterns = []) {
       if (mode === 'none') {
         continue;
       }
-      const lines = readableAddedLines(rawLines);
+      const { lines, notUtf8 } = historyFileLines(rawLines, c.blobs?.get(file));
+      if (notUtf8) {
+        findings.push({ sha: c.sha, where: `${file}:0`, rule: 'not-utf8', path: file });
+        continue;
+      }
       const joined = lines.map((l) => l.text).join('\n');
       for (const m of mode === 'all' ? joined.matchAll(PRIVATE_KEY_BLOCK) : []) {
         const line = lines[lineOfIndex(joined, m.index) - 1].line;
@@ -1127,6 +1208,18 @@ function runHistory({ root, base, patterns, baseline, historyBaseline, log, erro
     }
     c.added = parseAddedLines(diff.stdout);
     c.paths = names.stdout.split('\0').filter(Boolean);
+    c.blobs = new Map();
+    for (const [file, lines] of c.added) {
+      if (scanMode(file) === 'none' || !needsBlob(lines)) {
+        continue;
+      }
+      const blob = gitBytes(root, ['cat-file', 'blob', `${c.sha}:${file}`]);
+      if (blob === null) {
+        error(`scrub: git cat-file failed for ${c.sha.slice(0, 9)} ${file}`);
+        return 2;
+      }
+      c.blobs.set(file, blob);
+    }
   }
   // A fixture accepted in the tree baseline is accepted in the commit that added it.
   const accepted = new Set(baseline.map((e) => baselineKey(e.file, e.rule, e.sha256)));
