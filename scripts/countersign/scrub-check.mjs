@@ -3,7 +3,8 @@
  * a key, a personal path, an email address or one of the owner's private words.
  *
  * Rules (rule id: what it matches; where it looks):
- *   anthropic-key, openai-key, github-token: real-shaped tokens; every line
+ *   anthropic-key, openai-key, github-token, aws-access-key-id, google-api-key,
+ *     slack-token, huggingface-token: real-shaped tokens; every line
  *   private-key-block: a PEM private-key header followed by a key body; whole file,
  *     and in --history the whole commit message and each file's added lines joined
  *   windows-user-path: a Windows user folder (drive letter, Users, a name; with
@@ -15,7 +16,8 @@
  *     slash, a name), /Users/<name> and /home/<name> (with or without a
  *     trailing slash); lines the fork added
  *   email: an email address outside the allow list (the owner's noreply address,
- *     reserved example and test domains, @2x image names, URL userinfo, and the
+ *     reserved example and test domains, @2x image names, URL userinfo with a
+ *     password (scheme://user:password@host), and the
  *     Co-Authored-By trailer address); lines the fork added and commit metadata
  *   private:<n>: line n of the local .scrub-patterns file; every line, never baselined
  *
@@ -87,13 +89,19 @@ export const OWNER_EMAIL = '346368857+tejeshdevdas-py@users.noreply.github.com';
 // Built from parts so this file does not match its own email rule.
 const TRAILER_EMAIL = ['noreply', 'anthropic.com'].join('@');
 
+// Prefix-anchored shapes must not follow a letter or digit, but may follow "_" (an
+// environment variable name such as TOKEN_<token> is still caught).
 const KEY_RULES = [
   { id: 'anthropic-key', re: /sk-ant-[A-Za-z0-9_-]{20,}/g },
   { id: 'openai-key', re: /sk-(?:proj|svcacct|admin)-[A-Za-z0-9_-]{20,}/g },
   {
     id: 'github-token',
-    re: /\b(?:gh[pousr]_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{22,})\b/g,
+    re: /(?<![A-Za-z0-9])(?:gh[pousr]_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{22,})(?![A-Za-z0-9])/g,
   },
+  { id: 'aws-access-key-id', re: /(?<![A-Za-z0-9])AKIA[0-9A-Z]{16}(?![0-9A-Za-z])/g },
+  { id: 'google-api-key', re: /(?<![A-Za-z0-9])AIza[0-9A-Za-z_-]{35}/g },
+  { id: 'slack-token', re: /(?<![A-Za-z0-9])xox[baprs]-[0-9A-Za-z-]{10,}/g },
+  { id: 'huggingface-token', re: /(?<![A-Za-z0-9])hf_[A-Za-z0-9]{34,}/g },
 ];
 const PRIVATE_KEY_BLOCK =
   /-----BEGIN [A-Z0-9 ]*PRIVATE KEY(?: BLOCK)?-----[\s\S]{0,300}?[A-Za-z0-9+/=]{40,}/g;
@@ -124,6 +132,10 @@ export const BASELINE_RULES = [
   'anthropic-key',
   'openai-key',
   'github-token',
+  'aws-access-key-id',
+  'google-api-key',
+  'slack-token',
+  'huggingface-token',
   'private-key-block',
   'windows-user-path',
   'local-path',
@@ -195,8 +207,9 @@ export function isAllowedEmail(address, line, index) {
   if (/^\d+x\.(?:png|jpe?g|webp)$/.test(domain)) {
     return true;
   }
-  // URL userinfo: //user@host or //user:secret@host.
-  if (/\/\/[^\s/@"'`]*$/.test(line.slice(0, index))) {
+  // URL userinfo with a password: scheme://user:secret@host (the match starts at the
+  // password). scheme://user@host is a person's address in a URL and is not allowed.
+  if (/[A-Za-z][A-Za-z0-9+.-]*:\/\/[^\s/@"'`:]*:[^\s/@"'`]*$/.test(line.slice(0, index))) {
     return true;
   }
   return lower === TRAILER_EMAIL && /^\s*Co-Authored-By:/i.test(line);

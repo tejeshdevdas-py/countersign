@@ -252,12 +252,61 @@ test('the email allow list', () => {
   for (const address of allowed) {
     assert.equal(isAllowedEmail(address, address, 0), true, address);
   }
-  const userinfo = `http://user:secret@${['proxy', 'acme-widgets.com'].join('.')}:8080`;
+  const host = ['proxy', 'acme-widgets.com'].join('.');
+  const userinfo = `http://user:secret@${host}:8080`;
   assert.deepEqual(scrub([{ path: 'a.ts', text: userinfo }], []), []);
+  assert.deepEqual(scrub([{ path: 'a.ts', text: `socks5://u:p%24ss@${host}` }], []), []);
   const trailer = `Co-Authored-By: Claude <${TRAILER_EMAIL}>`;
   assert.deepEqual(scrub([{ path: 'a.md', text: trailer }], []), []);
   assert.deepEqual(rules(scrub([{ path: 'a.md', text: `mail ${TRAILER_EMAIL}` }], [])), ['email']);
   assert.deepEqual(rules(scrub([{ path: 'a.md', text: `mail ${OUTSIDE_EMAIL}` }], [])), ['email']);
+});
+
+test('URL userinfo is allowed only as scheme://user:password@host', () => {
+  const host = ['proxy', 'acme-widgets.com'].join('.');
+  for (const text of [
+    `https://someone@${host}/repo`, // no password: a person's address in a URL
+    `ssh://git@${host}/repo.git`,
+    `//someone@${host}`, // no scheme
+    `see https://x.test/ and ${OUTSIDE_EMAIL}`,
+  ]) {
+    assert.deepEqual(rules(scrub([{ path: 'a.md', text }], [])), ['email'], text);
+  }
+});
+
+test('key shapes: GitHub tokens after an underscore, AWS, Google, Slack and Hugging Face keys', () => {
+  const aws = ['AKIA', 'Q7'.repeat(8)].join('');
+  const google = ['AIza', 'Sy', 'b-_9'.repeat(8), 'z'].join('');
+  const slack = ['xoxb', '1234567890', 'abcDEF'].join('-');
+  const hf = ['hf', 'Ab9'.repeat(12)].join('_');
+  const cases = [
+    [`TOKEN_${GITHUB_TOKEN}`, 'github-token'],
+    [`${GITHUB_TOKEN}_suffix`, 'github-token'],
+    [`key=${aws}`, 'aws-access-key-id'],
+    [`"${google}"`, 'google-api-key'],
+    [`SLACK_${slack}`, 'slack-token'],
+    [`token: ${hf}`, 'huggingface-token'],
+  ];
+  for (const [text, rule] of cases) {
+    const findings = scrub([{ path: 'a.ts', text }], [], { addedLines: new Map() });
+    assert.deepEqual(rules(findings), [rule], text);
+  }
+  const nearMisses = [
+    ['AKIA', 'Q7'.repeat(7)].join(''), // 14 characters after AKIA
+    ['akia', 'Q7'.repeat(8)].join(''), // lower case
+    `x${aws}`, // inside a longer word
+    ['AIza', 'S'.repeat(20)].join(''),
+    ['xoxq', '1234567890', 'abc'].join('-'),
+    ['hf', 'Ab9'.repeat(5)].join('_'),
+    ['ghp', 'aB3'.repeat(11)].join('_'),
+  ];
+  for (const text of nearMisses) {
+    assert.deepEqual(scrub([{ path: 'a.ts', text }], []), [], text);
+  }
+  for (const rule of ['aws-access-key-id', 'google-api-key', 'slack-token', 'huggingface-token']) {
+    const entry = { file: 'a.ts', rule, sha256: sha256(rule), count: 1, reason: 'fixture' };
+    assert.deepEqual(validateBaseline([entry]), [], rule);
+  }
 });
 
 test('a finding carries path, line, rule and the sha256 of the match, never the text', () => {

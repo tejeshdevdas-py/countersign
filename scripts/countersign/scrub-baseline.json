@@ -93,6 +93,20 @@
       "reason": "test fixture: a file:// URL to a placeholder app page, to check that local pages pass the egress guard"
     },
     {
+      "file": "apps/desktop/src/main/learn-host/__tests__/redaction.test.ts",
+      "rule": "aws-access-key-id",
+      "sha256": "1a5d44a2dca19669d72edf4c4f1c27c4c1ca4b4408fbb17f6ce4ad452d78ddb3",
+      "count": 1,
+      "reason": "upstream test fixture: the public example access key id from the AWS documentation, used to test log redaction"
+    },
+    {
+      "file": "apps/desktop/src/main/learn-host/__tests__/redaction.test.ts",
+      "rule": "slack-token",
+      "sha256": "7828319d7ebcfa2a8e72abdeb92f2dee2748124737a3ac37cb9feccbeba6f8d2",
+      "count": 1,
+      "reason": "upstream test fixture: a made-up Slack bot token shape (digits and three letters), used to test log redaction"
+    },
+    {
       "file": "apps/desktop/src/main/maker-ipc/helpKnowledge.generated.ts",
       "rule": "local-path",
       "sha256": "309e5fa0afe8051d225a3d1a6dafe7b2d65d23b6d224cc39077ce5090efdfecd",
