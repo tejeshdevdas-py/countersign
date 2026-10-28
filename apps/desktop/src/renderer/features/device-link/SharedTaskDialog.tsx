@@ -3,6 +3,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent }
 import { ArrowLeft, Check, Clock, FileText, Link2, Users, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { LOCAL_ONLY } from '@cindy/maker-shared/local-only';
+import { localOnlyMessage } from '@/lib/countersignLocalOnly';
 import {
   parseSharedTaskPeer, sharedTaskHostPeer, sharedTaskAccountName, SHARED_TASK_HOST_CHANNEL,
   type SharedTaskDetail, type SharedTaskHostCommand,
@@ -436,12 +438,14 @@ export function SharedTaskDialog({ open, onOpenChange, session, returnFocus, ini
     else if (embedded) { setTarget(null); setManualOpen(false); setSuccess(null); }
     else onOpenChange(false);
   };
+  // Countersign: task sharing needs a cloud account; under LOCAL_ONLY there is none to sign in to.
+  const signInNotice = LOCAL_ONLY ? localOnlyMessage('Task sharing') : t('sharedTask.login');
   return <>{embedded && <section>
     <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
       <div><h2 className="text-20 font-medium">{t('sharedTask.title')}</h2><p className="mt-2 text-13 text-[var(--text-secondary)]">{t('sharedTask.managementIntro')}</p></div>
       <Button variant="secondary" size="lg" disabled={!isAuthenticated || busy} onClick={() => switchTab('join')}>{t('sharedTask.join')}</Button>
     </div>
-    {isAuthenticated ? hub : <p className="text-13">{t('sharedTask.login')}</p>}
+    {isAuthenticated ? hub : <p className="text-13">{signInNotice}</p>}
   </section>}<Dialog.Root open={open && (!embedded || !!target || !!confirm || manualOpen || !!success)} onOpenChange={value => { if (!value) dismiss(); }}><Dialog.Portal>
     <Dialog.Overlay className="modal-scrim fixed inset-0 z-[10000]" />
     <Dialog.Content ref={panel} aria-describedby={undefined} className="modal-panel fixed left-1/2 top-1/2 z-[10001] max-h-[calc(100dvh-32px)] w-[min(460px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 overflow-y-auto p-5 text-[var(--text-primary)]"
@@ -461,7 +465,7 @@ export function SharedTaskDialog({ open, onOpenChange, session, returnFocus, ini
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3"><Button ref={keep} variant="secondary" size="lg" disabled={busy} onClick={cancel}>{t(keepKey)}</Button>
           <Button variant="primary" tone="danger-solid" size="lg" loading={busy} onClick={confirmAction} className="h-auto min-h-9 max-w-full whitespace-normal py-1.5">{t(actionKey, { count: confirm.kind === 'close' ? confirm.targets.length : 1 })}</Button></div>
       </div>}
-      <div hidden={!!confirm}>{!isAuthenticated ? <p className="text-13">{t('sharedTask.login')}</p> : target ? hostView : success ? <div className="py-6 text-center">
+      <div hidden={!!confirm}>{!isAuthenticated ? <p className="text-13">{signInNotice}</p> : target ? hostView : success ? <div className="py-6 text-center">
         <span className="mb-4 inline-flex size-11 items-center justify-center rounded-full border border-[var(--border-default)]"><Check size={18} aria-hidden /></span>
         <h3 className="break-words text-14 font-medium">{success.title ? t('sharedTask.joinedTitle', { title: success.title }) : t('sharedTask.joined')}</h3><p className="mb-5 mt-2 text-12 text-[var(--text-secondary)]">{t('sharedTask.joinedBody')}</p>
         <Button variant="cta" size="lg" loading={busy} onClick={() => openTask(success.sharedTaskId)}>{t('sharedTask.enterTask')}</Button>{!admissionOnly && <div className="mt-3"><Button variant="secondary" tone="quiet" disabled={busy} onClick={() => switchTab('joined')}>{t('sharedTask.viewJoined')}</Button></div>}
