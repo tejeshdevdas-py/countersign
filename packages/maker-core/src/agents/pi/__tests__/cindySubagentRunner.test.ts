@@ -805,12 +805,21 @@ describe('Cindy durable PI Subagent runner', () => {
   it('accepts steering while a child is backing off for automatic retry', async () => {
     const fixture = await makeFixture({ retryThenHang: true });
     try {
-      const retrying = await waitFor(async () => {
-        const [run] = await listPiSubagentRuns(fixture.root);
-        if (run?.totalTokens !== 1 || run.state !== 'running') return null;
-        const transcript = await readFile(path.join(fixture.runDir, 'transcript.jsonl'), 'utf8');
-        return transcript.includes('auto_retry_start') ? run : null;
-      });
+      // transcript.jsonl is written per event but status.json on a flush timer,
+      // so a flush between the failed attempt and auto_retry_start leaves the
+      // transcript ahead of a status still carrying resultReady=true. Poll the
+      // durable field the assertion reads, as the immutable-output test does.
+      const retrying = await waitFor(
+        async () => {
+          const [run] = await listPiSubagentRuns(fixture.root);
+          if (run?.totalTokens !== 1 || run.state !== 'running') return null;
+          if (run.tasks[0]?.resultReady !== false) return null;
+          const transcript = await readFile(path.join(fixture.runDir, 'transcript.jsonl'), 'utf8');
+          return transcript.includes('auto_retry_start') ? run : null;
+        },
+        undefined,
+        'the retry backoff to clear resultReady in durable status',
+      );
       expect(retrying.tasks[0]?.resultReady).toBe(false);
       await expect(controlPiSubagentRuns(fixture.root, retrying.runId, 'steer', {
         childId: retrying.tasks[0]?.childId, message: 'Use the corrected request after retry',
