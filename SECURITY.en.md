@@ -13,8 +13,6 @@ chat.
 Use GitHub private vulnerability reporting on this repository ("Report a
 vulnerability" on the repository's Security tab).
 
-<!-- owner: enable on GitHub -->
-
 If reproduction materials contain sensitive information, say so in the report
 and wait for the maintainer to provide an appropriate secure transfer method.
 Do not send sensitive materials through a public channel.
@@ -36,8 +34,6 @@ report when a fix or mitigation can be disclosed. The maintainer answers on a
 best-effort basis. Confirmed vulnerabilities follow a **90-day coordinated
 disclosure window** (adjustable in coordination with the reporter). If you hear
 nothing for more than 7 days, please add a comment to the report.
-
-<!-- owner: confirm -->
 
 ## Contributor notes
 

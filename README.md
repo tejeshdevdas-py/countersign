@@ -89,8 +89,6 @@ pnpm install
 pnpm release:package -- --platform win32 --allow-unsigned --skip-smoke
 ```
 
-<!-- owner: default branch pending -->
-
 `pnpm install` also downloads the Claude Code, Codex, Pi and ripgrep engines at the versions pinned in `tools/*/latest.json`. The last command is the packaging command M1 was built with. `--skip-smoke` skips a packaged smoke test that starts the app; that test has not been run on Countersign.
 
 The installer is written to `apps/desktop/release/artifacts/global/unversioned/win32-x64/Countersign-unversioned-Setup.exe`. It is unsigned.
@@ -266,8 +264,6 @@ Not checked: a build on a clean machine, a start with no network, a capture afte
 
 - Report a security problem through GitHub private vulnerability reporting on this repository; see [`SECURITY.en.md`](SECURITY.en.md).
 - Report bugs as GitHub issues on this repository. The in-app issue reporter is off.
-
-<!-- owner: enable on GitHub -->
 
 ## Credit and licence
 
