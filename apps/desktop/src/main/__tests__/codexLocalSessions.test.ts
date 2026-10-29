@@ -1591,7 +1591,7 @@ describe('prepareExternalCodexSessionForResume orphan rollout synthesis', () => 
     };
   }
 
-  // Countersign: commit 56eca0a5d removed the legacy brand identity lists on purpose, since Countersign
+  // Countersign: the commit "drop legacy identity lists, tidy single-scheme tests" removed the legacy brand identity lists on purpose, since Countersign
   // has no legacy brand to migrate from. Upstream adopted a legacy branded HOME here; the intended
   // behaviour is now that such a directory is never consulted, even in the cn region.
   it('does not adopt a legacy branded Codex HOME (Countersign has no legacy brand)', async () => {
@@ -2173,7 +2173,7 @@ ${rolloutLine('m1', 'user', 'legacy history', '2026-07-14T00:00:01.000Z')}
 
   // Countersign: removed the upstream case 'synthesizes into the current HOME when legacy state survives
   // but its rollout is missing'. It relied on a legacy branded HOME (xdt-maker) being discovered, which
-  // 56eca0a5d removed on purpose. The equivalent flow for a discoverable external HOME is covered by the
+  // the commit "drop legacy identity lists, tidy single-scheme tests" removed on purpose. The equivalent flow for a discoverable external HOME is covered by the
   // 'missing external rollout' cases below.
 
   it('rolls back when a missing external rollout materializes inside the state-copy transaction', async () => {
