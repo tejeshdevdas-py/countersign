@@ -34,6 +34,12 @@ vi.mock('../maker-host/override-settings-file.js', () => ({
 
 import { LOCAL_ONLY, LocalOnlyError } from '@cindy/maker-shared';
 import { getActiveAppSession } from '../appSessionState.js';
+// Loaded once with the file (engineering-conventions 3.2). Its cold import
+// takes seconds; inside a case it counted against that case's 5 s budget,
+// which is how CI on Linux timed out. No case needs a fresh copy: the
+// sign-in entry points reject before touching login state, and the
+// read-only cases run before initialize().
+import * as auth from '../authManager.js';
 
 describe('Countersign local-only constants', () => {
   it('is local-only and the error is identifiable', () => {
@@ -52,13 +58,6 @@ async function loadAppSessionState(): Promise<typeof import('../appSessionState.
   // reset-modules: appSessionState caches the loaded session; each case reads the persisted mode afresh.
   vi.resetModules();
   return import('../appSessionState.js');
-}
-
-/** authManager holds login state in module scope, so each case loads it afresh. */
-async function loadAuthManager(): Promise<typeof import('../authManager.js')> {
-  // reset-modules: authManager holds login state in module scope; each case starts from a fresh load.
-  vi.resetModules();
-  return import('../authManager.js');
 }
 
 describe('Countersign always starts in local mode', () => {
@@ -94,7 +93,6 @@ describe('authManager makes no cloud call', () => {
   });
 
   it('cloud sign-in entry points reject with LocalOnlyError', async () => {
-    const auth = await loadAuthManager();
     await expect(auth.dispatchLoginAction({ type: 'noop' })).rejects.toMatchObject({
       name: 'LocalOnlyError',
     });
@@ -106,7 +104,6 @@ describe('authManager makes no cloud call', () => {
   });
 
   it('syncSavedAccounts() returns the saved list without any network call', async () => {
-    const auth = await loadAuthManager();
     const synced = await auth.syncSavedAccounts();
     expect(synced).toEqual(auth.listSavedAccounts());
     expect(Array.isArray(synced.accounts)).toBe(true);
@@ -115,7 +112,6 @@ describe('authManager makes no cloud call', () => {
   });
 
   it('initialize() performs no fetch', async () => {
-    const auth = await loadAuthManager();
     auth.setProjectionRepairTeardown(async () => undefined);
     await auth.initialize();
     expect(fetchStub).not.toHaveBeenCalled();
