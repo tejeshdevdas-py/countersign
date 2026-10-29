@@ -309,6 +309,8 @@ const desktopGuardInclude = [
   'src/main/countersign/__tests__/forgeCountersignWiring.contract.test.ts',
   // Countersign: the plugin gate in mcp-providers.ts refuses the chat-app tool servers first (journey-2).
   'src/main/countersign/__tests__/chatAppToolServers.contract.test.ts',
+  // Countersign: the Linux register-desktop.sh claims only the BRAND_IDENTITY deep-link schemes.
+  'src/main/countersign/__tests__/linuxDesktopSchemes.contract.test.ts',
 ];
 
 export function desktopUnitWorkerCount(

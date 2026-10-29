@@ -131,7 +131,7 @@ esac`);
     assert.equal(downloads.filter((url) => url.includes('/manifest-linux-x64.json?t=')).length, 4);
     assert.ok(downloads.every((url) => url.startsWith('https://hotfix.cindy.app/cindy/')));
     assert.equal(fs.readdirSync(path.join(home, '.local/share/applications')).filter((f) => f.endsWith('.desktop')).length, 1);
-    assert.ok(fs.readFileSync(path.join(home, 'mime.log'), 'utf8').includes('x-scheme-handler/cindy'));
+    assert.ok(fs.readFileSync(path.join(home, 'mime.log'), 'utf8').includes('x-scheme-handler/countersign'));
     const active = pointer(prefix);
     fails(run(home, v1), /refusing to downgrade/);
     assert.equal(pointer(prefix), active);

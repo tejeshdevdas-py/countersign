@@ -41,10 +41,10 @@ icon=${icon//\\/\\\\}
 printf '%s\n' '[Desktop Entry]' 'Type=Application' 'Name=Cindy (User)' \
   "Exec=\"$exec_path\" %U" "Icon=$icon" 'Terminal=false' \
   'Categories=Development;' "StartupWMClass=$app_id" \
-  'MimeType=x-scheme-handler/cindy;x-scheme-handler/xdt-maker;' > "$temp"
+  'MimeType=x-scheme-handler/countersign;' > "$temp"
 desktop-file-validate "$temp"
 mv -T -- "$temp" "$dest"
 update-desktop-database "$apps_dir"
-xdg-mime default "$id" x-scheme-handler/cindy x-scheme-handler/xdt-maker
+xdg-mime default "$id" x-scheme-handler/countersign
 printf 'Menu entry and login links registered: %s\n' "$dest"
 printf 'CLI: use %s/launch (add a cindy symlink to your PATH if desired).\n' "$prefix"
